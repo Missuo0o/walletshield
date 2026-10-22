@@ -17,29 +17,31 @@ function App(){
  const [page,setPage]=useState<Page>(hosted?'network':'lab'),[account,setAccount]=useState(''),[snapReady,setSnapReady]=useState(false),[prepared,setPrepared]=useState(false),[walletBusy,setWalletBusy]=useState(false),[notice,setNotice]=useState(''),[online,setOnline]=useState(false),[wallets,setWallets]=useState<DiscoveredWallet[]>([]),[walletId,setWalletId]=useState(''),[walletChainId,setWalletChainId]=useState<number|null>(null);
  const selectedWallet=wallets.find(w=>w.id===walletId)??defaultWallet(wallets),provider=selectedWallet?.provider,providerRef=useRef(provider),busyRef=useRef(false);providerRef.current=provider;
  const identityEpoch=useRef(0);
+ const [identityGeneration,setIdentityGeneration]=useState(0);
  const setBusy=(value:boolean)=>{busyRef.current=value;setWalletBusy(value);};
  const short=(address:string)=>`${address.slice(0,6)}…${address.slice(-4)}`;
  const stillSelected=(p:WalletProvider)=>{if(providerRef.current!==p)throw Error('The selected wallet changed. Reconnect before continuing.');};
  async function readSnap(p=provider):Promise<boolean>{
+  const epoch=identityEpoch.current;
   if(!p){setSnapReady(false);return false;}
   try{
    const snaps=await p.request({method:'wallet_getSnaps'}) as Record<string,{enabled:boolean;blocked:boolean}>;
-   if(!snaps?.[SNAP_ID]?.enabled||snaps[SNAP_ID].blocked){if(providerRef.current===p)setSnapReady(false);return false;}
+   if(!snaps?.[SNAP_ID]?.enabled||snaps[SNAP_ID].blocked){if(providerRef.current===p&&epoch===identityEpoch.current)setSnapReady(false);return false;}
    const health=await p.request({method:'wallet_invokeSnap',params:{snapId:SNAP_ID,request:{method:'walletshield_status'}}}) as {paired?:boolean;address?:string};
    const accounts=walletAccounts(await p.request({method:'eth_accounts'}));
    const ready=health?.paired===true&&(!health.address||health.address.toLowerCase()===accounts[0]?.toLowerCase());
-   if(providerRef.current===p)setSnapReady(ready);return ready;
-  }catch{if(providerRef.current===p)setSnapReady(false);return false;}
+   if(providerRef.current===p&&epoch===identityEpoch.current)setSnapReady(ready);return ready;
+  }catch{if(providerRef.current===p&&epoch===identityEpoch.current)setSnapReady(false);return false;}
  }
- function clearIdentity(){identityEpoch.current++;setWebSession(null);setIdentityBound(false);}
+ function clearIdentity(){identityEpoch.current++;setIdentityGeneration(identityEpoch.current);setWebSession(null);setIdentityBound(false);}
  async function bindIdentity(){if(!provider||!account||busyRef.current)return;const epoch=identityEpoch.current;setBusy(true);try{const verified=await authenticateWallet(provider,account,()=>identityEpoch.current===epoch&&providerRef.current===provider,labApi);if(identityEpoch.current!==epoch||providerRef.current!==provider)throw Error('The wallet account changed before verification finished. Start again.');setWebSession(verified);setIdentityBound(true);setNotice('Wallet identity verified. This login signature gives access to your own reports. Next, install and pair the Snap.');}catch(e){clearIdentity();setNotice((e as {code?:number}).code===4001?'Identity verification canceled.':e instanceof Error?e.message:'Identity verification did not complete.');}finally{setBusy(false);}}
 
  async function revokeIdentity(){if(busyRef.current)return;setBusy(true);try{await labApi('/api/wallet-auth/revoke',{});await labApi('/api/wallet-auth/logout',{});clearIdentity();setSnapReady(false);setNotice('Snap credentials for this wallet were revoked. Sign in and pair again to restore access.');}catch(e){setNotice(e instanceof Error?e.message:'Sign out did not complete.');}finally{setBusy(false);}}
 
  useEffect(()=>{void fetch('/api/health').then(r=>setOnline(r.ok)).catch(()=>setOnline(false));return discoverWallets(window,window.ethereum,setWallets);},[]);
  useEffect(()=>{
-  let active=true;clearIdentity();setAccount('');setPrepared(false);setSnapReady(false);setWalletChainId(null);if(!provider)return;
-  void provider.request({method:'eth_accounts'}).then(value=>{if(active)setAccount(walletAccounts(value)[0]??'');}).catch(()=>{});
+  let active=true;clearIdentity();const epoch=identityEpoch.current;setAccount('');setPrepared(false);setSnapReady(false);setWalletChainId(null);if(!provider)return;
+  void provider.request({method:'eth_accounts'}).then(value=>{if(active&&epoch===identityEpoch.current)setAccount(walletAccounts(value)[0]??'');}).catch(()=>{});
   void provider.request({method:'eth_chainId'}).then(value=>{if(active)setWalletChainId(walletChain(value));}).catch(()=>{});void readSnap(provider);
   const changed=(value:unknown)=>{clearIdentity();setSnapReady(false);try{setAccount(walletAccounts(value)[0]??'');}catch{setAccount('');}setPrepared(false);};const chain=(value:unknown)=>{setWalletChainId(walletChain(value));setPrepared(false);};const disconnected=()=>{clearIdentity();setSnapReady(false);setAccount('');setWalletChainId(null);setPrepared(false);};
   provider.on?.('accountsChanged',changed);provider.on?.('chainChanged',chain);provider.on?.('disconnect',disconnected);
@@ -77,7 +79,7 @@ function App(){
  {notice&&<div className="notice" role="status"><span>{notice}</span><button aria-label="Dismiss notice" onClick={()=>setNotice('')}><X size={17}/></button></div>}
  {page==='lab'&&<WalletLab provider={provider} externalBusy={walletBusy} account={account} snapReady={snapReady} prepared={prepared} onPrepare={prepare} onSetup={()=>setPage('setup')} onBusy={setBusy} switchLocal={switchLocal}/>}
  {page==='network'&&<RealNetworks hosted={hosted} identityBound={identityBound} onBind={bindIdentity} onRevoke={revokeIdentity} provider={provider} account={account} walletChainId={walletChainId} snapReady={snapReady} busy={walletBusy} onConnect={connect} onInstall={install} onBusy={setBusy}/>}
- {page==='history'&&<SecurityDesk/>}
+ {page==='history'&&<SecurityDesk key={`${selectedWallet?.id??'none'}:${account.toLowerCase()}:${identityGeneration}`} identityKey={`${selectedWallet?.id??'none'}:${account.toLowerCase()}:${identityGeneration}`} enabled={!hosted||identityBound}/>}
  {page==='setup'&&<><div className="page-heading"><div><div className="eyebrow"><span/> WALLET CONNECTION</div><h1>Connect your wallet. <span>Review before you sign.</span></h1><p>One wallet can use multiple networks. The local Snap requires MetaMask Flask. Open Public networks to check a configured network.</p></div></div><div className="setup-grid">
  <section className="panel setup-card"><span className="setup-number">01</span><h2>Connect the selected wallet</h2><p>Choose a wallet in the top bar and use a dedicated Flask test account. This site does not request a recovery phrase or private key.</p><button className="button secondary wide" onClick={connect} disabled={walletBusy}>{account?<Check size={16}/>:<Wallet size={16}/>} {account?`Connected ${short(account)}`:'Connect wallet'}</button></section>
  <section className="panel setup-card"><span className="setup-number">02</span>{hosted&&<><button className="button secondary wide" onClick={bindIdentity} disabled={walletBusy||!account}>{identityBound?'Identity verified':'Sign to verify this wallet'}</button><p>The login signature proves account control without granting asset permissions. The server returns only records belonging to this identity.</p></>}<h2>Install WalletShield Snap</h2><p>Enable transaction and message insights, then pair the backend. Installation alone does not verify that every request type works.</p><code>{SNAP_ID}</code><button className="button primary wide" onClick={install} disabled={walletBusy||!account}>{walletBusy?<Loader2 size={16} className="spin"/>:<Plug size={16}/>} {snapReady?'Reload and pair Snap':'Install and pair Snap'}</button></section>

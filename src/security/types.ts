@@ -24,6 +24,7 @@ export type EvidenceQuality={computedAt:string;counts:Record<'pass'|'warning'|'r
  capture:'paired-snap'|'workbench'|'unattributed';walletBinding:'authenticated-credential'|'not-established';caveats:string[]};
 export type SecurityReport = {
   quality?:EvidenceQuality;
+  assessmentScope?:AssessmentScope;
   capture?:{channel:'paired-snap'|'workbench';wallet?:string;pairingId?:string};
   id: string; createdAt: string; source: 'rpc' | 'demo'; request: SecurityRequest; operation: Operation;
   level: Level; title: string; summary: string; complete: boolean; checks: Evidence[];
@@ -31,6 +32,7 @@ export type SecurityReport = {
   ruleScoreFloor?: number | null; score: number | null; scoreSource: 'ai' | 'rules' | 'none';
   ai: AIState; missingData: string[]; fingerprint: string; version: 'security/0.2.0' | 'security/0.3.0' | 'security/0.4.0' | 'security/0.4.1-ai-evidence';
 };
+export type AssessmentScope={policy:'observable-request-v1';label:string;criticalUnknownCheckIds:string[];contextualUnknownCheckIds:string[];criticalMissingData:string[];contextualMissingData:string[];boundary:string};
 export const COVERAGE = [
   ['Native transfer', 'Read state; optional isolated execution, gas and native deltas'],
   ['ERC-20 / NFT transfers', 'Decode common transfers; shared selectors require token-standard observations'],

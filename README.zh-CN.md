@@ -10,6 +10,8 @@ WalletShield 是一个 EVM 钱包安全原型，包含本地钱包实验室，�
 
 首次运行与故障恢复步骤请参阅[中文用户手册](docs/USER-MANUAL-zh.md)。每个分析配置提取的准确字段、尚存的不确定性和可扩展方向，请参阅[中文覆盖指南](docs/AI-COVERAGE-GUIDE-zh.md)。[README.md](README.md) 是主要英文说明，英文详细文档为[用户手册](docs/USER-MANUAL.md)和[自动生成的覆盖指南](docs/AI-COVERAGE-GUIDE.md)。
 
+当前已实现/部分实现/手动入口/未覆盖的对照表和本轮修复说明见[当前覆盖范围](docs/CURRENT-COVERAGE-zh.md)（[English](docs/CURRENT-COVERAGE.md)）。
+
 ## 一次操作会经历什么
 
 ```text
@@ -140,7 +142,7 @@ ENABLE_MONITOR=0
 
 如果只需要专用本地链，可将 `INFURA_API_KEY` 留空。有效的 Infura 密钥会配置 Ethereum 主网（`1`）和 Sepolia（`11155111`）。显式的 `RPC_<CHAIN_ID>_URL` 会覆盖该网络推导出的 URL。其他 EVM 网络需要显式配置可信端点。URL 必须使用 HTTPS，loopback 可使用 HTTP；不接受包含用户名/密码的 URL。链 31337 始终使用 `http://127.0.0.1:8545`，不能通过配置重定向到其他网络。
 
-`ENABLE_EXTERNAL_LOOKUPS=1` 会启用可选 GoPlus 请求；如有需要，设置 `GOPLUS_TOKEN`。`ENABLE_FORK_SIMULATION=1` 会在配置的 RPC 和历史状态支持时启用隔离执行；未明确设为 `1` 时，分叉模拟关闭。`ENABLE_MONITOR` 在此版本不会启用持续监控：实际加载的配置始终禁用计划性签名后监控。
+`ENABLE_EXTERNAL_LOOKUPS=1` 会启用可选 GoPlus 请求；如有需要，设置 `GOPLUS_TOKEN`。仓库默认关闭，本次复核开发机已明确启用；各安装查看 `/api/security/status`，不会继承本机开关。适配器只查 1 个主要代币和最多 3 个明确交易对手，不遍历全部资产或钱包历史。`ENABLE_FORK_SIMULATION=1` 会在配置的 RPC 和历史状态支持时启用隔离执行；未明确设为 `1` 时，分叉模拟关闭。`ENABLE_MONITOR` 在此版本不会启用持续监控：实际加载的配置始终禁用计划性签名后监控。
 
 进程环境变量优先。其次，Meta 凭据与 AI 开关从 `.local/meta.env` 加载。RPC/工具设置依次优先读取 `.local/rpc.env`、`.local/meta.env`，最后读取 `.local/ai.env` 中兼容的旧设置。不会复用旧 OpenAI 凭据。配置会在请求时重新读取，因此保存文件通常无需重启后端；如果修改的是进程环境，则需重启。
 
@@ -236,9 +238,9 @@ npm pack --dry-run --ignore-scripts
 
 1. 连接目标账户，选择 **Verify current wallet identity**（设置页中为 **Sign to verify this wallet**）。确认前逐项核对准确登录消息、应用域名、URI、账户、链、nonce 和到期时间。这是用于身份验证的账户控制权证明，不是资产支出权限。
 2. 服务端签发有效期五分钟的一次性 challenge，并验证对其存储消息的 EOA 签名。它不会使用未经检查的 ERC-1271 兜底；目前不支持合约钱包身份验证。登录成功后创建有效期八小时的网页 bearer，只保存在浏览器内存中。刷新、更换 provider/账户或断开连接都会清除内存身份；重新访问记录需再次验证。
-3. 安装并配对 Snap。服务端签发**不同的**、绑定地址且有效期 30 天的 Snap bearer，通过配对传入 Snap；不会把网页 bearer 交给 Snap。Snap 在存储前验证后端接受该凭据，健康检查会验证绑定地址。配对到期或被撤销后，需要重新登录并配对。
+3. 安装并配对 Snap。服务端签发**不同的**、绑定地址且有效期 30 天的 Snap bearer，通过配对传入 Snap；不会把网页 bearer 交给 Snap。Snap 在存储前验证后端接受该凭据，健康检查会验证绑定地址。配对到期或被撤销后，需要重新登录并配对。持久化原子签发上限为每分钟每地址 4 次、每个服务端观察到的 IP 12 次、全局 60 次；每地址最多保留 4 个活动 Snap 凭据，全局最多 8192 个。成功重配只轮换该地址最早到期的凭据。拒绝签发返回 429/Retry-After，不改变既有配对，也不扣签发计数。
 4. 扫描必须来自已验证地址。历史、单份报告和证据由服务端拥有的地址映射控制访问；知道报告 ID 或伪造 Origin 不能获得访问权。UI 会将 Snap 采集与网页分析分别标注。每钱包预算由该地址的网页/Snap 会话共享。
-5. 选择 **Sign out and revoke Snap pairing**，撤销该地址的 Snap 凭据并退出当前网页会话。同一地址的其他浏览器会话可能仍有效，直到各自退出或到期。切换账户会清除浏览器会话，但不会自动撤销服务端之前签发的凭据。
+5. 选择 **Sign out and revoke Snap pairing**，撤销该地址的 Snap 凭据并退出当前网页会话。同一地址的其他浏览器会话可能仍有效，直到各自退出或到期。切换账户会清除浏览器会话，但不会自动撤销服务端之前签发的凭据。账户/provider/断开或加载失败会清空历史与详情；取消/延迟响应不能恢复前一身份的记录，当前所有者列表不存在的选择会清空。本地模式仍是同机共享历史，托管模式才按所有者隔离。
 
 托管模式禁用本地实验室/资产准备、旧授权/workflow/demo 路由、monitor 兼容路由、覆盖指南下载和合成 AI 测试路由。身份验证速率限制和待处理 challenge 上限约束登录请求；签发 Snap 凭据需要有效网页 bearer。网页/Snap token 的到期、撤销、所有者映射和每日尝试次数都持久化到后端 SQLite，其中仅存储 token 哈希。HTTPS 服务和 npm 包仍需要真实钱包/浏览器验收，以及适用的 MetaMask 分发流程。准备产物不等于公开部署或独立安全认证。
 
@@ -261,7 +263,7 @@ npm pack --dry-run --ignore-scripts
 
 维度使用定性值（`low`、`review`、`high`、`unknown` 或 `not_applicable`），不会分别打数字分数或求平均。每个结果还包括证据支持程度（`limited`、`moderate` 或 `strong`）、有引用的原因、缺失数据、行动建议和受约束的蜜罐字段。证据支持程度描述证据包能提供多少支持，不是经过校准的模型置信概率。
 
-验证器会拒绝不存在的引用、缺失/重复维度、无证据支持的确定性表述、无支持的蜜罐陈述及不一致的放弃评分。存在未解决检查、过时/缺失/未来的观察时间戳，或同一高度区块哈希冲突时，整体评估不能是 `low`，证据支持程度不能是 `strong`。全部维度为 unknown/not-applicable 时不能支持数字。仅缺少信誉数据不能证明身份恶意。失败、等待中、AI 禁用/未配置、预算耗尽或模型放弃评分时，**不显示数值分数**。
+nonce/domain 断言现在检查摘要、原因、各维度、行动建议和缺失数据文本，包括条目索引、匹配/不匹配方向、否定和条件性建议；必须引用对应的实际 RPC 观察，不能借无关引用声称已验证。自然语言校验仍是部分防护，不是所有句子的正确性证明。验证器会拒绝不存在的引用、缺失/重复维度、无证据支持的确定性表述、无支持的蜜罐陈述及不一致的放弃评分。服务端仅把自己生成的 unknown `fraud_context` 观察及完全对应的缺口归为背景不确定性；无法取得链下目的不再永久否决可观察请求的低风险判断。其他所有未知检查/缺口、模型新增的任何 `missing_data`、过旧/缺失/未来时间戳及同链同高度哈希冲突仍为关键缺口，会阻止整体 `low` 或 `strong`。模型包字段为 `assessment_scope`、报告属性为 `assessmentScope`，策略名 `observable-request-v1`。模型完全重复标准背景缺口时仍为背景，新增或改写缺口仍为关键。完整报告的 complete 和缺失列表不改变；允许的 low/strong 仅针对可观察请求范围，不证明链下诚实、身份可信或未来安全。全部维度为 unknown/not-applicable 时不能支持数字。仅缺少信誉数据不能证明身份恶意。失败、等待中、AI 禁用/未配置、预算耗尽或模型放弃评分时，**不显示数值分数**。
 
 结构与引用语义检查约束输出格式及部分断言，但不能证明每句英语或每项模型判断都正确。用户仍需对照所引用的观察和剩余缺口阅读解释。
 
@@ -270,6 +272,8 @@ npm pack --dry-run --ignore-scripts
 新报告会保存派生的 `quality` 清单，并将它发送到模型证据包。它列出 pass/warning/risk/unknown 计数、按来源统计的 observed/unknown 计数、每个可用的网络/区块/哈希/时间戳、同一链混用上游区块的情况、同一链/高度的哈希冲突、采集通道及钱包凭据归属。它标记相对于报告创建时间早于五分钟的观察、缺失/无效时间戳，以及超前超过 30 秒的时间戳。这些是证据诊断，不是风险分数、检测覆盖率或置信度百分比。观察时间是采集器记录结果的时间，不能证明上游数据的新鲜度。读取按区块号固定，而不是按区块哈希原子固定；记录哈希提供溯源，但不能排除链重组或提供方响应不一致。同高度哈希冲突需要新的独立检查，并会阻止整体 low 评估或 strong 证据支持程度。分叉执行与公共 RPC 区块仍属不同状态空间。
 
 `pass` 只表示该项观察成功，不是地址或操作认证。`unknown` 表示检查未完成、不支持或缺失。转账成功不能证明收款方合法；有限额 allowance 仍可授权恶意支出；`eth_call` 成功、nonce 匹配或一次卖出成功，都不保证未来安全。
+
+支持的 EIP-712 无符号整数在风险解释前，会统一等值的十进制、十六进制与前导零表示，且保持被签 digest 不变。零地址按角色解释：支持的 NFT approval/Permit 撤销不会被误报为资产销毁；实际转账接收方及所有权变更仍按各自语义检查。transferFrom 的资产所有者与调用者分开；当前余额不足描述为执行/敞口问题，不再错误解释为授权覆盖未来入账。
 
 对于 EIP-712 消息，只有属于从 primary type 可达的声明类型图中的字段，才能作为已签名意图的证据。类型图之外的额外 JSON 属性不是签名字段，不能单独证明签名权限、所有者不一致、财务敞口或其他风险。Permit2 nonce/allowance 检查的 owner 来自真实签名账户，而非消息额外提供的 `owner` 属性。识别出规范类型结构也不能认证验证合约。
 
@@ -292,7 +296,7 @@ Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一
 | NFT / 委托 / 批量 NFT 转账 | 所有者、收款方、token ID 或 IDs/数量；ERC-165 声明、owner/approval 或 ERC-1155 余额、部分 operator 状态 | 每种资产最多 16 个 ID；接口声明可能不实；集合真实性、价格、回调和非标准语义检查不完整。 |
 | 单项授权、撤销、链上 Permit | spender、金额或 token ID、大额 allowance 信号、部分 owner/deadline 字段；代币标准、ERC-20 allowance 和余额 | ERC-20 与 ERC-721 `approve` 共用编码；NFT ID 为零不自动代表撤销。未覆盖所有 Permit 变体或未来支出。 |
 | NFT operator 授权 / 撤销 | 集合、operator、布尔值及可读取的现有 operator 状态；控制/信誉/分叉证据 | 不完整枚举当前/未来持有资产，也不证明 operator 会诚实行事。 |
-| 链上 Permit2 结构 allowance | 代币、spender、`uint160` 数量、expiration 和可用代币事实 | 结构不证明官方 Permit2 身份；此路径的三方 allowance/domain 验证不完整。 |
+| 链上 Permit2 结构 allowance | 代币、spender、`uint160` 数量、expiration 和可用代币事实 | 结构不证明官方 Permit2 身份；独立读取用户对候选 Permit2 合约的底层 ERC-20 授权，以及其内部对最终 spender 的 amount/expiration/nonce。可读状态不证明部署身份、domain 语义或未来用途。 |
 | V2 结构兑换 | 路径、输入量、最低输出、收款方、deadline；支持时，在分叉执行买入 → 授权所得代币 → 反向卖出，记录返回数量/gas、变化量及可选代币情报 | 限定路径结构且要求相同收款方；卖出失败有多种原因；往返损失含费用/价格冲击，不是纯税率。 |
 | V3 结构兑换 | 代币或解码路径、fee、收款方、输入/输出限制、价格限制和部分 deadline；通用分叉事实 | 没有 V3 专属连续买卖测试、完整池/tick/报价验证或 MEV 模型。 |
 | ERC-4626 结构金库 | 动作、assets/shares、receiver/owner；`asset`、`totalAssets`、`totalSupply`、动作 preview/max；可读取的底层资产余额/decimals/allowance 和份额单位 | 底层资产与份额单位分别处理；接口输出不证明身份、估值、偿付能力或未来赎回。 |
@@ -455,3 +459,9 @@ node --import tsx scripts/test-ai-audit.ts
 源码入口：[`web/src/main.tsx`](web/src/main.tsx)、[`snap/src/index.ts`](snap/src/index.ts)、[`src/security/api.ts`](src/security/api.ts)、[`src/security/ai.ts`](src/security/ai.ts)、[`src/security/providers.ts`](src/security/providers.ts)、[`src/security/coverage.ts`](src/security/coverage.ts) 和 [`src/testing/cases.ts`](src/testing/cases.ts)。[中文用户手册](docs/USER-MANUAL-zh.md)与[中文覆盖指南](docs/AI-COVERAGE-GUIDE-zh.md)提供操作说明及逐字段覆盖范围；英文原文为[用户手册](docs/USER-MANUAL.md)和[自动生成的详细覆盖指南](docs/AI-COVERAGE-GUIDE.md)。旧截图或验收产物与当前行为不同时，以当前源码和实际报告为准。
 
 最新实现审查：[英文界面与证据可靠性，2026-10-22](docs/ENGLISH-EVIDENCE-REVIEW-2026-10-22.md)。该记录区分已完成的自动化/模型检查与尚待完成的手动钱包及部署验收。更早的带日期审查仍属于历史记录。
+
+## 本轮依赖修复状态
+
+更新后的依赖使用 `@fastify/static` 10.1.7，并通过锁文件覆盖将 `tmp` 固定为 0.2.7、受影响的 `bn.js` 5.x 范围升为 5.2.5、低于 11.1.1 的 `uuid` 升为 11.1.1。本轮 `npm audit --omit=dev` 确认生产依赖已无已知告警。完整审计仍有 12 个低危受影响包条目，根源是 `elliptic` 开发/构建工具依赖链，当前上游没有可用修复路径。12 个条目不是 12 种独立根因，也不能声称所有依赖已经零漏洞。
+
+按更新的锁文件执行 `npm ci`；发布前重新运行 `npm audit --omit=dev` 与 `npm audit`。这些是本次审计时点的结果，不是永久承诺，也不能替代项目安全审计、浏览器钱包验收或开发构建环境检查。

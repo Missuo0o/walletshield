@@ -24,6 +24,10 @@ export function assess(request:SecurityRequest, collected:Evidence[], source:'rp
       delete op.fields.unlimited;
     } else {op.addsPermission=true; add('approval_standard','unknown','Approval semantics are unverified','ERC-20 amounts and ERC-721 token IDs share the approve encoding. NFT ID zero is not automatically revocation.');}
   }
+  if(op.category==='asset_transfer_from'&&(token?.standard==='erc20'||token?.standard==='erc721')){
+    op.tokenStandard=token.standard;
+    op.label=token.standard==='erc20'?'Delegated ERC-20 transfer':'Delegated single-NFT transfer';
+  }
   add('operation',op.decoded?'pass':'unknown',op.label,op.decoded?'Common parameters were decoded; an ABI shape does not authenticate the target protocol.':'This request is not fully understood and cannot be marked as checked successfully.');
   if(op.addsPermission) add('permission_scope',op.category==='operator_approval'||op.fields.unlimited===true?'risk':'warning','Asset authority is requested',op.category==='operator_approval'?'The operator can manage the relevant NFTs in this collection.':'The authority may permit future asset movement; finite limits and gasless signatures can still carry risk.');
   if(op.rawSigning) add('raw_signing','risk','Raw signing risk','Raw data does not establish signing purpose; asset authority or replay risk may be involved.');
@@ -60,11 +64,15 @@ export function assess(request:SecurityRequest, collected:Evidence[], source:'rp
     if(typeof value==='string'&&/^\d+$/.test(value)&&BigInt(value)<BigInt(verifiedTime?chainTime:Math.floor(Date.now()/1000))) add(`expired_${key}`,'warning','Request deadline has passed',`${key} according to ${verifiedTime?'the queried block clock':'the local clock (chain clock unverified)'} has passed; expiration does not authenticate the source.`);
   }
   if(op.category==='native_transfer' && collected.some(e=>e.id==='chain_context'&&e.data?.targetHasCode===true)) add('contract_recipient','warning','Recipient can execute contract code','Empty-calldata receipt may execute fallback or receive code; this is not necessarily an ordinary account transfer.');
-  if(op.targets.some(a=>a.toLowerCase()===zeroAddress)&&!['approval','operator_approval'].includes(op.category)) add('zero_recipient','risk','Zero-address target','A zero-address transfer may cause permanent loss or burning.');
+  if(typeof op.fields.recipient==='string'&&op.fields.recipient.toLowerCase()===zeroAddress) add('zero_recipient','risk','Zero-address recipient','A zero-address transfer may cause permanent loss or burning. Authority revocations are distinct from asset transfers.');
   if(request.kind==='transaction' && request.transaction.to?.toLowerCase()===request.transaction.from.toLowerCase()) add('self_transfer','warning','Target equals sender','Confirm this is an intended self-transfer or smart-account action.');
   if(request.kind==='transaction' && op.addsPermission && BigInt(request.transaction.value??'0x0')!==0n) add('approval_native_value','risk','Approval carries native value','The request includes native spending as well as authority changes.');
-  if(op.fields.amountOrTokenId && token?.standard==='erc20' && typeof token.balance==='string' && /^\d+$/.test(String(op.fields.amountOrTokenId))) {
+  if(op.category==='approval' && op.fields.amountOrTokenId && token?.standard==='erc20' && typeof token.balance==='string' && /^\d+$/.test(String(op.fields.amountOrTokenId))) {
     if(BigInt(String(op.fields.amountOrTokenId))>BigInt(token.balance)) add('over_balance','warning','Approval exceeds current balance','Future incoming amounts of this token may also be covered.');
+  }
+  if(['token_transfer','asset_transfer_from'].includes(op.category)&&token?.standard==='erc20'&&typeof token.balance==='string'&&/^\d+$/.test(token.balance)){
+    const amount=op.category==='asset_transfer_from'?op.fields.amountOrTokenId:op.fields.amount;
+    if(typeof amount==='string'&&/^\d+$/.test(amount)&&BigInt(amount)>BigInt(token.balance))add('transfer_over_balance','warning','Transfer exceeds the observed owner balance','The declared transfer amount exceeds this token balance at the queried block. The operation does not grant new approval or authority over future deposits; state changes and nonstandard token behavior remain unverified.');
   }
   if(request.context?.withdrawalFee)add('withdrawal_fee','risk','Payment demanded before withdrawal','The user reports a pay-before-withdrawal demand, a fraud indicator needing review rather than a verified accusation.');
   if(request.context?.guaranteedProfit)add('guaranteed_profit','warning','User reports guaranteed returns','An ordinary transfer or contract call cannot establish promised returns; verify independently.');

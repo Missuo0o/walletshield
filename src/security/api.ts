@@ -1,5 +1,5 @@
 import type {ServiceConfig} from '../server/service-config.js';
-import type {WalletAuth,WalletPrincipal} from '../server/wallet-auth.js';
+import {PairingLimitError,type WalletAuth,type WalletPrincipal} from '../server/wallet-auth.js';
 import type { FastifyInstance } from 'fastify';
 import type { Store } from '../server/store.js';
 import { requestSchema, COVERAGE, type SecurityReport, type AIState } from './types.js';
@@ -9,6 +9,7 @@ import { collector, evidence, type Collector } from './providers.js';
 import { loadSecurityConfig, type SecurityConfig } from './config.js';
 import { scoreWithAI, evidencePacket } from './ai.js';
 import {evidenceQuality} from './quality.js';
+import {assessmentScope} from './assessment-scope.js';
 import { securityExamples, demoEvidence } from './examples.js';
 import { watchSchema, newWatch, startMonitor } from './monitor.js';
 import { z } from 'zod';
@@ -35,7 +36,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
   app.post('/api/security/pair',async(req,reply)=>{
     if(!local(req.headers.origin))return reply.code(403).send({error:'Pair the Snap from the WalletShield companion page.'});
     reply.header('Cache-Control','no-store');
-    if(hosted){const principal=auth!.authenticate(req);if(!principal||principal.kind!=='web')return reply.code(401).send({error:'Verify your wallet identity first.'});return {...auth!.issueSnap(principal),address:principal.address};}
+    if(hosted){const principal=auth!.authenticate(req);if(!principal||principal.kind!=='web')return reply.code(401).send({error:'Verify your wallet identity first.'});try{return {...auth!.issueSnap(principal,req.ip),address:principal.address};}catch(error){if(error instanceof PairingLimitError)return reply.header('Retry-After','60').code(429).send({error:error.message});throw error;}}
     const c=await getConfig();if(!c.snapToken)return reply.code(503).send({error:'Local pairing is not configured.'});return {token:c.snapToken,expiresAt:null};
   });
   app.get('/api/security/pair/status',async(req,reply)=>{
@@ -64,13 +65,14 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
   const busy=new Set<string>(),recent=new Map<string,number[]>();
   async function modelStage(report:SecurityReport,config:SecurityConfig,principal?:WalletPrincipal){
     report.quality=evidenceQuality(report);
+    report.assessmentScope=assessmentScope(report);
     // Only the model supplies a number. Failure, abstention and quotas never
     // fall back to a preset score, including when handling an older report.
     report.score=null;report.scoreSource='none';delete report.ruleScoreFloor;
     if(config.apiKey&&config.aiEnabled&&principal&&!auth!.takeAttempt(principal,options.access!.service.walletDailyLimit,config.aiDailyLimit??100))report.ai={status:'disabled',message:'The wallet or service daily model limit has been reached. Evidence retained; no AI score.'};
     else if(config.apiKey&&config.aiEnabled&&!principal&&!store.securityAiAttempt(config.aiDailyLimit??30))report.ai={status:'disabled',message:`The local daily model limit of ${config.aiDailyLimit??30} attempts has been reached. No AI score; evidence retained.`};
     else {if(config.apiKey&&config.aiEnabled){report.ai={status:'pending',message:'Muse is analyzing this evidence. No score yet; wait for the wallet insight.'};store.securitySave(report);}try{report.ai=options.score?await options.score(report,config):await scoreWithAI(report,config,fetch,()=>principal?auth!.takeAttempt(principal,options.access!.service.walletDailyLimit,config.aiDailyLimit??100):store.securityAiAttempt(config.aiDailyLimit??30));}catch{report.ai={status:'failed',message:'Model service error. No AI score; qualitative evidence retained.'};}}
-    if(report.ai.status==='completed'&&report.ai.result){const ai=report.ai.result;if(ai.score!==null){report.score=ai.score;report.scoreSource='ai';}if(report.level!=='high'&&ai.assessment==='high'){report.level='high';report.title='High risk';}if(report.complete&&report.level!=='high'){report.level=ai.assessment;report.title=ai.assessment==='low'?'No obvious risk observed':ai.assessment==='review'?'Review needed':'Unable to assess';}}
+    if(report.ai.status==='completed'&&report.ai.result){const ai=report.ai.result;report.assessmentScope=assessmentScope(report,ai.missing_data);if(ai.score!==null){report.score=ai.score;report.scoreSource='ai';}if(report.level!=='high'&&ai.assessment==='high'){report.level='high';report.title='High risk';}if(!report.assessmentScope.criticalMissingData.length&&report.level!=='high'){report.level=ai.assessment;report.title=ai.assessment==='low'?'No clear risk observed within request scope':ai.assessment==='review'?'Review needed':'Unable to assess';}}
     store.securitySave(report);return report;
   }
   if(!hosted){

@@ -20,7 +20,7 @@ test('long personal messages explicitly retain truncation and cannot be presente
 });
 test('Permit / Permit2 extraction preserves raw amounts, unlimited scope and each batch nonce',()=>{
  const permit=example('permit') as Extract<SecurityRequest,{kind:'signature'}>;(permit.signature.data as any).message.value=maxUint256.toString();assert.equal(decodeRequest(permit).fields.unlimited,true);
- const permit2=example('permit2') as Extract<SecurityRequest,{kind:'signature'}>;const t=permit2.signature.data as any;t.primaryType='PermitBatch';t.message.details=[{token:'0x'+'1'.repeat(40),amount:String(2n**160n-1n),expiration:'2000000000',nonce:'3'},{token:'0x'+'2'.repeat(40),amount:'100',expiration:'2000000001',nonce:'7'}];
+ const permit2=example('permit2') as Extract<SecurityRequest,{kind:'signature'}>;const t=permit2.signature.data as any;t.primaryType='PermitBatch';t.types.PermitBatch=[{name:'details',type:'PermitDetails[]'},{name:'spender',type:'address'},{name:'sigDeadline',type:'uint256'}];t.message.details=[{token:'0x'+'1'.repeat(40),amount:String(2n**160n-1n),expiration:'2000000000',nonce:'3'},{token:'0x'+'2'.repeat(40),amount:'100',expiration:'2000000001',nonce:'7'}];
  const fields=decodeRequest(permit2).fields;assert.deepEqual(fields.nonces,['3','7']);assert.equal(fields.unlimited,true);assert.equal(fields.declaredAssetCount,'2');
 });
 test('invalid typed structure cannot leave a decoded-pass operation despite a Permit-like name',()=>{

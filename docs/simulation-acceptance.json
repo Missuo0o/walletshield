@@ -9,11 +9,11 @@
       "title": "Isolated fork execution completed",
       "detail": "Execution occurred only on a temporary local fork; no transaction was sent upstream. Supplied gas, fees, and nonce were preserved; a fork cap was used if gas was absent. The fork mines from the stated base block, so this is not a guarantee of future execution.",
       "source": "isolated-fork",
-      "observedAt": "2026-10-22T21:42:21.860Z",
+      "observedAt": "2026-10-22T22:39:49.668Z",
       "data": {
         "chainId": 31337,
         "blockNumber": "5",
-        "blockHash": "0x58db0dde066804751956e14f1c05aaee333ec6912c5e5c8077b208162a75af4b",
+        "blockHash": "0xebb2002f6ff268f773ba5c1c94e7a2a47d5175b1ef8b836da63e7c92209e23fb",
         "executionBlockNumber": "6",
         "gasLimit": "0xb71b00",
         "gasLimitSource": "simulation_default",
@@ -75,7 +75,7 @@
       "title": "Asset discovery has coverage limits",
       "detail": "Before/after state was read for identified assets and assets found in Transfer events. Assets without events, nonstandard storage, future proxy changes, and cross-chain results may be missed.",
       "source": "isolated-fork",
-      "observedAt": "2026-10-22T21:42:21.860Z"
+      "observedAt": "2026-10-22T22:39:49.668Z"
     },
     {
       "id": "round_trip",
@@ -83,11 +83,11 @@
       "title": "Buy/sell simulation from a fixed base block",
       "detail": "The fork mines sequential buy, approval, and sell steps from a base block. Minimum sell output is zero for observation. Loss includes taxes, fees, and price impact; it is not a tax rate. One successful sell does not guarantee future safety.",
       "source": "isolated-fork",
-      "observedAt": "2026-10-22T21:42:22.048Z",
+      "observedAt": "2026-10-22T22:39:49.852Z",
       "data": {
         "chainId": 31337,
         "blockNumber": "5",
-        "blockHash": "0x58db0dde066804751956e14f1c05aaee333ec6912c5e5c8077b208162a75af4b",
+        "blockHash": "0xebb2002f6ff268f773ba5c1c94e7a2a47d5175b1ef8b836da63e7c92209e23fb",
         "bought": "100",
         "returned": "100",
         "roundTripReturnPercent": 100
@@ -101,7 +101,7 @@
       "title": "Fork execution incomplete",
       "detail": "The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.",
       "source": "isolated-fork",
-      "observedAt": "2026-10-22T21:42:23.890Z",
+      "observedAt": "2026-10-22T22:39:51.688Z",
       "data": {
         "chainId": 31337,
         "blockNumber": "5"
@@ -115,7 +115,7 @@
       "title": "Fork execution incomplete",
       "detail": "The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.",
       "source": "isolated-fork",
-      "observedAt": "2026-10-22T21:42:24.037Z",
+      "observedAt": "2026-10-22T22:39:51.844Z",
       "data": {
         "chainId": 31337,
         "blockNumber": "5"
@@ -129,11 +129,11 @@
       "title": "Isolated fork execution completed",
       "detail": "Execution occurred only on a temporary local fork; no transaction was sent upstream. Supplied gas, fees, and nonce were preserved; a fork cap was used if gas was absent. The fork mines from the stated base block, so this is not a guarantee of future execution.",
       "source": "isolated-fork",
-      "observedAt": "2026-10-22T21:42:24.258Z",
+      "observedAt": "2026-10-22T22:39:52.067Z",
       "data": {
         "chainId": 31337,
         "blockNumber": "6",
-        "blockHash": "0x37d88108a0bf8d7afa4a5ce583113aac437f67270ec448dab7b72a111b26ac02",
+        "blockHash": "0xc73606d9e1ca7725dd21e784800faf75b2c676b7d2b78fe2a2ece9350b43554c",
         "executionBlockNumber": "7",
         "gasLimit": "0xb71b00",
         "gasLimitSource": "simulation_default",
@@ -195,7 +195,7 @@
       "title": "Asset discovery has coverage limits",
       "detail": "Before/after state was read for identified assets and assets found in Transfer events. Assets without events, nonstandard storage, future proxy changes, and cross-chain results may be missed.",
       "source": "isolated-fork",
-      "observedAt": "2026-10-22T21:42:24.258Z"
+      "observedAt": "2026-10-22T22:39:52.067Z"
     },
     {
       "id": "round_trip",
@@ -203,7 +203,7 @@
       "title": "Sell after buy failed",
       "detail": "Token restrictions, routing, liquidity, or gas may explain the failure. Combine it with contract and intelligence evidence; this alone does not prove a honeypot.",
       "source": "isolated-fork",
-      "observedAt": "2026-10-22T21:42:24.442Z",
+      "observedAt": "2026-10-22T22:39:52.263Z",
       "data": {
         "bought": "100",
         "buyGas": "0x1358e",

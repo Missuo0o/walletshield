@@ -106,7 +106,7 @@
       "id": "permit2-approve",
       "kind": "transaction",
       "category": "permit2_approval",
-      "evidenceCount": 2,
+      "evidenceCount": 3,
       "result": "success"
     },
     {
@@ -384,5 +384,5 @@
     }
   ],
   "scope": "local-node-transactions-and-signature-format-not-MetaMask-Snap-UI",
-  "generatedAt": "2026-10-22T21:40:43.756Z"
+  "generatedAt": "2026-10-22T22:39:50.575Z"
 }

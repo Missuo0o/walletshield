@@ -16,8 +16,28 @@ export function createStore(path: string) {
   db.exec('CREATE TABLE IF NOT EXISTS security_watches(id TEXT PRIMARY KEY,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS security_alerts(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,payload TEXT NOT NULL)');
   db.exec('CREATE TABLE IF NOT EXISTS lab_sessions(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,payload TEXT NOT NULL)');
   db.exec('CREATE TABLE IF NOT EXISTS wallet_auth_challenges(id TEXT PRIMARY KEY,address TEXT NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS wallet_auth_tokens(token_hash TEXT PRIMARY KEY,address TEXT NOT NULL,kind TEXT NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_address ON wallet_auth_tokens(address,kind); CREATE TABLE IF NOT EXISTS wallet_report_owners(report_id TEXT PRIMARY KEY,address TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_report_owners_address ON wallet_report_owners(address); CREATE TABLE IF NOT EXISTS wallet_ai_attempts(address TEXT NOT NULL,day TEXT NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(address,day)); CREATE TABLE IF NOT EXISTS wallet_auth_rates(rate_key TEXT NOT NULL,bucket INTEGER NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(rate_key,bucket));');
+  db.exec('CREATE INDEX IF NOT EXISTS wallet_auth_challenges_expiry ON wallet_auth_challenges(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_expiry ON wallet_auth_tokens(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_owner_expiry ON wallet_auth_tokens(address,kind,expires_at,token_hash); CREATE INDEX IF NOT EXISTS wallet_auth_rates_bucket ON wallet_auth_rates(bucket);');
+  function pruneAuth(now:string){db.prepare('DELETE FROM wallet_auth_challenges WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_tokens WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_rates WHERE bucket<?').run(Math.floor(Date.parse(now)/60000)-2);}
   return {
-    authPrune(now:string){db.prepare('DELETE FROM wallet_auth_challenges WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_tokens WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_rates WHERE bucket<?').run(Math.floor(Date.parse(now)/60000)-2);},
+    authPrune:pruneAuth,
+    /** Reserve all issuance budgets and rotate only this owner's oldest Snap
+     * credentials under one write lock. Failed issuance charges no rate bucket. */
+    authIssueSnap(token:WalletAuthToken,webId:string,now:string,limits:{ipKey:string;addressPerMinute:number;ipPerMinute:number;globalPerMinute:number;maxPerAddress:number;maxGlobal:number}):boolean{
+      if(token.kind!=='snap'||![limits.addressPerMinute,limits.ipPerMinute,limits.globalPerMinute,limits.maxPerAddress,limits.maxGlobal].every(v=>Number.isSafeInteger(v)&&v>0)||!Number.isFinite(Date.parse(now)))throw Error('Invalid pairing limits');
+      const bucket=Math.floor(Date.parse(now)/60000),rates=[['pair:global',limits.globalPerMinute],[`pair:ip:${limits.ipKey}`,limits.ipPerMinute],[`pair:address:${token.address}`,limits.addressPerMinute]] as const;
+      db.exec('BEGIN IMMEDIATE');
+      try{
+        pruneAuth(now);
+        if(!db.prepare("SELECT 1 FROM wallet_auth_tokens WHERE token_hash=? AND address=? AND kind='web' AND expires_at>?").get(webId,token.address,now)||rates.some(([key,limit])=>Number(db.prepare('SELECT attempts FROM wallet_auth_rates WHERE rate_key=? AND bucket=?').get(key,bucket)?.attempts??0)>=limit)){db.exec('COMMIT');return false;}
+        const own=Number(db.prepare("SELECT count(*) AS n FROM wallet_auth_tokens WHERE address=? AND kind='snap'").get(token.address)?.n??0),total=Number(db.prepare("SELECT count(*) AS n FROM wallet_auth_tokens WHERE kind='snap'").get()?.n??0),other=total-own;
+        const keep=Math.min(limits.maxPerAddress-1,limits.maxGlobal-other-1);
+        if(keep<0){db.exec('COMMIT');return false;}
+        if(own>keep)db.prepare("DELETE FROM wallet_auth_tokens WHERE token_hash IN (SELECT token_hash FROM wallet_auth_tokens WHERE address=? AND kind='snap' ORDER BY expires_at,token_hash LIMIT ?)").run(token.address,own-keep);
+        db.prepare('INSERT INTO wallet_auth_tokens VALUES(?,?,?,?,?)').run(token.id,token.address,token.kind,token.expiresAt,JSON.stringify(token));
+        for(const [key] of rates)db.prepare('INSERT INTO wallet_auth_rates VALUES(?,?,1) ON CONFLICT(rate_key,bucket) DO UPDATE SET attempts=attempts+1').run(key,bucket);
+        db.exec('COMMIT');return true;
+      }catch(error){db.exec('ROLLBACK');throw error;}
+    },
     authChallengeSave(challenge:WalletAuthChallenge,maxPending=256):boolean {return db.prepare('INSERT INTO wallet_auth_challenges SELECT ?,?,?,? WHERE (SELECT count(*) FROM wallet_auth_challenges)<?').run(challenge.id,challenge.address,challenge.expiresAt,JSON.stringify(challenge),maxPending).changes===1;},
     // DELETE RETURNING consumes the challenge atomically before signature work.
     authChallengeConsume(id:string,now:string):WalletAuthChallenge|null{const row=db.prepare('DELETE FROM wallet_auth_challenges WHERE id=? RETURNING expires_at,payload').get(id);return row&&String(row.expires_at)>now?JSON.parse(row.payload as string):null;},

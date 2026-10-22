@@ -7,6 +7,8 @@ import type {Store,WalletAuthToken} from './store.js';
 export type WalletPrincipal={address:string;id:string;kind:'web'|'snap';expiresAt:string};
 export type WalletAuthOptions={origin:string;enabled:boolean;now?:()=>number};
 export const WALLET_AUTH_LIMITS={challengePerMinute:6,challengePerAddress:3,verifyPerMinute:12,globalPerMinute:120,maxPending:256} as const;
+export const SNAP_PAIRING_LIMITS={addressPerMinute:4,ipPerMinute:12,globalPerMinute:60,maxPerAddress:4,maxGlobal:8192} as const;
+export class PairingLimitError extends Error{constructor(){super('Snap pairing capacity or issuance limit reached. Wait one minute or revoke unused pairings before retrying. No existing pairing was changed.');this.name='PairingLimitError';}}
 const CHALLENGE_TTL=5*60*1000,WEB_TTL=8*60*60*1000,SNAP_TTL=30*24*60*60*1000;
 const addressSchema=z.string().regex(/^0x[\da-f]{40}$/i).refine(v=>!/^0x0{40}$/i.test(v));
 const challengeSchema=z.object({address:addressSchema,chainId:z.number().int().positive().max(Number.MAX_SAFE_INTEGER)}).strict();
@@ -38,7 +40,14 @@ export function registerWalletAuth(app:FastifyInstance,store:Store,options:Walle
   const record:WalletAuthToken={id:digest(token),address:address.toLowerCase(),kind,createdAt,expiresAt};
   store.authPrune(createdAt);store.authTokenSave(record);return {token,expiresAt};
  }
- function issueSnap(principal:WalletPrincipal){if(!active(principal)||principal.kind!=='web')throw Error('Wallet authentication required');return issue(principal.address,'snap');}
+ function issueSnap(principal:WalletPrincipal,ip='internal'){
+  if(!active(principal)||principal.kind!=='web')throw Error('Wallet authentication required');
+  const token=randomBytes(32).toString('hex'),createdAt=iso(),expiresAt=new Date(now()+SNAP_TTL).toISOString();
+  const record:WalletAuthToken={id:digest(token),address:principal.address,kind:'snap',createdAt,expiresAt};
+  // Hash the server-observed peer address; request headers never supply this key.
+  if(!store.authIssueSnap(record,principal.id,createdAt,{...SNAP_PAIRING_LIMITS,ipKey:digest(ip)}))throw new PairingLimitError();
+  return {token,expiresAt};
+ }
  function revokeToken(token:string){if(/^[a-f0-9]{64}$/.test(token))store.authTokenRevoke(digest(token));}
  function reportOwner(reportId:string,principal:WalletPrincipal){if(!active(principal)||!store.authReportOwner(reportId,principal.address))throw Error('Wallet report owner mismatch');}
  function ownsReport(reportId:string,principal:WalletPrincipal){return active(principal)&&store.authOwnsReport(reportId,principal.address);}

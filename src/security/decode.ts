@@ -24,14 +24,25 @@ const addr = (value: unknown): value is string => typeof value === 'string' && /
 const obj = (value: unknown): Record<string, any> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, any> : {};
 const scalar = (v: unknown) => typeof v === 'string' || typeof v === 'number' || typeof v === 'bigint' ? String(v).slice(0,1000) : '';
 const result = (category: string, label: string, fields: Operation['fields'] = {}, targets: string[] = []): Operation => ({ category, label, fields, targets, decoded: true });
+// EIP-712 hashes integers, not their JSON spelling. Normalize only declared
+// unsigned integer fields, without mutating the signed message or its digest.
+function canonicalUint(value:unknown,type:string):string|undefined {
+  const match=/^uint(\d*)$/.exec(type);if(!match)return undefined;
+  const bits=Number(match[1]||256);if(bits<8||bits>256||bits%8)return undefined;
+  if(typeof value==='number'&&!Number.isSafeInteger(value))return undefined;
+  if(!['string','number','bigint'].includes(typeof value))return undefined;
+  const text=String(value);if(!/^(?:\d+|0x[\da-f]+)$/i.test(text))return undefined;
+  try{const number=BigInt(text);return number>=0n&&number<2n**BigInt(bits)?String(number):undefined;}catch{return undefined;}
+}
 // EIP-712 ignores extra message properties. Only declared fields are committed
 // by the signature, including fields inside named structs and arrays.
 function committedValue(value:unknown,type:string,types:Record<string,any>,depth=0):unknown {
   if(depth>8)return undefined;
   const array=type.match(/^(.*)\[(?:\d*)\]$/);
-  if(array)return Array.isArray(value)?value.slice(0,64).map(v=>committedValue(v,array[1],types,depth+1)):undefined;
+  if(array)return Array.isArray(value)?value.slice(0,128).map(v=>committedValue(v,array[1],types,depth+1)):undefined;
   const declared=types[type];
   if(Array.isArray(declared)){const record=obj(value);return Object.fromEntries(declared.slice(0,128).filter(f=>f&&typeof f.name==='string'&&typeof f.type==='string'&&record[f.name]!==undefined).map(f=>[f.name,committedValue(record[f.name],f.type,types,depth+1)]));}
+  if(/^uint\d*$/.test(type))return canonicalUint(value,type);
   return ['string','number','boolean','bigint'].includes(typeof value)?value:undefined;
 }
 
@@ -96,19 +107,21 @@ function decodeSignature(request: Extract<SecurityRequest,{kind:'signature'}>): 
   fields.parameterSummary=rpcSummary(method,{message:committed}).fields.parameterSummary;
   const protocol=encodingValid?permitProtocol(typed):undefined;
   const erc20Permit=protocol==='erc2612',nftPermit=protocol==='erc4494';
-  if (primary === 'Permit' && (erc20Permit||nftPermit) && (nftPermit||addr(m.owner)) && addr(m.spender)) {
-    const validAmount = m.value === undefined || /^\d+$/.test(scalar(m.value));
+  if (primary === 'Permit' && (erc20Permit||nftPermit) && (nftPermit||addr(committed.owner)) && addr(committed.spender)) {
+    const required=nftPermit?['tokenId','nonce','deadline']:['value','nonce','deadline'];
+    if(required.some(key=>typeof committed[key]!=='string'||!/^\d+$/.test(committed[key])))return {...result('typed_signature','Partially understood typed signature',fields),decoded:false,complex:true};
     fields.permitProtocol=protocol!;fields.futureConsumptionUnverified=true;
-    fields.unlimited=m.value!==undefined&&scalar(m.value)===maxUint256.toString();
-    return {...result('permit_signature',nftPermit ? 'NFT Permit signature candidate' : 'Token Permit signature candidate',fields,targets),token:addr(domain.verifyingContract)?domain.verifyingContract:undefined,tokenStandard:nftPermit?'erc721':'erc20',addsPermission:nftPermit?m.spender.toLowerCase()!=='0x0000000000000000000000000000000000000000':BigInt(m.value)!==0n,decoded:encodingValid && validAmount && addr(domain.verifyingContract)};
+    if(erc20Permit)fields.unlimited=committed.value===maxUint256.toString();
+    return {...result('permit_signature',nftPermit ? 'NFT Permit signature candidate' : 'Token Permit signature candidate',fields,targets),token:addr(domain.verifyingContract)?domain.verifyingContract:undefined,tokenStandard:nftPermit?'erc721':'erc20',addsPermission:nftPermit?committed.spender.toLowerCase()!=='0x0000000000000000000000000000000000000000':BigInt(committed.value)!==0n,decoded:encodingValid && addr(domain.verifyingContract)};
   }
   if (['PermitSingle','PermitBatch','PermitTransferFrom','PermitBatchTransferFrom'].includes(primary)) {
-    const details = Array.isArray(m.details) ? m.details : Array.isArray(m.permitted) ? m.permitted : [m.details ?? m.permitted];
+    const details = Array.isArray(committed.details) ? committed.details : Array.isArray(committed.permitted) ? committed.permitted : [committed.details ?? committed.permitted];
     const values = details.slice(0,64).map(obj);
     fields.tokens = values.map(v=>scalar(v.token)); fields.amounts = values.map(v=>scalar(v.amount));
     fields.expirations = values.map(v=>scalar(v.expiration)); fields.nonces=values.map(v=>scalar(v.nonce)); fields.declaredAssetCount=String(details.length);
     fields.unlimited=values.some(v=>scalar(v.amount)===(['PermitSingle','PermitBatch'].includes(primary)?2n**160n-1n:maxUint256).toString());
-    if (!encodingValid || !protocol?.startsWith('permit2') || !addr(domain.verifyingContract) || !addr(m.spender) || details.length > 64 || !values.length || values.some(v=>!addr(v.token) || !/^\d+$/.test(scalar(v.amount)))) return {...result('typed_signature','Partially understood typed signature',fields),decoded:false,complex:true};
+    const allowance=protocol==='permit2_allowance',required=allowance?['sigDeadline']:['nonce','deadline'];
+    if (!encodingValid || !protocol?.startsWith('permit2') || !addr(domain.verifyingContract) || !addr(committed.spender) || details.length > 64 || !values.length || required.some(key=>typeof committed[key]!=='string'||!/^\d+$/.test(committed[key])) || values.some(v=>!addr(v.token) || !/^\d+$/.test(scalar(v.amount)) || allowance&&['expiration','nonce'].some(key=>typeof v[key]!=='string'||!/^\d+$/.test(v[key])))) return {...result('typed_signature','Partially understood typed signature',fields),decoded:false,complex:true};
     fields.permitProtocol=protocol;fields.futureConsumptionUnverified=true;fields.recipientCommitted=false;
     return {...result('permit2_signature','Permit2 signature candidate',fields,targets),token:values[0].token,addsPermission:values.some(v=>BigInt(v.amount)!==0n)};
   }

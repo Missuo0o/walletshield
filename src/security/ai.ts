@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {evidenceQuality} from './quality.js';
+import {assessmentScope} from './assessment-scope.js';
 import { META_MODEL, META_RESPONSES_URL, type SecurityConfig } from './config.js';
 import { AI_DIMENSIONS, type SecurityReport, type AIResult, type AIState } from './types.js';
 const citedIds=z.array(z.string().min(1).max(150)).min(1).max(8);
@@ -21,26 +22,88 @@ function evidenceGaps(report:SecurityReport):string[] {
   if(!report.complete&&!gaps.length)gaps.push('Evidence collection is incomplete; specific missing observations were not supplied.');
   return gaps;
 }
+type VerificationSubject={kind:'nonce'|'domain';start:number;end:number;index?:string};
+// This is a bounded guard for explicit nonce/domain assertions, not a general
+// natural-language truth checker. Keep it assertion-local: an unrelated "no",
+// "check" or "if" must not exempt a factual assertion elsewhere in the sentence.
+function verificationClaims(text:string):{subject:VerificationSubject;direction:'pass'|'risk'}[] {
+  const claims:{subject:VerificationSubject;direction:'pass'|'risk'}[]=[];
+  for(const piece of text.matchAll(/[^。！？；;.!?\n，,]+[。！？；;.!?\n，,]?/g)) {
+    if(/[?？]$/.test(piece[0]))continue;
+    const clause=piece[0];
+    const subjects:VerificationSubject[]=[];
+    for(const match of clause.matchAll(/\bnonces?(?=\b|[_-]\d)(?:\s*(?:\[\s*(\d+)\s*\]|#\s*(\d+)|(?:index|entry)\s*(\d+)|[_-](\d+)))?|\bdomain(?:[ _-]separator)?\b|域分隔符/gi)) {
+      const kind=/^nonce/i.test(match[0])?'nonce':'domain';
+      subjects.push({kind,start:match.index!,end:match.index!+match[0].length,index:match.slice(1).find(value=>value!==undefined)});
+    }
+    // Longer negative predicates precede their positive substrings. "Not
+    // verified" means unknown; "does not match" asserts an observed mismatch.
+    const predicate=/\b(?:does?\s+not|did\s+not|is\s+not|are\s+not|isn't|aren't|doesn't|don't|didn't)\s+(?:match|equal|correspond)(?:ed|s)?\b|\bnot\s+(?:valid|consistent|matching|matched)\b|\b(?:mismatch(?:ed|es)?|invalid|differs?|unequal)\b|不(?:匹配|一致)|无效|\b(?:not\s+(?:invalid|mismatched)|no\s+mismatch(?:es)?)\b|\b(?:verified|validated|confirmed|valid|matched|matches|consistent)\b|已(?:经)?(?:核对|匹配|校验|验证)|(?:匹配|校验|核对|验证)(?:成功|通过)|一致|匹配/gi;
+    let priorEnd=0,priorSubjects:VerificationSubject[]=[],nonassertiveScope=false;
+    const predicates=[...clause.matchAll(predicate)];
+    for(let i=0;i<predicates.length;i++) {
+      const found=predicates[i],start=found.index!,end=start+found[0].length;
+      const before=subjects.filter(subject=>subject.start>=priorEnd&&subject.end<=start);
+      const after=subjects.filter(subject=>subject.start>=end&&subject.end<=(predicates[i+1]?.index??clause.length));
+      let attached:VerificationSubject[]=[];
+      if(before.length) {
+        attached=[before.at(-1)!];
+        for(let j=before.length-2;j>=0;j--) {
+          if(!/^\s*(?:and|or|与|和|及|、|\/|&)\s*$/i.test(clause.slice(before[j].end,attached[0].start)))break;
+          attached.unshift(before[j]);
+        }
+      }else if(after.length&&/^\s*(?:the\s+)?$/i.test(clause.slice(end,after[0].start))) {
+        attached=[after[0]];
+        for(let j=1;j<after.length;j++) {
+          if(!/^\s*(?:and|or|与|和|及|、|\/|&)\s*$/i.test(clause.slice(attached.at(-1)!.end,after[j].start)))break;
+          attached.push(after[j]);
+        }
+      }else if(priorSubjects.length&&/^\s*(?:and|but|however|yet|且|并且|并|与|和|及|但|却|\/|&)\s*(?:(?:is|are|was|were|has|have|been|now)\s+)*$/i.test(clause.slice(priorEnd,start)))attached=priorSubjects;
+      const first=attached[0]?.start??start;
+      // Scope introductory advice/conditions/attribution to this assertion only.
+      // A causal or contrast boundary starts a new assertion, even after advice.
+      const lead=clause.slice(priorEnd,first);
+      const boundaries=[...lead.matchAll(/\b(?:and|but|because|since|although|however|yet)\b|因为|由于|但|而且|并且|却/g)];
+      const scopeStart=priorEnd+(boundaries.length?boundaries.at(-1)!.index!+boundaries.at(-1)![0].length:0);
+      let context=clause.slice(scopeStart,start);
+      const lastSubjectEnd=attached.at(-1)?.end??start;
+      const bridge=clause.slice(Math.max(priorEnd,lastSubjectEnd),start);
+      const bridgeBoundaries=[...bridge.matchAll(/\b(?:and|but|because|since|although|however|yet)\b|因为|由于|但|而且|并且|却/g)];
+      if(bridgeBoundaries.length) {
+        const boundary=bridgeBoundaries.at(-1)!;
+        context=bridge.slice(boundary.index!+boundary[0].length);
+      }
+      const tail=clause.slice(end);
+      const introductoryScope=/\b(?:if|unless|whether|until|once|claims?|claimed|alleged|reportedly)\b|请|是否|建议|声称|宣称/i.test(context)
+        ||/^\s*(?:(?:please\s+)?(?:check|verify|confirm|determine|ensure|establish|inspect)\b|(?:we|you)\s+(?:need|must|should)\b)/i.test(context.trim());
+      const inheritedScope:boolean=nonassertiveScope&&/^\s*(?:and\b|且|并且|并|与|和|及|\/|&)/i.test(clause.slice(priorEnd,first));
+      const uncertain=introductoryScope||inheritedScope||/\b(?:may|might|could|should|would|perhaps|possibly|cannot|can't|unverified|unconfirmed|unknown|unavailable|no\s+evidence)\b|尚|待|需要|可能|无法|不能|未|没有/i.test(context)
+        ||/^\s*(?:(?:is|are|remains?)\s+)?(?:unknown|unverified|unconfirmed|unproven|uncertain|not\s+(?:established|confirmed|verified|ruled\s+out)|cannot\s+be\s+(?:determined|confirmed))\b/i.test(tail)
+        ||/^\s*(?:only\s+)?(?:if|unless|when)\b/i.test(tail)
+        ||/\b(?:not|never|no|isn't|aren't|wasn't|weren't|hasn't|haven't)\s+(?:(?:yet|independently|actually|fully|been|being|known|proven|guaranteed|to|be|has|have|is|are|was|were)\s+)*$/i.test(context);
+      if(!uncertain)for(const subject of attached) {
+        // Website/SIWE host matching is not DOMAIN_SEPARATOR() verification.
+        if(subject.kind==='domain'&&/\b(?:website|login|siwe|origin)\s+(?:host\s+)?$/i.test(clause.slice(Math.max(0,subject.start-30),subject.start))&&!/eip[\s-]?712|domain[ _-]separator|域分隔符/i.test(clause))continue;
+        claims.push({subject,direction:/^(?:not\s+(?:invalid|mismatched)|no\s+mismatch(?:es)?)$/i.test(found[0])?'pass':/不(?:匹配|一致)|无效|\b(?:not|mismatch|invalid|differ|unequal|isn't|aren't|doesn't|don't|didn't)/i.test(found[0])?'risk':'pass'});
+      }
+      priorEnd=end;priorSubjects=attached;nonassertiveScope=introductoryScope||inheritedScope;
+    }
+  }
+  return claims;
+}
 function validateVerificationClaims(data:z.infer<typeof output>,checks:Map<string,SecurityReport['checks'][number]>,report:SecurityReport) {
   const statements=[...data.reasons,...data.dimensions.map(d=>({text:d.reason,evidence_ids:d.evidence_ids}))];
-  statements.push({text:data.summary,evidence_ids:[...new Set(statements.flatMap(s=>s.evidence_ids))]});
-  // Bound this check to explicit verification assertions. Questions, advice and
-  // uncertainty remain model judgments; matching a real but unrelated ID is not
-  // proof that a nonce or an EIP-712 domain was checked on chain.
-  for(const statement of statements)for(const clause of statement.text.split(/[。！？；;.!?\n，,]|但|\bbut\b/i)) {
-    if(/请|是否|尚|待|需要|可能|建议|无法|不能|声称|宣称|\b(?:if|may|might|could|should|check|verify|confirm|claims?|claimed|alleged|reported|not|no|cannot)\b/i.test(clause))continue;
-    const mismatch=/不(?:匹配|一致)|\b(?:mismatch(?:ed)?|invalid)\b/i.test(clause);
-    const verified=/已(?:经)?(?:核对|匹配|校验|验证)|(?:匹配|校验|核对|验证)(?:成功|通过)|一致|匹配|\b(?:verified|validated|valid|matched|matches|consistent)\b/i.test(clause);
-    if(!mismatch&&(!verified||/未|无法|没有|不能|\b(?:not|no|cannot|unverified)\b/i.test(clause)))continue;
-    for(const [kind,subject,id] of [['nonce',/\bnonces?\b/i,/^signature_nonce(?:_\d+)?$/],['domain',/\bdomain(?:_separator)?\b|域分隔符/i,/^signature_domain$/]] as const) {
-      if(!subject.test(clause))continue;
-      // A website/login domain is not an EIP-712 domain separator assertion.
-      if(kind==='domain'&&!(report.request.kind==='signature'&&report.request.signature.method.startsWith('eth_signTypedData'))&&!/eip[\s-]?712|domain_separator|域分隔符/i.test(clause))continue;
-      if(!statement.evidence_ids.some(evidenceId=>{
-        const check=checks.get(evidenceId);
-        return id.test(evidenceId)&&check?.source==='rpc'&&check.status===(mismatch?'risk':'pass');
-      }))throw Error('Unsupported signature verification claim');
-    }
+  const cited=[...new Set(statements.flatMap(s=>s.evidence_ids))];
+  // All displayed model prose is checked. Fields without their own citations can
+  // use only the citations already supplied by reasons/dimensions, not all facts.
+  statements.push(...[data.summary,data.suggested_action,...data.missing_data].map(text=>({text,evidence_ids:cited})));
+  for(const statement of statements)for(const claim of verificationClaims(statement.text)) {
+    const {subject,direction}=claim;
+    if(subject.kind==='domain'&&!(report.request.kind==='signature'&&report.request.signature.method.startsWith('eth_signTypedData'))&&!/eip[\s-]?712|domain[ _-]separator|域分隔符/i.test(statement.text))continue;
+    const relevant=subject.kind==='domain'?['signature_domain']:subject.index!==undefined?[`signature_nonce_${subject.index}`]:[...checks.keys()].filter(id=>/^signature_nonce(?:_\d+)?$/.test(id));
+    // Unqualified batch claims apply to every collected entry; a single matching
+    // nonce cannot establish that all entries matched. Partial claims name index.
+    if(!relevant.length||relevant.some(id=>!statement.evidence_ids.includes(id)||checks.get(id)?.source!=='rpc'||checks.get(id)?.status!==direction))throw Error('Unsupported signature verification claim');
   }
 }
 export function evidencePacket(report:SecurityReport) {
@@ -53,7 +116,7 @@ export function evidencePacket(report:SecurityReport) {
   const fees=transaction?Object.fromEntries(['gas','gasPrice','maxFeePerGas','maxPriorityFeePerGas','nonce'].filter(k=>(transaction as any)[k]!==undefined).map(k=>[k,String(BigInt((transaction as any)[k]))])):undefined;
   const gaps=evidenceGaps(report);
   return {version:report.version,createdAt:report.createdAt,reportSource:report.source,evidenceComplete:gaps.length===0,chainId:report.request.chainId,origin,intent:report.request.intent??null,feeParameters:fees,
-    quality:evidenceQuality(report),requestSummary,unsupportedTransactionFields:transaction?.unsupportedFields??[],userReportedContext:report.request.context??null,operation:report.operation,checks:report.checks,missing_checks:gaps,
+    quality:evidenceQuality(report),assessment_scope:assessmentScope(report),requestSummary,unsupportedTransactionFields:transaction?.unsupportedFields??[],userReportedContext:report.request.context??null,operation:report.operation,checks:report.checks,missing_checks:gaps,
     request_data_scope:'Only allowlisted decoded summaries are provided, not full calldata, generated signatures, full RPC parameters or wallet history. A decoded ABI shape is a candidate, not verified protocol identity or complete understanding. Message previews and parameter/batch extraction can be truncated. Demo and demo-fixture sources are synthetic observations, not real-network facts.',
     snapshot_consistency:'Collectors pin their own reads and can observe different blocks. Use each observation’s network, block and time; do not merge different assets or snapshots as if atomic. Fork execution blocks are distinct from upstream state. The quality inventory is not an accuracy or confidence percentage.',
     quantity_conventions:'Quantity strings are raw base units unless stated otherwise, never automatically USD. Native value/balances/gas cost and maximumExecutionFeeWei are wei; gas is execution units and gas prices are wei per gas. Nonces are counters. Convert only the same token with observed decimals. NFT IDs are not amounts; vault shares are not underlying assets. roundTripReturnPercent includes price impact and fees, not just sell tax. External tax fields follow their provider convention. Aave-style healthFactor uses 1e18 for one; base-currency valuation is unverified. No price source means no dollar-loss claim. A signed domain is not an independently verified active wallet network.',analysis_dimensions:AI_DIMENSIONS,
@@ -67,8 +130,9 @@ export function validateAI(value:unknown,report:SecurityReport,model:string):AIR
   validateVerificationClaims(data,checks,report);
   if(new Set(data.dimensions.map(d=>d.dimension)).size!==AI_DIMENSIONS.length)throw Error('Missing or duplicate dimension');
   const missing=[...new Set([...evidenceGaps(report),...data.missing_data])];
+  const scope=assessmentScope(report,data.missing_data);
   const quality=evidenceQuality(report),timingIssues=quality.freshness.staleCheckIds.length+quality.freshness.futureCheckIds.length+quality.freshness.missingTimestampCheckIds.length+(quality.conflictingBlockHashes?.length??0);
-  if((missing.length||timingIssues)&&data.evidence_confidence==='strong')throw Error('Unresolved evidence cannot have strong confidence');
+  if((scope.criticalMissingData.length||timingIssues)&&data.evidence_confidence==='strong')throw Error('Unresolved evidence cannot have strong confidence');
   if(data.score!==null&&!data.dimensions.some(d=>!['unknown','not_applicable'].includes(d.assessment)&&d.evidence_ids.some(id=>checks.get(id)?.status!=='unknown'&&id!=='tool_plan')))throw Error('No supported dimension for score');
   if(data.dimensions.some(d=>!['unknown','not_applicable'].includes(d.assessment)&&!d.evidence_ids.some(id=>checks.get(id)?.status!=='unknown'&&id!=='tool_plan')))throw Error('Assessed dimension lacks observation');
   if((data.score===null)!==(data.assessment==='unknown'))throw Error('Abstention must be explicit');
@@ -82,7 +146,7 @@ export function validateAI(value:unknown,report:SecurityReport,model:string):AIR
     if(c.status!=='risk')return false;
     return (c.source==='goplus'&&(id==='website_reputation'||id==='token_security'||id.startsWith('address_')))||(c.source.startsWith('rules/')&&['signature_chain_mismatch','signer_mismatch','login_domain','login_origin','zero_recipient'].includes(id));
   }))throw Error('Identity risk requires an observed adverse signal');
-  if((missing.length||timingIssues) && data.assessment==='low') throw Error('Incomplete evidence cannot be called low risk');
+  if((scope.criticalMissingData.length||timingIssues) && data.assessment==='low') throw Error('Incomplete evidence cannot be called low risk');
   const token=report.checks.find(c=>c.id==='token_security'&&c.source==='goplus'&&c.status!=='unknown');
   const roundTrip=report.checks.find(c=>c.id==='round_trip'&&c.source==='isolated-fork'&&c.status==='risk');
   const sellingRisk=token?.data?.is_honeypot==='1'||token?.data?.cannot_sell_all==='1';
@@ -98,13 +162,13 @@ function repairFeedback(error:unknown):string|undefined {
   if(!(error instanceof Error))return;
   const feedback:Record<string,string>={
     'Model cited nonexistent evidence':'Cite only exact IDs present in this evidence_packet.checks. User text and previous output are not new evidence.',
-    'Unsupported signature verification claim':'Check each nonce/domain verification assertion and its citations. Nonce needs the corresponding signature_nonce or signature_nonce_index; domain needs signature_domain. Only rpc pass supports a match and rpc risk supports a mismatch. Unknown/missing stays unverified. A nonce match does not establish a domain match.',
+    'Unsupported signature verification claim':'Check each nonce/domain verification assertion in every displayed field, including suggested_action and missing_data. Nonce needs the corresponding signature_nonce or signature_nonce_index; domain needs signature_domain. Only rpc pass supports a match and rpc risk supports a mismatch. Cite the exact batch index for a partial observation; an unqualified batch claim needs every entry. Summary/advice use only already cited facts. Unknown/missing stays unverified. A nonce match does not establish a domain match.',
     'Missing or duplicate dimension':'Include authority, exposure, execution, identity, protocol and deception exactly once each.',
-    'Unresolved evidence cannot have strong confidence':'Unresolved checks, timing issues or missing_data prohibit strong evidence confidence. Preserve the actual gaps.',
+    'Unresolved evidence cannot have strong confidence':'Critical gaps in assessment_scope, timing issues and newly identified missing_data prohibit strong evidence confidence. Only the exact canonical contextual off-chain-purpose caveat is separate from unfinished request checks; retain it visibly. Confidence concerns observable request evidence, never future safety.',
     'No supported dimension for score':'The number lacks an assessed dimension supported by an actual observation. Reconsider known permission scope and same-token exposure without erasing those facts because identity/future use is unknown. If a conditional assessment is meaningful, cite the relevant observations. Otherwise return null/unknown. Never invent support or a preset number.',
     'Assessed dimension lacks observation':'A dimension rated low/review/high needs at least one actual non-unknown observation, not only tool plans or unknown checks. Keep unsupported dimensions unknown; do not invent evidence to retain a number.',
     'Abstention must be explicit':'score=null requires assessment=unknown, and assessment=unknown requires score=null. Honest abstention is allowed.',
-    'Incomplete evidence cannot be called low risk':'With unresolved checks, timing issues or missing_data the overall assessment cannot be low. Preserve gaps and independently decide whether conditional scoring is justified or null is needed.',
+    'Incomplete evidence cannot be called low risk':'Critical gaps in assessment_scope, timing issues or newly identified missing_data prohibit low. Only the exact canonical contextual off-chain-purpose caveat alone does not prohibit a low assessment within observable request scope. Preserve all gaps and independently decide whether conditional scoring is justified or null is needed.',
     'Identity risk requires an observed adverse signal':'identity=high requires observed, relevant adverse identity evidence. Large authority or missing reputation/current-network context alone is not such evidence.',
     'No honeypot evidence':'Without valid selling intelligence or a round-trip risk observation, honeypot must be unknown.',
     'Unsupported honeypot claim':'risk_indicator requires is_honeypot=1 / cannot_sell_all=1 or a risky round_trip observation; admin powers alone are insufficient.',
@@ -128,10 +192,11 @@ export async function scoreWithAI(report:SecurityReport,config:SecurityConfig,fe
         'Separate possible loss impact, actual adverse observations and evidence completeness. Unlimited approval can serve legitimate purposes. Large amounts alone do not prove fraud. Local test lists are not reputation certification. Missing information is neither proof of safety nor an automatic reason for a mechanically high score. Return null when no meaningful number is supported.',
         'Not all six dimensions need to be known for a score. Unknown identity/protocol/execution, missing external reputation, and unexecuted future signature consumption do not individually force score=null. Known authority, same-token exposure and verified structure/nonce/domain can support a conditional number while other dimensions remain unknown. Never invent support to make a number appear.',
         'For Permit, authority concerns spender, asset, scope and conditions. Unverified spender identity belongs in identity; unknown future consumption belongs in execution. Neither erases parsed finite/unlimited authority. Same-token decimals and balance can support exposure. Current allowance=0 does not erase new signed authority. EIP-2612 deadline limits submission, not allowance duration after submission. A nonce/domain match supports only the exact checked structure/state. Finite small relative exposure can lower corresponding dimensions; authority is not always high.',
-        'The textual assessment is independent of fixed numeric thresholds. Unresolved checks, timing problems or missing_data prohibit an overall low assessment and strong evidence confidence. Successful eth_call is not full asset simulation, and successful transfer does not authenticate its recipient. honeypot=risk_indicator needs token_security is_honeypot=1 / cannot_sell_all=1 or risky round_trip evidence. Admin powers alone do not suffice. no_known_indicator requires is_honeypot=0 without observed selling restriction or round-trip risk. Failed selling can have other causes and is not certain fraud.',
+        'The textual assessment is independent of fixed numeric thresholds. Use assessment_scope to distinguish critical gaps from the permanent contextual off-chain-purpose caveat. Critical gaps, timing problems or newly identified missing_data prohibit overall low and strong evidence confidence. The canonical contextual caveat alone does not prohibit either within observable request scope; keep that caveat visible and do not claim identity, future execution or safety is established. Reuse the exact supplied gap text when reporting an existing gap. All other missing information remains critical.',
+        'Successful eth_call is not full asset simulation, and successful transfer does not authenticate its recipient. honeypot=risk_indicator needs token_security is_honeypot=1 / cannot_sell_all=1 or risky round_trip evidence. Admin powers alone do not suffice. no_known_indicator requires is_honeypot=0 without observed selling restriction or round-trip risk. Failed selling can have other causes and is not certain fraud.',
         'Output exactly six dimensions: authority (recipient, scope, duration, revocation), exposure (same-asset balance/fees/loss impact), execution (calls, deltas and hidden behavior), identity (source/target/protocol/account/network consistency), protocol (slippage, exits, liquidation and upgrades), deception (inducement, pay-before-withdrawal and guaranteed-return context). Each has existing evidence IDs and a concise reason. Use not_applicable or unknown honestly. A low/review/high dimension needs an actual non-unknown observation, not just a tool plan. Do not number or average dimensions.',
         'Evidence confidence describes available support, not model certainty. score=null iff assessment=unknown. If all dimensions are unknown/not_applicable or only cite unknown/tool_plan observations, abstain. tool_plan is intended work, not results. Quality counts are an inventory, never detection accuracy or a probability. Do not call data fresh only because it was fetched now; inspect block provenance. Separate fork and upstream snapshots.',
-        'Verify each factual assertion against its citations. A claimed nonce/domain match needs rpc pass signature_nonce (or signature_nonce_index) / signature_domain; a mismatch needs the corresponding rpc risk. operation, token_identity, tool_plan and user claims cannot substitute for those checks. identity=high needs actual adverse identity intelligence, account/network/login-origin mismatch or zero-address evidence. Missing reputation is not malicious identity. SIWE nonce format does not prove server-issued, unique or unused nonce; login inspection is not signature verification.',
+        'Verify each factual assertion against its citations in every displayed field, including summary, missing_data and suggested_action. A claimed nonce/domain match needs rpc pass signature_nonce (or signature_nonce_index) / signature_domain; a mismatch needs the corresponding rpc risk. For partial batch comparisons, name the exact zero-based nonce index and cite that entry; do not generalize one result to the full batch. Summary/advice can use only facts already cited by reasons/dimensions. operation, token_identity, tool_plan and user claims cannot substitute for those checks. identity=high needs actual adverse identity intelligence, account/network/login-origin mismatch or zero-address evidence. Missing reputation is not malicious identity. SIWE nonce format does not prove server-issued, unique or unused nonce; login inspection is not signature verification.',
         'Raw units are not dollars; NFT IDs are not amounts, shares are not underlying, and future signature consumption is not observed execution. Never promise safety, future sellability, successful blocking, verified protocol authenticity or transaction execution without the corresponding bounded evidence.',
         'Keep wallet waiting bounded: one concise sentence per dimension, summary under 100 English words, at most three reasons, and merge duplicate missing items. Cite facts without repeating all checks. Give concrete English advice, not action-code labels. Model numbers are advisory; the user decides in the wallet.'
       ].join('\n'),
