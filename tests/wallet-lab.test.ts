@@ -1,15 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {WALLET_CASES,UNAVAILABLE_WALLET_TESTS} from '../src/testing/cases.js';
+import {WALLET_CASES,UNAVAILABLE_WALLET_TESTS,buildWalletCase} from '../src/testing/cases.js';
+import {compileLabArtifacts,labClient,type LabDeployment} from '../src/testing/contracts.js';
 import {COVERAGE_PROFILES} from '../src/security/coverage.js';
 import {newLabSession,matchLabReport,comparableRequest,validLabToken,publicLabSession} from '../src/testing/sessions.js';
 import {securityExamples,demoEvidence} from '../src/security/examples.js';
 import {assess} from '../src/security/rules.js';
 import {createStore} from '../src/server/store.js';
 import {buildApp} from '../src/server/app.js';
-import {encodeFunctionData,parseAbi} from 'viem';
+import {decodeFunctionData,encodeFunctionData,hashTypedData,maxUint256,parseAbi} from 'viem';
 import {decodeRequest} from '../src/security/decode.js';
-import type {SecurityRequest} from '../src/security/types.js';
+import {signatureStructure} from '../src/security/signatures.js';
+import {requestSchema,type SecurityRequest} from '../src/security/types.js';
 const request=()=>structuredClone(securityExamples.find(e=>e.id==='approve')!.request);
 test('V3 tuple overloads and zero-argument deposit preserve exact selectors while rejecting trailing bytes',()=>{
  const address='0x1111111111111111111111111111111111111111';
@@ -58,4 +60,72 @@ test('only authenticated Snap scans attach reports; webpage scans and arbitrary 
   assert.equal((await app.inject({method:'POST',url:'/api/lab/begin',headers:{origin:'http://127.0.0.1:5173'},payload:{caseId:'unknown-client-method',address:'0x'+'1'.repeat(40)}})).statusCode,400);
   assert.equal((await app.inject({method:'POST',url:`/api/lab/sessions/${session.id}/result`,headers:{origin:'http://127.0.0.1:5173'},payload:{token:'x'.repeat(30),status:'confirmed'}})).statusCode,400);
  }finally{await app.close();store.close();}
+});
+
+const optionalAccountCases=['account-threshold','account-module-enable','account-module-disable','account-guard-set','account-guard-remove','account-fallback-set','account-fallback-remove','account-call'];
+const candidateSignatureCases=['dai-allow','dai-revoke','erc3009-transfer','erc3009-receive'];
+const compiled=compileLabArtifacts();
+function fixtureDeployment():LabDeployment {
+ const address=(digit:string)=>('0x'+digit.repeat(40)) as `0x${string}`;
+ return {version:1,chainId:31337,baseToken:address('1'),owner:address('2'),recipient:address('3'),deployedAt:'2026-10-22T00:00:00.000Z',contracts:Object.fromEntries([['token','4'],['actions','5'],['account','6']].map(([key,digit])=>[key,{address:address(digit),codeHash:('0x'+'a'.repeat(64)) as `0x${string}`}]))};
+}
+test('the optional account artifact compiles and new wallet cases contain real canonical control/CALL transactions',async()=>{
+ const artifacts=await compiled,d=fixtureDeployment();
+ assert.ok(artifacts.LabAccount.bytecode.length>100);
+ for(const id of optionalAccountCases) {
+  const item=WALLET_CASES.find(value=>value.id===id)!;assert.equal(item.kind,'transaction');assert.match(item.boundary!,/No production multisig signatures/);
+  const request=await buildWalletCase(id,d.owner,d,artifacts);assert.equal(requestSchema.safeParse(request).success,true,id);
+  assert.equal(request.kind,'transaction');if(request.kind!=='transaction')throw Error('Expected transaction');
+  assert.equal(request.transaction.to,d.contracts.account.address);
+  const operation=decodeRequest(request);assert.equal(operation.category,id==='account-call'?'account_execution':'account_control',id);
+  assert.ok(COVERAGE_PROFILES.find(profile=>profile.id===item.profile)?.categories.includes(operation.category),id);
+  const decoded=decodeFunctionData({abi:artifacts.LabAccount.abi,data:request.transaction.data as `0x${string}`});
+  if(id==='account-call'){
+   assert.equal(decoded.functionName,'execTransaction');
+   const args=decoded.args as readonly unknown[];assert.equal(args[0],d.contracts.token.address);assert.equal(args[1],0n);assert.equal(args[3],0);assert.equal(args[9],'0x');
+   const inner=decodeFunctionData({abi:artifacts.LabToken.abi,data:args[2] as `0x${string}`});assert.equal(inner.functionName,'mint');assert.deepEqual(inner.args,[d.owner,1000000n]);
+  }
+ }
+});
+test('an older lab remains usable but optional account cases give an actionable deployment instruction',async()=>{
+ const artifacts=await compiled,d=fixtureDeployment();delete d.contracts.account;
+ for(const id of optionalAccountCases)await assert.rejects(buildWalletCase(id,d.owner,d,artifacts),/Run npm run deploy:lab/);
+ const existing=await buildWalletCase('token-transfer',d.owner,d,artifacts);
+ assert.equal(existing.kind,'transaction');assert.equal(decodeRequest(existing).category,'token_transfer');
+});
+test('DAI-shaped local signature candidates query only the holder nonce and preserve grant versus revocation semantics',async(t)=>{
+ const artifacts=await compiled,d=fixtureDeployment();let calls=0;
+ t.mock.method(labClient,'readContract',async(params:Record<string,unknown>)=>{calls++;assert.equal(params.address,d.contracts.token.address);assert.equal(params.functionName,'nonces');assert.deepEqual(params.args,[d.owner]);return 7n;});
+ for(const id of ['dai-allow','dai-revoke']) {
+  const request=await buildWalletCase(id,d.owner,d,artifacts),operation=decodeRequest(request);
+  assert.equal(requestSchema.safeParse(request).success,true);assert.equal(operation.category,'dai_permit_signature');
+  assert.equal(operation.fields.allowed,id==='dai-allow');assert.equal(operation.fields.amount,id==='dai-allow'?String(maxUint256):'0');
+  assert.equal(operation.addsPermission,id==='dai-allow');
+  if(request.kind!=='signature')throw Error('Expected signature');const typed=request.signature.data as any;
+  assert.equal(typed.message.holder,d.owner);assert.equal(typed.message.nonce,'7');assert.equal(typed.domain.verifyingContract,d.contracts.token.address);
+  assert.match(hashTypedData(typed),/^0x[\da-f]{64}$/);assert.ok(signatureStructure(request).some(fact=>fact.id==='typed_structure'&&fact.status==='pass'));
+  assert.match(WALLET_CASES.find(item=>item.id===id)!.boundary!,/does not implement this signature-consumption method/);
+ }
+ assert.equal(calls,2);
+});
+test('ERC-3009 local candidates use unique committed bytes32 nonces without inventing an authorization-state getter',async(t)=>{
+ const artifacts=await compiled,d=fixtureDeployment();
+ t.mock.method(labClient,'readContract',async()=>{throw Error('ERC-3009 request construction must not borrow the sequential nonce getter');});
+ const nonces=new Set<string>();
+ for(const id of ['erc3009-transfer','erc3009-receive']) {
+  const request=await buildWalletCase(id,d.owner,d,artifacts),operation=decodeRequest(request);
+  assert.equal(requestSchema.safeParse(request).success,true);assert.equal(operation.category,'transfer_authorization');assert.equal(operation.addsPermission,false);
+  if(request.kind!=='signature')throw Error('Expected signature');const typed=request.signature.data as any;
+  assert.equal(typed.primaryType,id==='erc3009-transfer'?'TransferWithAuthorization':'ReceiveWithAuthorization');
+  assert.equal(typed.message.from,d.owner);assert.equal(typed.message.to,d.recipient);assert.equal(typed.message.value,'1000000');
+  assert.equal(typed.message.validAfter,'0');assert.ok(BigInt(typed.message.validBefore)>BigInt(Math.floor(Date.now()/1000)));
+  assert.match(typed.message.nonce,/^0x[\da-f]{64}$/);nonces.add(typed.message.nonce);
+  assert.match(hashTypedData(typed),/^0x[\da-f]{64}$/);
+  assert.equal(operation.fields.relayerRestriction,id==='erc3009-transfer'?'any_submitter':'caller_must_be_recipient');
+  assert.equal(comparableRequest(request),comparableRequest(structuredClone(request)),'The generated nonce stays committed to its stored request.');
+  assert.match(WALLET_CASES.find(item=>item.id===id)!.boundary!,/no future acceptance, ERC-3009 authorizationState or token movement is established/);
+ }
+ assert.equal(nonces.size,2);
+ assert.equal(WALLET_CASES.filter(item=>optionalAccountCases.includes(item.id)).length,8);
+ assert.equal(WALLET_CASES.filter(item=>candidateSignatureCases.includes(item.id)).length,4);
 });

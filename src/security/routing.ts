@@ -14,7 +14,10 @@ export function planRequest(request:SecurityRequest,op:Operation,config?:Securit
   add('login_envelope',op.category==='siwe','Inspect supported SIWE fields, URI/source binding and local time conditions; server nonce use and signature acceptance remain unknown');
   add('vault_preview',op.category==='vault','Read ERC-4626 underlying asset, shares, previews and limits');
   add('lending_account',op.category==='lending','Read Aave-style account health and collateral settings');
-  add('protocol_limits',['swap_v3','liquidity','staking','bridge','claim','mint_burn','control_change','batch'].includes(op.category),'Retain unverified route, lockup, destination and internal-authority semantics');
+  add('account_authority',['account_control','account_execution'].includes(op.category),'Read selected owners, threshold, module state and authority target code at a pinned block; retain full-policy gaps');
+  add('batch_structure',['batch','account_execution'].includes(op.category),'Inspect bounded nested multicall, account execution and MultiSend candidates without assuming authenticated execution context');
+  add('position_context',op.category==='liquidity_v3','Read selected position ownership/liquidity interfaces and token units at a pinned block; no valuation or pool authentication');
+  add('protocol_limits',['swap_v3','liquidity','liquidity_v3','withdrawal','staking','bridge','claim','mint_burn','control_change','account_control','account_execution','batch'].includes(op.category),'Retain unverified route, lockup, destination and internal-authority semantics');
   add('wallet_rpc_summary',['permission','user_operation','wallet_rpc'].includes(request.kind),'Extract allowlisted permission, session, smart-account and RPC fields without execution');
   add('external_intelligence',true,'Address, website, token and honeypot intelligence',config?config.lookups:null);
   add('ai_assessment',true,'Muse assesses obtained evidence and gaps; failures never fabricate a score',config?!!config.apiKey&&config.aiEnabled:null);

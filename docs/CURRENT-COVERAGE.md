@@ -4,7 +4,7 @@
 
 This describes the current v0.4.1 implementation after the correctness, validation, identity and dependency repair. It is a capability matrix, not an accuracy certification. Install/configure/run instructions are in the [README](../README.md) and [user manual](USER-MANUAL.md); exact per-profile extraction is in the [generated coverage guide](AI-COVERAGE-GUIDE.md).
 
-WalletShield provides **pre-sign risk advice** for one unsigned EVM request. It does not force blocking or continuously monitor after signing, as defined by the current product scope. **30 analysis profiles and 54 representative local cases (43 transactions, 11 messages, 25 profiles represented) are not a percentage of risks covered.** Other methods, deployments, states and adversarial inputs can behave differently.
+WalletShield provides **pre-sign risk advice** for one unsigned EVM request. It does not force blocking or continuously monitor after signing, as defined by the current product scope. **30 analysis profiles and 66 representative local cases (51 transactions, 15 messages, 25 profiles represented) are not a percentage of risks covered.** Other methods, deployments, states and adversarial inputs can behave differently.
 
 ## Entry points matter
 
@@ -27,19 +27,24 @@ WalletShield provides **pre-sign risk advice** for one unsigned EVM request. It 
 | ERC-721/1155 single/batch transfers | Owner/recipient/token IDs/amounts, declared interfaces, selected ownership/approval/operator reads | Complete holdings/callbacks, collection authenticity and value; at most 16 IDs/asset |
 | ERC-20/NFT approve and revoke; NFT setApprovalForAll | Spender/operator, exact amount or NFT identifier, permission scope, current state and revocation semantics | Full future exposure, malicious later use, all Permit variants and recipient identity |
 | On-chain Permit2-shaped approve | Token/spender/uint160 cap/expiration; **separate** underlying ERC-20 owner→Permit2 approval and internal owner/token/final-spender amount/expiration/nonce | Claimed Permit2 deployment/code/domain authenticity and future consumption |
-| Permit / NFT Permit / common Permit2 typed signatures | Committed type graph, exact normalized unsigned quantities, digest/domain hash, canonical selected nonce/domain/interface/allowance and conditional balance exposure | Custom/DAI/witness variants, complete authority semantics, signature acceptance and consumption |
+| Permit / NFT Permit / DAI / ERC-3009 / common Permit2 signatures | Committed type graph, exact normalized unsigned quantities, digest/domain hash, canonical selected nonce/domain/interface/allowance and conditional balance exposure | Other custom/witness variants, complete authority semantics, signature acceptance and consumption |
 | SIWE-like login and personal signatures | Bounded message/field extraction, source/account/domain/URI/time checks; explicit remote-nonce uncertainty | Remote nonce issuance/replay store, arbitrary server meaning, actual signature/session acceptance |
 | Orders/listings/other typed messages | Committed type graph, digest/domain, bounded recognized financial fields and selected state reads | Full offer/consideration, fulfillment, cancellation, custom/witness authority and actual acceptance |
 | V2/V3-shaped swaps | Candidate paths/amounts/limits/recipients/deadlines; generic fork effects; selected V2 buy→approve acquired amount→sell experiment | V3 round trips, arbitrary routers/aggregators, trusted prices/quotes, MEV and later sellability |
 | ERC-4626-shaped vault and Aave-shaped lending | Current preview/max/totals/underlying/share data or collateral/debt/LTV/health factor where readable | Verified protocol identity, full post-operation liquidation, oracle/price stress, future solvency/exits |
+| V3 concentrated-liquidity positions | Exact mint/increase/decrease/collect fields; existing positions/owner/approvals/manager code and token units/caller balances | No pool identity/current tick/quote, NFT valuation, complete fee/exit economics or future proceeds |
 | Staking/liquidity/wrapping/mint/burn/claim | Selected candidate methods, amounts/recipients/limits, partial controls and generic fork observations | Lock/slashing/yield rules, LP valuation, wrapper guarantees, mint entitlement or complete Merkle proof verification |
-| Selected OP-shaped bridge deposit | Source parameters, controls and source-chain simulation effects | Destination proof/arrival, validators/custody, relayer future behavior and cross-chain finality |
-| Control/role/upgrade/deployment | Candidate authority changes, code hash/common proxy slots/readable owner/paused, optional fork effects | Full code/constructor/storage-layout audit, hidden administration and dynamic delegation |
-| Batch/aggregator/unknown call | Parent request, selected wrapper counts/selectors, bounded call/asset simulation | Complete recursive child semantics, dynamic code, hidden/nonstandard assets and every protocol |
+| Selected OP-shaped bridge stages | Initiation/withdrawal/finalization parameters, claimed message sender/recipient, amounts/gas and source-chain observations | Portal/messenger/proofs, destination identity/message status/arrival, validators/custody and future relay/finality |
+| Control/role/upgrade/deployment and Safe-shaped control | Admin and owner/module/guard/fallback/threshold/hash candidate parameters; fixed-block owners/threshold/selected module/code and optional fork effects | Authentic implementation, full authority graph, storage/code/policy audit, signature validity and hidden/dynamic authority |
+| Batch/Safe execution/aggregator/unknown call | Bounded canonical multicall/Safe/MultiSend child structure, CALL/delegatecall/targets/values/selectors, generic fork facts | Unsupported wrappers/opaque commands, child sender/owner/storage context, signature/execution proof and hidden/nonstandard assets |
 
 The exact 30 profile definitions remain in `src/security/coverage.ts`. The five profiles without representative executable wallet-lab cases are raw `eth_sign`, permission/session, UserOperation, network configuration and read-only RPC. Backend summary paths for those profiles must not be described as automatic wallet coverage.
 
 **EIP-7702 is not covered end to end.** Existing delegation designators can trigger one same-block target-code/hash read, but this does not validate a new authorization list, audit the delegated implementation or prove its permissions. Unsupported authorization/type fields remain an explicit gap; they are not removed to manufacture simulation success. ERC-1271 signature acceptance and ERC-4337 account/bundler/paymaster execution also remain incomplete.
+
+## Extended candidate adapters
+
+The same 30 profile groups now additionally route DAI-style Permit, ERC-3009 transfer authorization, Safe-style control/execution calls, bounded structural multicall/MultiSend children, V3 position-manager actions, selected OP-shaped withdrawal/finalization calls and generic withdraw(uint256). Confirmed nonce remains pinned; a separate node pending-nonce view does not expose original pending payloads or replacement rules. The [extension notes](EXTENDED-COVERAGE-2026-10-22.md) identify exactly what was tested and what was not. The 66-case catalog now includes eight simplified account transactions and four DAI/ERC-3009 candidate signatures. Other new paths use API/code fixtures; this is not newly accepted live public-deployment coverage.
 
 ## What this repair changes
 

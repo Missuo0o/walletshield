@@ -15,6 +15,10 @@ const isAddress=(v:unknown):v is `0x${string}`=>typeof v==='string'&&/^0x[\da-f]
 const limitations:Record<string,string>={
  swap_v3:'Common V3 parameters were decoded. Dependent V3 buy/sell testing is unavailable; slippage, liquidity, MEV, and future sellability remain unknown.',
  liquidity:'Pool identity, authentic reserves, LP pricing, impermanent loss, and exit conditions require a protocol-specific adapter.',
+ liquidity_v3:'Position parameter and selected interface reads do not authenticate the manager or pool. Current tick/liquidity, market prices, slippage economics, complete accounting and future collection remain unverified.',
+ withdrawal:'withdraw(uint256) is shared by wrapped-coin and other protocols. Its quantity units, authentic wrapper identity, redemption ratio, exit conditions and native proceeds are not established by the method name.',
+ account_control:'Selected account-control parameters are candidates. Full owner/module/guard/recovery graphs, actual enforcement and deployment identity remain unverified.',
+ account_execution:'An account execution envelope does not establish valid signatures, actual caller/storage context, full nested semantics or trusted account policy.',
  staking:'Lock periods, slashing, reward sources, exit restrictions, and future withdrawals remain unverified.',
  bridge:'A source-chain simulation cannot establish destination-chain receipt, message validity, bridge custody, or validator trust.',
  claim:'A claim may also transfer assets or grant authority. A Merkle-proof shape or project name does not establish a genuine reward.',

@@ -41,9 +41,25 @@ test('independent chain failures retain calls, exact nonce and base-fee evidence
  assert.equal(context.data?.blockHash,blockHash);assert.equal(context.data?.chainId,31337);assert.equal(context.data?.blockTimestampSeconds,'1000');
  assert.equal(context.data?.targetHasCode,false);assert.equal(context.data?.nativeBalanceWei,undefined);assert.deepEqual(context.data?.missing,['native_balance']);
  assert.equal(checks.find(e=>e.id==='chain_state_missing')?.status,'unknown');assert.equal(checks.find(e=>e.id==='basic_call')?.status,'pass');
- const nonce=checks.find(e=>e.id==='transaction_nonce')!;assert.equal(nonce.status,'warning');assert.equal(nonce.data?.confirmedNonce,'9007199254740993');assert.equal(nonce.data?.relation,'below_confirmed');assert.equal(nonce.data?.pendingNonceChecked,false);
+ const nonce=checks.find(e=>e.id==='transaction_nonce')!;assert.equal(nonce.status,'warning');assert.equal(nonce.data?.confirmedNonce,'9007199254740993');assert.equal(nonce.data?.relation,'below_confirmed');assert.equal(nonce.data?.pendingNonceChecked,true);
  const fee=checks.find(e=>e.id==='transaction_base_fee')!;assert.equal(fee.status,'warning');assert.equal(fee.data?.baseFeePerGasWei,'32');assert.equal(fee.data?.suppliedFeeCapWei,'16');
- assert.ok(rpc.calls.filter(c=>['eth_getBalance','eth_getCode','eth_getTransactionCount'].includes(c.method)).every(c=>c.params.at(-1)==='0x2a'));
+ assert.ok(rpc.calls.filter(c=>['eth_getBalance','eth_getCode','eth_getTransactionCount'].includes(c.method)&&c.params.at(-1)!=='pending').every(c=>c.params.at(-1)==='0x2a'));
+ assert.equal(rpc.calls.filter(c=>c.method==='eth_getTransactionCount'&&c.params.at(-1)==='pending').length,1);
+});
+
+test('pending nonce stays a separate unpinned node view; replacement candidates, failures and inconsistencies do not invent cancellation',async()=>{
+ for(const mode of ['overlap','failed','inconsistent']){
+  const request=native();request.transaction.nonce=mode==='overlap'?'0x3':'0x2';
+  const rpc=fixture(call=>{if(call.method==='eth_getTransactionCount'&&call.params[1]==='pending'){if(mode==='failed')throw Error('No pending view');return mode==='inconsistent'?'0x1':'0x5';}});
+  const checks=await usingFetch(rpc.fetcher,()=>collector(config,rpc.fetcher)(request,decodeRequest(request))),pending=checks.find(e=>e.id==='transaction_pending_nonce')!,confirmed=checks.find(e=>e.id==='transaction_nonce')!;
+  assert.equal(confirmed.data?.confirmedNonce,'2');assert.equal(confirmed.data?.blockHash,blockHash);
+  assert.equal(pending.status,mode==='overlap'?'warning':'unknown');
+  assert.equal(pending.data?.view,'pending');assert.equal(pending.data?.confirmedBlockNumber,'42');
+  assert.equal(pending.data?.blockNumber,undefined);assert.equal(pending.data?.blockHash,undefined);
+  assert.equal(pending.data?.overlapsObservedPendingRange,mode==='overlap');assert.equal(pending.data?.pendingPayloadChecked,false);
+  assert.match(pending.detail,mode==='inconsistent'?/cannot be combined/:/original payload/);
+  if(mode==='failed'){assert.equal(confirmed.status,'pass');assert.equal(pending.data?.pendingNonce,null);}
+ }
 });
 
 test('failed code and mismatched header are unknown without erasing a known native balance or successful call',async()=>{

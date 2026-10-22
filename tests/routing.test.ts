@@ -78,7 +78,8 @@ test('coverage descriptions distinguish automatic wallet hooks from manual reque
  for(const id of ['permit','permit2','message'])assert.equal(coverageForCategory(decodeRequest(example(id)).category).entry,'signature',id);
  for(const id of ['permission','user-operation','network'])assert.equal(coverageForCategory(decodeRequest(example(id)).category).entry,'manual',id);
  assert.equal(coverageForCategory('unimplemented-future-protocol').id,'unknown');
- assert.match(coverageForCategory('swap_v3').uncertain,/V3 round trips/);assert.match(coverageForCategory('bridge').uncertain,/Destination chain ID, arrival/);
+ assert.match(coverageForCategory('swap_v3').uncertain,/V3 round trips/);
+ assert.match(coverageForCategory('bridge').uncertain,/destination/i);assert.match(coverageForCategory('bridge').uncertain,/proof|arrival|settlement/i);
 });
 test('wallet display bounds facts and preserves exact raw units and total missing count without showing raw calldata',()=>{
  const lines=operationLines({fields:{recipient:from,amount:'900719925474099300000',data:'DO_NOT_SHOW',messagePreview:'DO_NOT_SHOW',tokens:Array(10).fill(to),deadline:'2',method:'long'.repeat(100),action:'deposit',owner:to}});

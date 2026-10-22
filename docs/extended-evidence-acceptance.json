@@ -1,0 +1,1754 @@
+{
+  "kind": "isolated-anvil-getter-fixtures",
+  "generatedAt": "2026-10-22T23:11:50.520Z",
+  "passed": 15,
+  "scope": "Actual temporary-node HTTP reads and deliberately seeded fixture writes; not MetaMask/Snap UI acceptance or public protocol authentication",
+  "noRealNetwork": true,
+  "noModelCalls": true,
+  "noWalletSignatures": true,
+  "mainLocalChainUntouched": true,
+  "collectorsUpstreamUnchanged": true,
+  "authorizationStateTransition": "fixture-admin-seeded; no cryptographic authorization consumed",
+  "cases": [
+    {
+      "name": "account-module-before",
+      "blockBefore": "6",
+      "blockAfter": "6",
+      "checks": [
+        {
+          "id": "account_semantics",
+          "status": "unknown",
+          "title": "Smart-account implementation and full authority graph unverified",
+          "detail": "Safe-shaped methods do not authenticate a deployment. Complete module/guard/fallback configuration, owner contract policies, signature acceptance, nonce/preapproved-hash use and nested execution remain unverified. No getGuard public getter is assumed.",
+          "source": "coverage",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "identityVerified": false,
+            "fullModuleGraphChecked": false,
+            "guardStateChecked": false,
+            "fallbackStateChecked": false,
+            "signaturesVerified": false
+          }
+        },
+        {
+          "id": "account_owners",
+          "status": "pass",
+          "title": "Current candidate account owners observed",
+          "detail": "A getOwners response is an interface observation, not proof of official deployment, owner identity, linked-list consistency or contract-owner signature policy. At most 64 owner addresses are retained.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "owners": [
+              "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+            ],
+            "returnedCount": 2,
+            "truncated": false,
+            "invalidList": false,
+            "chainId": 31337,
+            "blockNumber": "6",
+            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_threshold",
+          "status": "pass",
+          "title": "Current candidate account threshold observed",
+          "detail": "This is the returned owner-signature threshold. It does not establish that signatures, owners, modules or guards are trustworthy.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "threshold": "2",
+            "observedOwnerCount": 2,
+            "withinObservedOwnerCount": true,
+            "chainId": 31337,
+            "blockNumber": "6",
+            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_code",
+          "status": "pass",
+          "title": "Candidate account code observed",
+          "detail": "Code presence/hash is not deployment identity or an audit of implementation and delegation.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "hasCode": true,
+            "codeHash": "0xa65c2d88afd82ff878cc80c7b94e2f4767b143c05d4557dd823ca3128426bb77",
+            "chainId": 31337,
+            "blockNumber": "6",
+            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_module",
+          "status": "pass",
+          "title": "Selected module state observed",
+          "detail": "Only isModuleEnabled for the explicitly selected non-sentinel module is queried. This does not enumerate modules, authenticate their code, or establish guard/module enforcement.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "module": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "enabled": false,
+            "chainId": 31337,
+            "blockNumber": "6",
+            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_authority_code_0",
+          "status": "pass",
+          "title": "Selected authority or execution target code observed",
+          "detail": "An address with or without code can exercise authority depending on the implementation. Code/hash is not legitimacy, a module audit, delegatecall safety or future execution proof.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "target": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "hasCode": false,
+            "chainId": 31337,
+            "blockNumber": "6",
+            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "account-module-after-fixture-admin-write",
+      "blockBefore": "7",
+      "blockAfter": "7",
+      "checks": [
+        {
+          "id": "account_semantics",
+          "status": "unknown",
+          "title": "Smart-account implementation and full authority graph unverified",
+          "detail": "Safe-shaped methods do not authenticate a deployment. Complete module/guard/fallback configuration, owner contract policies, signature acceptance, nonce/preapproved-hash use and nested execution remain unverified. No getGuard public getter is assumed.",
+          "source": "coverage",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "identityVerified": false,
+            "fullModuleGraphChecked": false,
+            "guardStateChecked": false,
+            "fallbackStateChecked": false,
+            "signaturesVerified": false
+          }
+        },
+        {
+          "id": "account_owners",
+          "status": "pass",
+          "title": "Current candidate account owners observed",
+          "detail": "A getOwners response is an interface observation, not proof of official deployment, owner identity, linked-list consistency or contract-owner signature policy. At most 64 owner addresses are retained.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "owners": [
+              "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+            ],
+            "returnedCount": 2,
+            "truncated": false,
+            "invalidList": false,
+            "chainId": 31337,
+            "blockNumber": "7",
+            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_threshold",
+          "status": "pass",
+          "title": "Current candidate account threshold observed",
+          "detail": "This is the returned owner-signature threshold. It does not establish that signatures, owners, modules or guards are trustworthy.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "threshold": "2",
+            "observedOwnerCount": 2,
+            "withinObservedOwnerCount": true,
+            "chainId": 31337,
+            "blockNumber": "7",
+            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_code",
+          "status": "pass",
+          "title": "Candidate account code observed",
+          "detail": "Code presence/hash is not deployment identity or an audit of implementation and delegation.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "hasCode": true,
+            "codeHash": "0xa65c2d88afd82ff878cc80c7b94e2f4767b143c05d4557dd823ca3128426bb77",
+            "chainId": 31337,
+            "blockNumber": "7",
+            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_module",
+          "status": "pass",
+          "title": "Selected module state observed",
+          "detail": "Only isModuleEnabled for the explicitly selected non-sentinel module is queried. This does not enumerate modules, authenticate their code, or establish guard/module enforcement.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "module": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "enabled": true,
+            "chainId": 31337,
+            "blockNumber": "7",
+            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_authority_code_0",
+          "status": "pass",
+          "title": "Selected authority or execution target code observed",
+          "detail": "An address with or without code can exercise authority depending on the implementation. Code/hash is not legitimacy, a module audit, delegatecall safety or future execution proof.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "target": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "hasCode": false,
+            "chainId": 31337,
+            "blockNumber": "7",
+            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "account-independent-threshold-failure",
+      "blockBefore": "8",
+      "blockAfter": "8",
+      "checks": [
+        {
+          "id": "account_semantics",
+          "status": "unknown",
+          "title": "Smart-account implementation and full authority graph unverified",
+          "detail": "Safe-shaped methods do not authenticate a deployment. Complete module/guard/fallback configuration, owner contract policies, signature acceptance, nonce/preapproved-hash use and nested execution remain unverified. No getGuard public getter is assumed.",
+          "source": "coverage",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "identityVerified": false,
+            "fullModuleGraphChecked": false,
+            "guardStateChecked": false,
+            "fallbackStateChecked": false,
+            "signaturesVerified": false
+          }
+        },
+        {
+          "id": "account_owners",
+          "status": "pass",
+          "title": "Current candidate account owners observed",
+          "detail": "A getOwners response is an interface observation, not proof of official deployment, owner identity, linked-list consistency or contract-owner signature policy. At most 64 owner addresses are retained.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "owners": [
+              "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+            ],
+            "returnedCount": 2,
+            "truncated": false,
+            "invalidList": false,
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_threshold",
+          "status": "unknown",
+          "title": "Current candidate account threshold unavailable",
+          "detail": "The interface failed, was malformed, or returned zero. No threshold is inferred from calldata.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
+            "blockTimestampSeconds": "1792710710"
+          }
+        },
+        {
+          "id": "account_code",
+          "status": "pass",
+          "title": "Candidate account code observed",
+          "detail": "Code presence/hash is not deployment identity or an audit of implementation and delegation.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "hasCode": true,
+            "codeHash": "0xa65c2d88afd82ff878cc80c7b94e2f4767b143c05d4557dd823ca3128426bb77",
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_module",
+          "status": "pass",
+          "title": "Selected module state observed",
+          "detail": "Only isModuleEnabled for the explicitly selected non-sentinel module is queried. This does not enumerate modules, authenticate their code, or establish guard/module enforcement.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "module": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "enabled": true,
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "account_authority_code_0",
+          "status": "pass",
+          "title": "Selected authority or execution target code observed",
+          "detail": "An address with or without code can exercise authority depending on the implementation. Code/hash is not legitimacy, a module audit, delegatecall safety or future execution proof.",
+          "source": "rpc",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "target": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "hasCode": false,
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
+            "blockTimestampSeconds": "1792710710",
+            "identityVerified": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "position-existing-id-and-distinct-units",
+      "blockBefore": "8",
+      "blockAfter": "8",
+      "checks": [
+        {
+          "id": "position_context",
+          "status": "pass",
+          "title": "Position ownership and liquidity interfaces observed",
+          "detail": "All successful reads refer to the recorded block. Interfaces can be imitated. Liquidity, NFT IDs and owed raw token quantities are different units; owed values are not a price or a guarantee of proceeds. Pool, tick/price validity, signature acceptance, taxes and full exit economics remain unverified.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
+            "blockTimestampSeconds": "1792710710",
+            "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+            "identityVerified": false,
+            "action": "decreaseLiquidity",
+            "tokenId": "7",
+            "missing": [],
+            "permitNonce": "5",
+            "operator": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "token0": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            "token1": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            "fee": "3000",
+            "tickLower": "-120",
+            "tickUpper": "180",
+            "liquidity": "10",
+            "feeGrowthInside0LastX128": "20",
+            "feeGrowthInside1LastX128": "30",
+            "tokensOwed0": "4",
+            "tokensOwed1": "5",
+            "owner": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "approved": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "managerHasCode": true,
+            "managerCodeHash": "0x7a5db4230f445053e8131cc317d76eabd0822ebea7617820a60766a9a495a097",
+            "callerOperatorApproved": true
+          }
+        },
+        {
+          "id": "position_liquidity_limit",
+          "status": "warning",
+          "title": "Requested liquidity exceeds the observed position",
+          "detail": "The requested decrease exceeds the interface-reported liquidity at this block; nonstandard behavior and state changes remain unverified.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
+            "blockTimestampSeconds": "1792710710",
+            "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+            "identityVerified": false,
+            "action": "decreaseLiquidity",
+            "tokenId": "7",
+            "requested": "11",
+            "observed": "10"
+          }
+        },
+        {
+          "id": "position_asset_0",
+          "status": "pass",
+          "title": "Position asset units and caller balance observed",
+          "detail": "These quantities belong to this exact asset and account. No price, pool authentication or guaranteed collection is inferred.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
+            "blockTimestampSeconds": "1792710710",
+            "token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "identityVerified": false,
+            "decimals": "6",
+            "balanceRaw": "1234567"
+          }
+        },
+        {
+          "id": "position_asset_1",
+          "status": "pass",
+          "title": "Position asset units and caller balance observed",
+          "detail": "These quantities belong to this exact asset and account. No price, pool authentication or guaranteed collection is inferred.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
+            "blockTimestampSeconds": "1792710710",
+            "token": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "identityVerified": false,
+            "decimals": "6",
+            "balanceRaw": "9876543"
+          }
+        }
+      ]
+    },
+    {
+      "name": "position-independent-approval-failure",
+      "blockBefore": "9",
+      "blockAfter": "9",
+      "checks": [
+        {
+          "id": "position_context",
+          "status": "unknown",
+          "title": "Position ownership and liquidity interfaces observed",
+          "detail": "All successful reads refer to the recorded block. Interfaces can be imitated. Liquidity, NFT IDs and owed raw token quantities are different units; owed values are not a price or a guarantee of proceeds. Pool, tick/price validity, signature acceptance, taxes and full exit economics remain unverified.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+            "identityVerified": false,
+            "action": "decreaseLiquidity",
+            "tokenId": "7",
+            "missing": [
+              "approved"
+            ],
+            "permitNonce": "5",
+            "operator": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "token0": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            "token1": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            "fee": "3000",
+            "tickLower": "-120",
+            "tickUpper": "180",
+            "liquidity": "10",
+            "feeGrowthInside0LastX128": "20",
+            "feeGrowthInside1LastX128": "30",
+            "tokensOwed0": "4",
+            "tokensOwed1": "5",
+            "owner": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "managerHasCode": true,
+            "managerCodeHash": "0x7a5db4230f445053e8131cc317d76eabd0822ebea7617820a60766a9a495a097",
+            "callerOperatorApproved": true
+          }
+        },
+        {
+          "id": "position_liquidity_limit",
+          "status": "warning",
+          "title": "Requested liquidity exceeds the observed position",
+          "detail": "The requested decrease exceeds the interface-reported liquidity at this block; nonstandard behavior and state changes remain unverified.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+            "identityVerified": false,
+            "action": "decreaseLiquidity",
+            "tokenId": "7",
+            "requested": "11",
+            "observed": "10"
+          }
+        },
+        {
+          "id": "position_asset_1",
+          "status": "pass",
+          "title": "Position asset units and caller balance observed",
+          "detail": "These quantities belong to this exact asset and account. No price, pool authentication or guaranteed collection is inferred.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "token": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "identityVerified": false,
+            "decimals": "6",
+            "balanceRaw": "9876543"
+          }
+        },
+        {
+          "id": "position_asset_0",
+          "status": "pass",
+          "title": "Position asset units and caller balance observed",
+          "detail": "These quantities belong to this exact asset and account. No price, pool authentication or guaranteed collection is inferred.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "identityVerified": false,
+            "decimals": "6",
+            "balanceRaw": "1234567"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dai-holder-nonce-domain-zero-expiry",
+      "blockBefore": "9",
+      "blockAfter": "9",
+      "checks": [
+        {
+          "id": "signature_network_context",
+          "status": "pass",
+          "title": "Signature network and query provenance",
+          "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+          "source": "eip712",
+          "data": {
+            "requestChainId": 31337,
+            "declaredChainId": "31337",
+            "readChainId": 31337,
+            "readChainSource": "request",
+            "signingNetworkVerified": false,
+            "replayScopeDeclared": true
+          }
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "title": "Signature validity and future consumption remain unverified",
+          "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+          "source": "coverage",
+          "data": {
+            "signatureSupplied": false,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "title": "Declared DAI-style Permit authority identified",
+          "detail": "The supported DAI schema signs holder, spender, nonce, submission expiry and allowed. Under the reference implementation allowed=true maps to the maximum uint256 allowance; false maps to zero. The mapped amount is derived semantics, not a separately signed value. A matching type graph does not prove DAI identity; some same-shaped tokens have different expiry semantics.",
+          "source": "eip712",
+          "data": {
+            "protocol": "dai_permit",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "spender": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+            "allowed": true,
+            "declaredGrant": true,
+            "derivedAllowanceRaw": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            "amountSource": "dai_allowed_mapping",
+            "ownerSource": "signed_holder",
+            "recipientCommitted": false,
+            "actualTransferAmountCommitted": false,
+            "permissionKind": "standing_allowance",
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_signer_account",
+          "status": "pass",
+          "title": "Signing account code observed",
+          "detail": "No account code was observed at this block. This does not prove private-key control or exclude an undeployed smart account or future delegation.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "accountKind": "no_code",
+            "hasCode": false,
+            "erc1271Validation": "not_attempted",
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_verifier_code",
+          "status": "pass",
+          "title": "Verifier code observation",
+          "detail": "Code is observed only on the stated network and block. Code presence does not establish protocol identity, standard behavior, or safety.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "hasCode": true,
+            "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "signature_domain",
+          "status": "pass",
+          "title": "Typed-message domain separator comparison",
+          "detail": "The message domain hash matches the contract return value. This does not establish contract trust or actual signature validity.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+          }
+        },
+        {
+          "id": "signature_owner_binding",
+          "status": "pass",
+          "title": "Declared asset owner compared with signing account",
+          "detail": "This compares the committed owner, DAI holder or ERC-3009 payer with the signing account. It is not cryptographic signature verification. A difference requires review of the authority and any contract-account extension.",
+          "source": "eip712",
+          "data": {
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerSource": "signed_holder",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerMatchesSigner": true,
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_deadline",
+          "status": "pass",
+          "title": "Signature submission deadline compared with block time",
+          "detail": "Under the DAI reference implementation expiry=0 has no submission deadline; a nonzero expiry allows submission through that timestamp. It does not limit allowance duration after submission. Same-shaped implementations may differ and are not authenticated.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "deadline": "0",
+            "expiryZeroHasNoSubmissionDeadline": true,
+            "implementationVerified": false,
+            "expiredAtObservedBlock": false
+          }
+        },
+        {
+          "id": "signature_nonce",
+          "status": "pass",
+          "title": "Permit nonce matched",
+          "detail": "A nonce match at a fixed block does not guarantee future validity or replace signature verification.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "nonceScope": "holder",
+            "nonce": "5",
+            "declaredNonce": "5"
+          }
+        }
+      ]
+    },
+    {
+      "name": "erc3009-unused-exact-transfer",
+      "blockBefore": "9",
+      "blockAfter": "9",
+      "checks": [
+        {
+          "id": "signature_network_context",
+          "status": "pass",
+          "title": "Signature network and query provenance",
+          "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+          "source": "eip712",
+          "data": {
+            "requestChainId": 31337,
+            "declaredChainId": "31337",
+            "readChainId": 31337,
+            "readChainSource": "request",
+            "signingNetworkVerified": false,
+            "replayScopeDeclared": true
+          }
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "title": "Signature validity and future consumption remain unverified",
+          "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+          "source": "coverage",
+          "data": {
+            "signatureSupplied": false,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "title": "Declared one-time transfer authorization identified",
+          "detail": "The supported ERC-3009 schema commits to payer, recipient, exact amount and an open validity window. It does not set an ERC-20 allowance. ReceiveWithAuthorization requires the future caller to be the recipient under the standard; neither future caller nor actual consumption is observed. Implementation identity and signature acceptance remain unverified.",
+          "source": "eip712",
+          "data": {
+            "protocol": "erc3009_receive",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "recipient": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+            "amount": "50",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "declaredGrant": true,
+            "ownerSource": "signed_from",
+            "recipientCommitted": true,
+            "actualTransferAmountCommitted": true,
+            "permissionKind": "single_authorization_transfer",
+            "relayerRestriction": "caller_must_be_recipient",
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_signer_account",
+          "status": "pass",
+          "title": "Signing account code observed",
+          "detail": "No account code was observed at this block. This does not prove private-key control or exclude an undeployed smart account or future delegation.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "accountKind": "no_code",
+            "hasCode": false,
+            "erc1271Validation": "not_attempted",
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_verifier_code",
+          "status": "pass",
+          "title": "Verifier code observation",
+          "detail": "Code is observed only on the stated network and block. Code presence does not establish protocol identity, standard behavior, or safety.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "hasCode": true,
+            "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "signature_domain",
+          "status": "pass",
+          "title": "Typed-message domain separator comparison",
+          "detail": "The message domain hash matches the contract return value. This does not establish contract trust or actual signature validity.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+          }
+        },
+        {
+          "id": "signature_owner_binding",
+          "status": "pass",
+          "title": "Declared asset owner compared with signing account",
+          "detail": "This compares the committed owner, DAI holder or ERC-3009 payer with the signing account. It is not cryptographic signature verification. A difference requires review of the authority and any contract-account extension.",
+          "source": "eip712",
+          "data": {
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerSource": "signed_from",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerMatchesSigner": true,
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_authorization_window",
+          "status": "pass",
+          "title": "ERC-3009 authorization window compared with block time",
+          "detail": "The standard requires a submission timestamp strictly greater than validAfter and strictly less than validBefore. Boundary equality is not valid. Future submission timing, relayer actions and actual acceptance remain unverified.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "validAfter": "0",
+            "validBefore": "1792714310",
+            "invalidWindow": false,
+            "notYetValidAtObservedBlock": false,
+            "expiredAtObservedBlock": false,
+            "validAtObservedBlock": true,
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_nonce",
+          "status": "pass",
+          "title": "ERC-3009 authorization state observed",
+          "detail": "The claimed contract returns unused for this authorizer/bytes32 nonce. This does not prove a valid signature, a future caller, safe purpose or later consumption.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "nonceScope": "authorizer_bytes32",
+            "authorizationUsedOrCanceled": false,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "erc3009-admin-seeded-used-or-canceled",
+      "blockBefore": "10",
+      "blockAfter": "10",
+      "checks": [
+        {
+          "id": "signature_network_context",
+          "status": "pass",
+          "title": "Signature network and query provenance",
+          "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+          "source": "eip712",
+          "data": {
+            "requestChainId": 31337,
+            "declaredChainId": "31337",
+            "readChainId": 31337,
+            "readChainSource": "request",
+            "signingNetworkVerified": false,
+            "replayScopeDeclared": true
+          }
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "title": "Signature validity and future consumption remain unverified",
+          "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+          "source": "coverage",
+          "data": {
+            "signatureSupplied": false,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "title": "Declared one-time transfer authorization identified",
+          "detail": "The supported ERC-3009 schema commits to payer, recipient, exact amount and an open validity window. It does not set an ERC-20 allowance. ReceiveWithAuthorization requires the future caller to be the recipient under the standard; neither future caller nor actual consumption is observed. Implementation identity and signature acceptance remain unverified.",
+          "source": "eip712",
+          "data": {
+            "protocol": "erc3009_receive",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "recipient": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+            "amount": "50",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "declaredGrant": true,
+            "ownerSource": "signed_from",
+            "recipientCommitted": true,
+            "actualTransferAmountCommitted": true,
+            "permissionKind": "single_authorization_transfer",
+            "relayerRestriction": "caller_must_be_recipient",
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_signer_account",
+          "status": "pass",
+          "title": "Signing account code observed",
+          "detail": "No account code was observed at this block. This does not prove private-key control or exclude an undeployed smart account or future delegation.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "accountKind": "no_code",
+            "hasCode": false,
+            "erc1271Validation": "not_attempted",
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_verifier_code",
+          "status": "pass",
+          "title": "Verifier code observation",
+          "detail": "Code is observed only on the stated network and block. Code presence does not establish protocol identity, standard behavior, or safety.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "hasCode": true,
+            "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "signature_domain",
+          "status": "pass",
+          "title": "Typed-message domain separator comparison",
+          "detail": "The message domain hash matches the contract return value. This does not establish contract trust or actual signature validity.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+          }
+        },
+        {
+          "id": "signature_owner_binding",
+          "status": "pass",
+          "title": "Declared asset owner compared with signing account",
+          "detail": "This compares the committed owner, DAI holder or ERC-3009 payer with the signing account. It is not cryptographic signature verification. A difference requires review of the authority and any contract-account extension.",
+          "source": "eip712",
+          "data": {
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerSource": "signed_from",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerMatchesSigner": true,
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_authorization_window",
+          "status": "pass",
+          "title": "ERC-3009 authorization window compared with block time",
+          "detail": "The standard requires a submission timestamp strictly greater than validAfter and strictly less than validBefore. Boundary equality is not valid. Future submission timing, relayer actions and actual acceptance remain unverified.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "validAfter": "0",
+            "validBefore": "1792714310",
+            "invalidWindow": false,
+            "notYetValidAtObservedBlock": false,
+            "expiredAtObservedBlock": false,
+            "validAtObservedBlock": true,
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_nonce",
+          "status": "risk",
+          "title": "ERC-3009 authorization state observed",
+          "detail": "The claimed contract marks this authorizer/bytes32 nonce unavailable (used or canceled). The getter does not distinguish those causes.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "nonceScope": "authorizer_bytes32",
+            "authorizationUsedOrCanceled": true,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "erc3009-exact-valid-after-boundary",
+      "blockBefore": "10",
+      "blockAfter": "10",
+      "checks": [
+        {
+          "id": "signature_network_context",
+          "status": "pass",
+          "title": "Signature network and query provenance",
+          "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+          "source": "eip712",
+          "data": {
+            "requestChainId": 31337,
+            "declaredChainId": "31337",
+            "readChainId": 31337,
+            "readChainSource": "request",
+            "signingNetworkVerified": false,
+            "replayScopeDeclared": true
+          }
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "title": "Signature validity and future consumption remain unverified",
+          "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+          "source": "coverage",
+          "data": {
+            "signatureSupplied": false,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "title": "Declared one-time transfer authorization identified",
+          "detail": "The supported ERC-3009 schema commits to payer, recipient, exact amount and an open validity window. It does not set an ERC-20 allowance. ReceiveWithAuthorization requires the future caller to be the recipient under the standard; neither future caller nor actual consumption is observed. Implementation identity and signature acceptance remain unverified.",
+          "source": "eip712",
+          "data": {
+            "protocol": "erc3009_receive",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "recipient": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+            "amount": "50",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "declaredGrant": true,
+            "ownerSource": "signed_from",
+            "recipientCommitted": true,
+            "actualTransferAmountCommitted": true,
+            "permissionKind": "single_authorization_transfer",
+            "relayerRestriction": "caller_must_be_recipient",
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_signer_account",
+          "status": "pass",
+          "title": "Signing account code observed",
+          "detail": "No account code was observed at this block. This does not prove private-key control or exclude an undeployed smart account or future delegation.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "accountKind": "no_code",
+            "hasCode": false,
+            "erc1271Validation": "not_attempted",
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_verifier_code",
+          "status": "pass",
+          "title": "Verifier code observation",
+          "detail": "Code is observed only on the stated network and block. Code presence does not establish protocol identity, standard behavior, or safety.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "hasCode": true,
+            "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "signature_domain",
+          "status": "pass",
+          "title": "Typed-message domain separator comparison",
+          "detail": "The message domain hash matches the contract return value. This does not establish contract trust or actual signature validity.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+          }
+        },
+        {
+          "id": "signature_owner_binding",
+          "status": "pass",
+          "title": "Declared asset owner compared with signing account",
+          "detail": "This compares the committed owner, DAI holder or ERC-3009 payer with the signing account. It is not cryptographic signature verification. A difference requires review of the authority and any contract-account extension.",
+          "source": "eip712",
+          "data": {
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerSource": "signed_from",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerMatchesSigner": true,
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_authorization_window",
+          "status": "warning",
+          "title": "ERC-3009 authorization window compared with block time",
+          "detail": "The standard requires a submission timestamp strictly greater than validAfter and strictly less than validBefore. Boundary equality is not valid. Future submission timing, relayer actions and actual acceptance remain unverified.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "validAfter": "1792710710",
+            "validBefore": "1792714310",
+            "invalidWindow": false,
+            "notYetValidAtObservedBlock": true,
+            "expiredAtObservedBlock": false,
+            "validAtObservedBlock": false,
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_nonce",
+          "status": "risk",
+          "title": "ERC-3009 authorization state observed",
+          "detail": "The claimed contract marks this authorizer/bytes32 nonce unavailable (used or canceled). The getter does not distinguish those causes.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "nonceScope": "authorizer_bytes32",
+            "authorizationUsedOrCanceled": true,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "erc3009-exact-valid-before-boundary",
+      "blockBefore": "10",
+      "blockAfter": "10",
+      "checks": [
+        {
+          "id": "signature_network_context",
+          "status": "pass",
+          "title": "Signature network and query provenance",
+          "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+          "source": "eip712",
+          "data": {
+            "requestChainId": 31337,
+            "declaredChainId": "31337",
+            "readChainId": 31337,
+            "readChainSource": "request",
+            "signingNetworkVerified": false,
+            "replayScopeDeclared": true
+          }
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "title": "Signature validity and future consumption remain unverified",
+          "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+          "source": "coverage",
+          "data": {
+            "signatureSupplied": false,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "title": "Declared one-time transfer authorization identified",
+          "detail": "The supported ERC-3009 schema commits to payer, recipient, exact amount and an open validity window. It does not set an ERC-20 allowance. ReceiveWithAuthorization requires the future caller to be the recipient under the standard; neither future caller nor actual consumption is observed. Implementation identity and signature acceptance remain unverified.",
+          "source": "eip712",
+          "data": {
+            "protocol": "erc3009_receive",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "recipient": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+            "amount": "50",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "declaredGrant": true,
+            "ownerSource": "signed_from",
+            "recipientCommitted": true,
+            "actualTransferAmountCommitted": true,
+            "permissionKind": "single_authorization_transfer",
+            "relayerRestriction": "caller_must_be_recipient",
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_signer_account",
+          "status": "pass",
+          "title": "Signing account code observed",
+          "detail": "No account code was observed at this block. This does not prove private-key control or exclude an undeployed smart account or future delegation.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "accountKind": "no_code",
+            "hasCode": false,
+            "erc1271Validation": "not_attempted",
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_verifier_code",
+          "status": "pass",
+          "title": "Verifier code observation",
+          "detail": "Code is observed only on the stated network and block. Code presence does not establish protocol identity, standard behavior, or safety.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "hasCode": true,
+            "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "signature_domain",
+          "status": "pass",
+          "title": "Typed-message domain separator comparison",
+          "detail": "The message domain hash matches the contract return value. This does not establish contract trust or actual signature validity.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+          }
+        },
+        {
+          "id": "signature_owner_binding",
+          "status": "pass",
+          "title": "Declared asset owner compared with signing account",
+          "detail": "This compares the committed owner, DAI holder or ERC-3009 payer with the signing account. It is not cryptographic signature verification. A difference requires review of the authority and any contract-account extension.",
+          "source": "eip712",
+          "data": {
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerSource": "signed_from",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerMatchesSigner": true,
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_authorization_window",
+          "status": "warning",
+          "title": "ERC-3009 authorization window compared with block time",
+          "detail": "The standard requires a submission timestamp strictly greater than validAfter and strictly less than validBefore. Boundary equality is not valid. Future submission timing, relayer actions and actual acceptance remain unverified.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "validAfter": "0",
+            "validBefore": "1792710710",
+            "invalidWindow": false,
+            "notYetValidAtObservedBlock": false,
+            "expiredAtObservedBlock": true,
+            "validAtObservedBlock": false,
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_nonce",
+          "status": "risk",
+          "title": "ERC-3009 authorization state observed",
+          "detail": "The claimed contract marks this authorizer/bytes32 nonce unavailable (used or canceled). The getter does not distinguish those causes.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "10",
+            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "nonceScope": "authorizer_bytes32",
+            "authorizationUsedOrCanceled": true,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "signature-independent-domain-failure",
+      "blockBefore": "11",
+      "blockAfter": "11",
+      "checks": [
+        {
+          "id": "signature_network_context",
+          "status": "pass",
+          "title": "Signature network and query provenance",
+          "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+          "source": "eip712",
+          "data": {
+            "requestChainId": 31337,
+            "declaredChainId": "31337",
+            "readChainId": 31337,
+            "readChainSource": "request",
+            "signingNetworkVerified": false,
+            "replayScopeDeclared": true
+          }
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "title": "Signature validity and future consumption remain unverified",
+          "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+          "source": "coverage",
+          "data": {
+            "signatureSupplied": false,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "title": "Declared DAI-style Permit authority identified",
+          "detail": "The supported DAI schema signs holder, spender, nonce, submission expiry and allowed. Under the reference implementation allowed=true maps to the maximum uint256 allowance; false maps to zero. The mapped amount is derived semantics, not a separately signed value. A matching type graph does not prove DAI identity; some same-shaped tokens have different expiry semantics.",
+          "source": "eip712",
+          "data": {
+            "protocol": "dai_permit",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "spender": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+            "allowed": true,
+            "declaredGrant": true,
+            "derivedAllowanceRaw": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            "amountSource": "dai_allowed_mapping",
+            "ownerSource": "signed_holder",
+            "recipientCommitted": false,
+            "actualTransferAmountCommitted": false,
+            "permissionKind": "standing_allowance",
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_signer_account",
+          "status": "pass",
+          "title": "Signing account code observed",
+          "detail": "No account code was observed at this block. This does not prove private-key control or exclude an undeployed smart account or future delegation.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "11",
+            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
+            "blockTimestampSeconds": "1792710710",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "accountKind": "no_code",
+            "hasCode": false,
+            "erc1271Validation": "not_attempted",
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_verifier_code",
+          "status": "pass",
+          "title": "Verifier code observation",
+          "detail": "Code is observed only on the stated network and block. Code presence does not establish protocol identity, standard behavior, or safety.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "11",
+            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "hasCode": true,
+            "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "signature_domain",
+          "status": "unknown",
+          "title": "Typed-message domain separator unavailable",
+          "detail": "The interface query failed. Other observed nonce and account facts are retained.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "11",
+            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+          }
+        },
+        {
+          "id": "signature_owner_binding",
+          "status": "pass",
+          "title": "Declared asset owner compared with signing account",
+          "detail": "This compares the committed owner, DAI holder or ERC-3009 payer with the signing account. It is not cryptographic signature verification. A difference requires review of the authority and any contract-account extension.",
+          "source": "eip712",
+          "data": {
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerSource": "signed_holder",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerMatchesSigner": true,
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_deadline",
+          "status": "pass",
+          "title": "Signature submission deadline compared with block time",
+          "detail": "Under the DAI reference implementation expiry=0 has no submission deadline; a nonzero expiry allows submission through that timestamp. It does not limit allowance duration after submission. Same-shaped implementations may differ and are not authenticated.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "11",
+            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
+            "blockTimestampSeconds": "1792710710",
+            "deadline": "0",
+            "expiryZeroHasNoSubmissionDeadline": true,
+            "implementationVerified": false,
+            "expiredAtObservedBlock": false
+          }
+        },
+        {
+          "id": "signature_nonce",
+          "status": "pass",
+          "title": "Permit nonce matched",
+          "detail": "A nonce match at a fixed block does not guarantee future validity or replace signature verification.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "11",
+            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "nonceScope": "holder",
+            "nonce": "5",
+            "declaredNonce": "5"
+          }
+        }
+      ]
+    },
+    {
+      "name": "erc3009-independent-state-failure",
+      "blockBefore": "12",
+      "blockAfter": "12",
+      "checks": [
+        {
+          "id": "signature_network_context",
+          "status": "pass",
+          "title": "Signature network and query provenance",
+          "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+          "source": "eip712",
+          "data": {
+            "requestChainId": 31337,
+            "declaredChainId": "31337",
+            "readChainId": 31337,
+            "readChainSource": "request",
+            "signingNetworkVerified": false,
+            "replayScopeDeclared": true
+          }
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "title": "Signature validity and future consumption remain unverified",
+          "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+          "source": "coverage",
+          "data": {
+            "signatureSupplied": false,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "title": "Declared one-time transfer authorization identified",
+          "detail": "The supported ERC-3009 schema commits to payer, recipient, exact amount and an open validity window. It does not set an ERC-20 allowance. ReceiveWithAuthorization requires the future caller to be the recipient under the standard; neither future caller nor actual consumption is observed. Implementation identity and signature acceptance remain unverified.",
+          "source": "eip712",
+          "data": {
+            "protocol": "erc3009_receive",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "recipient": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+            "amount": "50",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "declaredGrant": true,
+            "ownerSource": "signed_from",
+            "recipientCommitted": true,
+            "actualTransferAmountCommitted": true,
+            "permissionKind": "single_authorization_transfer",
+            "relayerRestriction": "caller_must_be_recipient",
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_signer_account",
+          "status": "pass",
+          "title": "Signing account code observed",
+          "detail": "No account code was observed at this block. This does not prove private-key control or exclude an undeployed smart account or future delegation.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "12",
+            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
+            "blockTimestampSeconds": "1792710710",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "accountKind": "no_code",
+            "hasCode": false,
+            "erc1271Validation": "not_attempted",
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_verifier_code",
+          "status": "pass",
+          "title": "Verifier code observation",
+          "detail": "Code is observed only on the stated network and block. Code presence does not establish protocol identity, standard behavior, or safety.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "12",
+            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "hasCode": true,
+            "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
+            "identityVerified": false
+          }
+        },
+        {
+          "id": "signature_domain",
+          "status": "pass",
+          "title": "Typed-message domain separator comparison",
+          "detail": "The message domain hash matches the contract return value. This does not establish contract trust or actual signature validity.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "12",
+            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
+            "blockTimestampSeconds": "1792710710",
+            "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+          }
+        },
+        {
+          "id": "signature_owner_binding",
+          "status": "pass",
+          "title": "Declared asset owner compared with signing account",
+          "detail": "This compares the committed owner, DAI holder or ERC-3009 payer with the signing account. It is not cryptographic signature verification. A difference requires review of the authority and any contract-account extension.",
+          "source": "eip712",
+          "data": {
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerSource": "signed_from",
+            "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "ownerMatchesSigner": true,
+            "cryptographicSignerVerified": false
+          }
+        },
+        {
+          "id": "signature_authorization_window",
+          "status": "pass",
+          "title": "ERC-3009 authorization window compared with block time",
+          "detail": "The standard requires a submission timestamp strictly greater than validAfter and strictly less than validBefore. Boundary equality is not valid. Future submission timing, relayer actions and actual acceptance remain unverified.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "12",
+            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
+            "blockTimestampSeconds": "1792710710",
+            "validAfter": "0",
+            "validBefore": "1792714310",
+            "invalidWindow": false,
+            "notYetValidAtObservedBlock": false,
+            "expiredAtObservedBlock": false,
+            "validAtObservedBlock": true,
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_nonce",
+          "status": "unknown",
+          "title": "ERC-3009 authorization state unavailable",
+          "detail": "The authorizationState(address,bytes32) interface failed. A sequential Permit nonce, an allowance or another authorizer is not substituted for this authorization state.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "12",
+            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
+            "blockTimestampSeconds": "1792710710",
+            "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "nonce": "0xabababababababababababababababababababababababababababababababab",
+            "nonceScope": "authorizer_bytes32"
+          }
+        }
+      ]
+    },
+    {
+      "name": "account-wrong-chain-rejected",
+      "blockBefore": "12",
+      "blockAfter": "12",
+      "checks": [
+        {
+          "id": "account_semantics",
+          "status": "unknown",
+          "title": "Smart-account implementation and full authority graph unverified",
+          "detail": "Safe-shaped methods do not authenticate a deployment. Complete module/guard/fallback configuration, owner contract policies, signature acceptance, nonce/preapproved-hash use and nested execution remain unverified. No getGuard public getter is assumed.",
+          "source": "coverage",
+          "data": {
+            "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "identityVerified": false,
+            "fullModuleGraphChecked": false,
+            "guardStateChecked": false,
+            "fallbackStateChecked": false,
+            "signaturesVerified": false
+          }
+        },
+        {
+          "id": "account_state",
+          "status": "unknown",
+          "title": "Smart-account network or snapshot unavailable",
+          "detail": "The configured node failed, returned a different chain, or supplied no usable fixed block. No account state is inferred.",
+          "source": "rpc"
+        }
+      ]
+    },
+    {
+      "name": "position-wrong-chain-rejected",
+      "blockBefore": "12",
+      "blockAfter": "12",
+      "checks": [
+        {
+          "id": "position_context",
+          "status": "unknown",
+          "title": "Position-state query failed",
+          "detail": "Other collectors retain their own observations. Missing interfaces, wrong networks and timeouts are not zero values.",
+          "source": "rpc"
+        }
+      ]
+    },
+    {
+      "name": "signature-wrong-chain-rejected",
+      "blockBefore": "12",
+      "blockAfter": "12",
+      "checks": [
+        {
+          "id": "signature_network_context",
+          "status": "unknown",
+          "title": "Signature network and query provenance",
+          "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+          "source": "eip712",
+          "data": {
+            "requestChainId": 1,
+            "declaredChainId": "31337",
+            "readChainId": 1,
+            "readChainSource": "request",
+            "signingNetworkVerified": false,
+            "replayScopeDeclared": true
+          }
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "title": "Signature validity and future consumption remain unverified",
+          "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+          "source": "coverage",
+          "data": {
+            "signatureSupplied": false,
+            "cryptographicSignerVerified": false,
+            "consumptionExecuted": false
+          }
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "title": "Declared DAI-style Permit authority identified",
+          "detail": "The supported DAI schema signs holder, spender, nonce, submission expiry and allowed. Under the reference implementation allowed=true maps to the maximum uint256 allowance; false maps to zero. The mapped amount is derived semantics, not a separately signed value. A matching type graph does not prove DAI identity; some same-shaped tokens have different expiry semantics.",
+          "source": "eip712",
+          "data": {
+            "protocol": "dai_permit",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "spender": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+            "allowed": true,
+            "declaredGrant": true,
+            "derivedAllowanceRaw": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            "amountSource": "dai_allowed_mapping",
+            "ownerSource": "signed_holder",
+            "recipientCommitted": false,
+            "actualTransferAmountCommitted": false,
+            "permissionKind": "standing_allowance",
+            "implementationVerified": false
+          }
+        },
+        {
+          "id": "signature_nonce",
+          "status": "unknown",
+          "title": "Signature contract checks incomplete",
+          "detail": "A node, interface, domain, or nonce query failed. Previously observed facts are retained and the remainder stays unknown.",
+          "source": "rpc"
+        }
+      ]
+    }
+  ]
+}

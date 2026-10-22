@@ -4,7 +4,7 @@
 
 This manual explains the current English interface and the implemented local and hosted workflows. WalletShield gives advice about an unsigned EVM request before you decide in your wallet. It cannot guarantee safety, force rejection, sign for you, recover assets or continuously monitor a signed request.
 
-The [README](../README.md) is the configuration and developer reference. The [generated coverage guide](AI-COVERAGE-GUIDE.md) lists all 30 profiles, their exact extracted fields, tools, missing checks and possible extensions. The [current coverage matrix](CURRENT-COVERAGE.md) separates representative paths, partial evidence, explicit/manual entries and remaining gaps. The local lab has 54 representative cases: 43 transactions and 11 message requests, representing 25 profiles. These are examples, not a detection-accuracy benchmark.
+The [README](../README.md) is the configuration and developer reference. The [generated coverage guide](AI-COVERAGE-GUIDE.md) lists all 30 profiles, their exact extracted fields, tools, missing checks and possible extensions. The [current coverage matrix](CURRENT-COVERAGE.md) separates representative paths, partial evidence, explicit/manual entries and remaining gaps. The local lab has 66 representative cases: 51 transactions and 15 message requests, representing 25 profiles. These are examples, not a detection-accuracy benchmark.
 
 ## 1. Choose the workflow
 
@@ -99,6 +99,14 @@ Optional ERC-20 import changes only the wallet's displayed assets; the webpage i
 
 Generated lab signatures are format-checked and discarded in the browser. They are not uploaded, persisted or submitted for asset use. The unsigned message still reaches the backend and a bounded preview can reach Muse.
 
+### Optional account and signature-variant tests
+
+Eight **Smart-account fixture** transaction cases exercise threshold reduction, module flag enable/disable, guard set/remove, fallback set/remove and a CALL wrapper. On an existing local deployment, explicitly run `npm run deploy:lab` to add optional `LabAccount`, then **Prepare local test assets**. Deployment preserves earlier fixture addresses/state; preparation resets the optional account for the selected tester. Follow set-before-remove prerequisites.
+
+This is an owner-direct local interface model: any listed owner may call regardless of the displayed threshold. It is **not a production multisig**. Module/guard/fallback fields are flags without actual enforcement. The wrapper accepts CALL only, empty signatures and zero refund parameters; DELEGATECALL is deliberately rejected. No real smart-wallet control is modified by these lab operations.
+
+The four signature cases are `dai-allow`, `dai-revoke`, `erc3009-transfer` and `erc3009-receive`. They use the existing LAB-USD domain for actual wallet message requests and format/extraction testing. LabToken implements no DAI/ERC-3009 consumption method and no ERC-3009 authorizationState getter; missing state/consumption evidence is intentional. Signing does not consume these messages, change allowance or move tokens. Generated signatures stay in the browser and are discarded.
+
 ## 6. Use a public network and your own account
 
 Use **Public networks** for public-chain data and actual Snap delivery checks. Start with Sepolia and a dedicated test account. Mainnet can hold real assets; the local Flask development wallet is not a place to store them.
@@ -138,6 +146,8 @@ The Snap prioritizes up to 24 evidence rows, six primary parameter lines and six
 
 ## 8. Understand exact extraction and coverage
 
+New bounded paths include DAI-style Permit, ERC-3009 one-time transfer authorization, Safe-style controls/execution, supported recursive wrapper summaries, V3 position reads, selected bridge stages and generic withdrawals. Eight simplified account transaction cases and four DAI/ERC-3009 candidate-signature cases are available in the 66-case lab; other new paths have backend/API fixtures rather than equivalent official-protocol wallet cases. See [the extension acceptance boundaries](EXTENDED-COVERAGE-2026-10-22.md).
+
 The decoder extracts supported ABI fields and committed typed-message fields; it does not identify risk by operation keywords alone. The [README operation table](../README.md#evidence-collected-for-each-operation) and [coverage guide](AI-COVERAGE-GUIDE.md#4-all-profiles-evidence-attempted-and-remaining-gaps) enumerate every profile. Typical examples are:
 
 | Request | Fields and checks before Muse | Remaining boundary |
@@ -149,6 +159,8 @@ The decoder extracts supported ABI fields and committed typed-message fields; it
 | On-chain Permit2-shaped approve | Token/spender/uint160 cap/expiration; separate owner-to-Permit2 ERC-20 allowance and internal owner/token/final-spender amount/expiry/nonce | Interface reads do not authenticate the contract; each unavailable layer remains unknown |
 | Permit2 signature | Signed type/domain, token/amount/expiration/spender, signer-derived owner, allowance triple or nonce bitmap | Up to 16 entries; witness/custom variants and code authentication incomplete |
 | Session/UserOperation/RPC | Method, whitelisted addresses/limits/expiry or sender/entry point/paymaster/factory/nonce, bounded calldata summary | Explicit submission; no universal hook, permission grant or bundler execution |
+
+DAI reference authority derives from allowed, while ERC-3009 binds a one-time exact amount and Permit2 transfer binds a single-nonce cap; neither transfer form is a standing allowance. ERC-3009 balance insufficiency is recorded explicitly without inventing a smaller consumable transfer amount. Empty-data DELEGATECALL is delegated code execution rather than a native transfer. See the extension notes for these conditional exposure and wrapper boundaries.
 
 Supported unsigned EIP-712 quantities normalize equivalent decimal, hexadecimal and leading-zero representations before risk interpretation, without changing the signed digest. Zero addresses are interpreted by role: supported NFT approval/Permit revocations do not become asset-burn warnings; actual transfer recipients and ownership changes keep their own meanings. For transferFrom, the decoded asset owner is distinct from the caller; a current-balance shortfall is described as execution/exposure uncertainty rather than approval over future deposits.
 

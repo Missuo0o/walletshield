@@ -1,9 +1,12 @@
-import {encodeFunctionData,encodeDeployData,maxUint256,stringToHex,type Address} from 'viem';
+import {randomBytes} from 'node:crypto';
+import {encodeFunctionData,encodeDeployData,maxUint256,stringToHex,zeroAddress,type Address} from 'viem';
 import type {SecurityRequest} from '../security/types.js';
 import {labClient,type LabDeployment,type Artifact} from './contracts.js';
 export type WalletCase={id:string;name:string;group:string;profile:string;kind:'transaction'|'signature';description:string;prerequisite?:string;boundary?:string};
 const tx=(id:string,name:string,group:string,profile:string,description:string,prerequisite?:string,boundary?:string):WalletCase=>({id,name,group,profile,kind:'transaction',description,prerequisite,boundary});
-const sig=(id:string,name:string,profile:string,description:string):WalletCase=>({id,name,group:'Messages and signatures',profile,kind:'signature',description,boundary:'An actual wallet signature request. The browser checks the returned signature format, then discards it without uploading or submitting it for use.'});
+const sig=(id:string,name:string,profile:string,description:string,boundary?:string):WalletCase=>({id,name,group:'Messages and signatures',profile,kind:'signature',description,boundary:'An actual wallet signature request. The browser checks the returned signature format, then discards it without uploading or submitting it for use.'+(boundary?' '+boundary:'')});
+const accountBoundary='Simplified local account interface only. Any listed owner can call directly regardless of threshold. No production multisig signatures, module execution, guard/fallback enforcement or protocol identity are implemented.';
+const candidateSignatureBoundary='Format/candidate test using the existing LAB-USD domain only. LabToken does not implement this signature-consumption method; no future acceptance, ERC-3009 authorizationState or token movement is established.';
 export const WALLET_CASES:readonly WalletCase[]=[
  tx('approve-unlimited','Unlimited approval','Asset permissions','approval','Grant an unverified test address unlimited LAB-USD spending permission.'),
  tx('approve-limited','Limited approval','Asset permissions','approval','Approve 100 LAB-USD and inspect the finite allowance and spender identity.'),
@@ -40,11 +43,19 @@ export const WALLET_CASES:readonly WalletCase[]=[
  tx('bridge','Bridge deposit entry point','Swaps and protocols','bridge','Call local bridgeETHTo to record a 0.001 test ETH deposit.',undefined,'An event on this chain only. No cross-chain message or destination-chain delivery.'),
  tx('claim','Claim test assets','Swaps and protocols','claim','Call claim to receive 1 LAB-USD.',undefined,'A local claim without a proof requirement. It does not verify real airdrop identity or a Merkle root.'),
  tx('wrap','Wrap test ETH','Other transactions','wrap','Deposit 0.001 test ETH to receive WLAB.'),
- tx('unwrap','Unwrap test ETH','Other transactions','staking','Withdraw the 0.001 test ETH already wrapped.','Complete Wrap test ETH first.','The generic decoder classifies withdraw(uint256) as a staking candidate; it does not claim verified WETH semantics.'),
+ tx('unwrap','Unwrap test ETH','Other transactions','wrap','Withdraw the 0.001 test ETH already wrapped.','Complete Wrap test ETH first.','The decoder reports a withdrawal / possible native redemption candidate. The local fixture is known to the lab; an arbitrary same-shaped contract is not a verified wrapper.'),
  tx('mint','Mint test tokens','Other transactions','mint-burn','Mint 1 LAB-USD to the current account.'),
  tx('burn','Burn test tokens','Other transactions','mint-burn','Burn 1 LAB-USD from the current account.'),
  tx('ownership','Transfer control','Other transactions','control','Transfer the local lab contract ownership to the test address.','Prepare local test assets first to receive control of the lab contract.'),
  tx('upgrade','Upgrade call entry point','Other transactions','control','Record a candidate implementation address on the local lab contract.','Prepare local test assets first to receive control of the lab contract.','Records an implementation address without delegatecall or an audit of upgrade code.'),
+ tx('account-threshold','Lower account threshold','Smart-account fixture','control','Change the optional account fixture threshold from two owners to one.','Run npm run deploy:lab, then prepare local test assets.',accountBoundary),
+ tx('account-module-enable','Enable account module flag','Smart-account fixture','control','Record the local actions contract as an enabled module flag.','Run npm run deploy:lab, then prepare local test assets.',accountBoundary),
+ tx('account-module-disable','Disable account module flag','Smart-account fixture','control','Clear the local actions contract module flag.','Enable account module flag first to observe a state change.',accountBoundary),
+ tx('account-guard-set','Set account guard candidate','Smart-account fixture','control','Record the local actions contract as a fixture guard candidate.','Run npm run deploy:lab, then prepare local test assets.',accountBoundary),
+ tx('account-guard-remove','Remove account guard candidate','Smart-account fixture','control','Clear the fixture guard candidate.','Set account guard candidate first to observe a state change.',accountBoundary),
+ tx('account-fallback-set','Set account fallback candidate','Smart-account fixture','control','Record the local actions contract as a fixture fallback-handler candidate.','Run npm run deploy:lab, then prepare local test assets.',accountBoundary),
+ tx('account-fallback-remove','Remove account fallback candidate','Smart-account fixture','control','Clear the fixture fallback-handler candidate.','Set account fallback candidate first to observe a state change.',accountBoundary),
+ tx('account-call','Account CALL wrapper','Smart-account fixture','batch','Use the simplified execTransaction CALL wrapper to mint 1 LAB-USD to the test account.','Run npm run deploy:lab, then prepare local test assets.',accountBoundary+' Empty signatures and zero refund parameters are required. DELEGATECALL is intentionally rejected.'),
  tx('deployment','Deploy a contract','Other transactions','deployment','Deploy a simple contract owned by the current test wallet.'),
  tx('batch','Batch contract calls','Other transactions','batch','Execute two local claim calls in one transaction.','', 'Known local child calls. Generic decoding cannot fully explain arbitrary aggregators.'),
  tx('unknown','Unknown call fallback','Other transactions','unknown','Send an unknown selector to the local fallback and check that it remains unidentified.'),
@@ -56,6 +67,10 @@ export const WALLET_CASES:readonly WalletCase[]=[
  sig('permit-expired','Expired Permit signature','permit-sign','The signature submission deadline is already in the past.'),
  sig('permit-owner','Permit account mismatch','permit-sign','The declared owner deliberately differs from the signing account.'),
  sig('permit-nonce','Permit nonce mismatch','permit-sign','The declared nonce is deliberately one greater than the on-chain value.'),
+ sig('dai-allow','DAI-style Permit grant candidate','permit-sign','Sign holder/spender/nonce/expiry/allowed=true; reference semantics map true to unlimited allowance.',candidateSignatureBoundary),
+ sig('dai-revoke','DAI-style Permit revoke candidate','permit-sign','Sign the same DAI-shaped fields with allowed=false; reference semantics map false to zero allowance.',candidateSignatureBoundary),
+ sig('erc3009-transfer','ERC-3009 transfer authorization candidate','permit-sign','Sign a one-time exact 1 LAB-USD transfer with a random bytes32 nonce and a bounded validity window.',candidateSignatureBoundary),
+ sig('erc3009-receive','ERC-3009 receive authorization candidate','permit-sign','Sign ReceiveWithAuthorization; the reference standard restricts the future caller to the signed recipient.',candidateSignatureBoundary),
  sig('permit2','Single Permit2 signature','permit2-sign','Submit an actual EIP-712 PermitSingle request for the local contract.'),
  sig('permit2-batch','Batch Permit2 signature','permit2-sign','Sign a PermitBatch containing two local tokens.'),
  sig('order','Order signature','typed-order','Sign a generic local Order structure without claiming full Seaport validation.')
@@ -76,7 +91,7 @@ export async function buildWalletCase(id:string,account:Address,d:LabDeployment,
  const c=d.contracts,recipient=account.toLowerCase()===d.recipient.toLowerCase()?d.owner:d.recipient,spender='0x3333333333333333333333333333333333333333' as Address;
  const deadline=BigInt(Math.floor(Date.now()/1000)+1800),amount=10n**6n;
  const transaction=(to:Address|null,data:`0x${string}`,value='0x0'):SecurityRequest=>({kind:'transaction',chainId:31337,origin,transaction:{from:account,to,data,value}});
- const call=(key:string,artifact:string,name:string,args:unknown[]=[],value='0x0')=>transaction(c[key].address,encodeFunctionData({abi:artifacts[artifact].abi,functionName:name,args}),value);
+ const call=(key:string,artifact:string,name:string,args:unknown[]=[],value='0x0')=>{if(!c[key]?.address||!artifacts[artifact])throw Error('Run npm run deploy:lab to add the optional account fixture, then prepare local test assets.');return transaction(c[key].address,encodeFunctionData({abi:artifacts[artifact].abi,functionName:name,args}),value);};
  if(id==='native')return transaction(recipient,'0x','0x38d7ea4c68000');
  if(id==='native-contract')return transaction(c.actions.address,'0x','0x38d7ea4c68000');
  if(id.startsWith('approve-')){
@@ -112,6 +127,12 @@ export async function buildWalletCase(id:string,account:Address,d:LabDeployment,
  if(id==='burn')return call('token','LabToken','burn',[amount]);
  if(id==='ownership')return call('control','LabControl','transferOwnership',[recipient]);
  if(id==='upgrade')return call('control','LabControl','upgradeToAndCall',[c.actions.address,'0x']);
+ if(id==='account-threshold')return call('account','LabAccount','changeThreshold',[1n]);
+ if(id==='account-module-enable')return call('account','LabAccount','enableModule',[c.actions.address]);
+ if(id==='account-module-disable')return call('account','LabAccount','disableModule',['0x0000000000000000000000000000000000000001',c.actions.address]);
+ if(id==='account-guard-set'||id==='account-guard-remove')return call('account','LabAccount','setGuard',[id==='account-guard-set'?c.actions.address:zeroAddress]);
+ if(id==='account-fallback-set'||id==='account-fallback-remove')return call('account','LabAccount','setFallbackHandler',[id==='account-fallback-set'?c.actions.address:zeroAddress]);
+ if(id==='account-call')return call('account','LabAccount','execTransaction',[c.token.address,0n,encodeFunctionData({abi:artifacts.LabToken.abi,functionName:'mint',args:[account,amount]}),0,0n,0n,0n,zeroAddress,zeroAddress,'0x']);
  if(id==='deployment')return transaction(null,encodeDeployData({abi:artifacts.LabOwned.abi,bytecode:artifacts.LabOwned.bytecode,args:[account]}));
  if(id==='batch')return call('actions','LabActions','multicall',[deadline,[0n,1n].map(index=>encodeFunctionData({abi:artifacts.LabActions.abi,functionName:'claim',args:[index,account,amount,[]]}))]);
  if(id==='unknown')return transaction(c.actions.address,'0x12345678');
@@ -120,6 +141,14 @@ export async function buildWalletCase(id:string,account:Address,d:LabDeployment,
  if(id.startsWith('siwe'))return signature(stringToHex(`${id==='siwe-mismatch'?'different.walletshield.invalid':new URL(origin).host} wants you to sign in with your Ethereum account:\n${account}\n\nWalletShield local login test.\n\nURI: ${origin}\nVersion: 1\nChain ID: 31337\nNonce: ${crypto.randomUUID().replaceAll('-','').slice(0,16)}\nIssued At: ${new Date().toISOString()}\nExpiration Time: ${new Date(Number(deadline)*1000).toISOString()}`),'personal_sign');
  const domainTypes=[{name:'name',type:'string'},{name:'version',type:'string'},{name:'chainId',type:'uint256'},{name:'verifyingContract',type:'address'}];
  const domain={name:'WalletShield Lab USD',version:'1',chainId:31337,verifyingContract:c.token.address};
+ if(id==='dai-allow'||id==='dai-revoke'){
+  const nonce=await labClient.readContract({address:c.token.address,abi:artifacts.LabToken.abi,functionName:'nonces',args:[account]}) as bigint;
+  return signature({domain,types:{EIP712Domain:domainTypes,Permit:[{name:'holder',type:'address'},{name:'spender',type:'address'},{name:'nonce',type:'uint256'},{name:'expiry',type:'uint256'},{name:'allowed',type:'bool'}]},primaryType:'Permit',message:{holder:account,spender,nonce:String(nonce),expiry:String(deadline),allowed:id==='dai-allow'}},'eth_signTypedData_v4');
+ }
+ if(id==='erc3009-transfer'||id==='erc3009-receive'){
+  const primaryType=id==='erc3009-transfer'?'TransferWithAuthorization':'ReceiveWithAuthorization';
+  return signature({domain,types:{EIP712Domain:domainTypes,[primaryType]:[{name:'from',type:'address'},{name:'to',type:'address'},{name:'value',type:'uint256'},{name:'validAfter',type:'uint256'},{name:'validBefore',type:'uint256'},{name:'nonce',type:'bytes32'}]},primaryType,message:{from:account,to:recipient,value:String(amount),validAfter:'0',validBefore:String(deadline),nonce:'0x'+randomBytes(32).toString('hex')}},'eth_signTypedData_v4');
+ }
  if(id.startsWith('permit2')){
   const batch=id==='permit2-batch',primaryType=batch?'PermitBatch':'PermitSingle';
   const details=(token:Address)=>({token,amount:String(2n**160n-1n),expiration:String(deadline),nonce:'0'});

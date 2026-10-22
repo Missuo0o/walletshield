@@ -4,7 +4,7 @@
 
 本文记录 v0.4.1 完成正确性、模型校验、身份与依赖修复后的当前能力，不是准确率认证。安装、配置和启动见[中文 README](../README.zh-CN.md)和[使用手册](USER-MANUAL-zh.md)；逐配置的准确字段见[取数与能力边界指南](AI-COVERAGE-GUIDE-zh.md)。
 
-WalletShield 对单个未签名 EVM 请求提供**签名前风险提示**。按当前产品范围，不强制阻止，不在签名后持续监控。**30 个分析配置、54 个代表性本地案例（43 笔交易、11 个消息，涉及 25 个配置）不是风险覆盖率。** 其他方法、部署、状态和恶意输入可能表现不同。
+WalletShield 对单个未签名 EVM 请求提供**签名前风险提示**。按当前产品范围，不强制阻止，不在签名后持续监控。**30 个分析配置、66 个代表性本地案例（51 笔交易、15 个消息，涉及 25 个配置）不是风险覆盖率。** 其他方法、部署、状态和恶意输入可能表现不同。
 
 ## 先区分入口
 
@@ -27,19 +27,24 @@ WalletShield 对单个未签名 EVM 请求提供**签名前风险提示**。按�
 | ERC-721/1155 单笔/批量转移 | owner/recipient/token IDs/amounts、接口声明、部分所有权/approval/operator 读取 | 完整持仓/回调、系列真伪与价值；每资产最多 16 个 ID |
 | ERC-20/NFT 授权/撤销、NFT setApprovalForAll | spender/operator、精确数量或 NFT ID、权限范围、当前状态和撤销语义 | 全部未来敞口、日后恶意用途、所有 Permit 变体与身份 |
 | 链上 Permit2 结构 approve | token/spender/uint160 上限/expiration；**分别**读取底层 ERC-20 owner→Permit2 授权和 Permit2 内部 owner/token/最终 spender 的 amount/expiration/nonce | 候选部署/代码/domain 真伪和未来消费 |
-| Permit/NFT Permit/常见 Permit2 类型签名 | 实际签入的类型图、统一解释的无符号数量、digest/domain hash，标准部分 nonce/domain/interface/allowance 与条件性余额敞口 | 自定义/DAI/witness 变体、完整权限语义、签名接受与消费 |
+| Permit/NFT Permit/DAI/ERC-3009/常见 Permit2 签名 | 实际签入的类型图、统一解释的无符号数量、digest/domain hash，标准部分 nonce/domain/interface/allowance 与条件性余额敞口 | 其他自定义/witness 变体、完整权限语义、签名接受与消费 |
 | SIWE 登录类与 personal 消息 | 有界消息/字段、来源/账户/domain/URI/时间检查，远程 nonce 未验证声明 | 远端 nonce 签发/防重放存储、任意服务端解释、签名/会话接受 |
 | 订单/挂单/其他 typed 消息 | 实际签入的类型图、digest/domain、有界金融字段与部分状态读取 | 完整 offer/consideration、履约/取消、自定义/witness 权限与实际接受 |
 | V2/V3 结构兑换 | 路径/数量/限制/接收者/deadline 候选、通用分叉效果；部分 V2 买入→仅授权所得数量→反向卖出实验 | V3 往返、任意路由/聚合器、可信价格/报价、MEV 与未来卖出 |
 | ERC-4626 金库与 Aave 结构借贷 | 可读的当前 preview/max/totals/底层/份额，或抵押/债务/LTV/健康因子 | 真实协议身份、完整操作后清算、预言机/价格压力、未来偿付和退出 |
+| V3 集中流动性仓位 | 严格 mint/increase/decrease/collect 参数，既有 positions/owner/approval/manager 代码与代币单位/调用者余额 | 不认证池/当前 tick/报价、NFT 估值、完整费用/退出经济性或未来收益 |
 | 质押/流动性/封装/mint/burn/claim | 部分候选方法、数量/接收者/限制、控制权与通用分叉观察 | 锁定/罚没/收益规则、LP 估值、封装保证、铸造资格或完整 Merkle proof |
-| 部分 OP 结构桥入金 | 源链参数、控制权与源链模拟变化 | 目标链证明/到账、验证者/托管、中继未来行为和跨链最终性 |
-| 控制权/角色/升级/部署 | 候选权限改变、代码哈希、常见代理槽、可读 owner/paused、可选分叉效果 | 完整代码/构造器/存储布局审计、隐藏管理员与动态委托 |
-| batch/聚合器/未知调用 | 父请求、部分封装数量/selector、有界调用/资产模拟 | 全部递归子语义、动态代码、隐藏/非标准资产与所有协议 |
+| 部分 OP 结构桥阶段 | 发起/提款/完成候选参数、声称消息发送/接收者、数量/gas 和源链观察 | portal/messenger/proof、目标身份/消息状态/到账、验证者/托管和未来中继/最终性 |
+| 控制权/角色/升级/部署与 Safe 结构控制 | 管理和 owner/module/guard/fallback/threshold/hash 候选参数；固定区块 owner/threshold/选定 module/代码与可选分叉效果 | 真实实现、完整权限图、存储/代码/策略审计、签名有效性和隐藏/动态权限 |
+| batch/Safe 执行/聚合器/未知调用 | 有界标准编码 multicall/Safe/MultiSend 子结构、CALL/delegatecall/目标/值/selector 和通用分叉观察 | 不支持封装/opaque commands、子 sender/owner/存储上下文、签名/执行证明和隐藏/非标准资产 |
 
 准确的 30 个配置定义在 `src/security/coverage.ts`。没有可执行代表性钱包实验室案例的 5 个配置是 raw `eth_sign`、permission/session、UserOperation、网络配置与只读 RPC。后端支持摘要分析不能描述成钱包自动防护。
 
 **EIP-7702 尚未端到端覆盖。** 当前能观察已有委托标记，并读取同一区块下的一跳委托目标代码/hash；这不等于验证新 authorization list、审计委托实现或证明实际权限。不支持的授权/交易类型字段会明确保留缺口，不会被移除来制造模拟成功。ERC-1271 签名接受及 ERC-4337 账户/bundler/paymaster 执行也仍不完整。
+
+## 新增候选适配器
+
+本轮还增加 DAI 结构 Permit、ERC-3009 单次转移授权、Safe 结构控制/执行、有界递归封装摘要、V3 仓位状态、部分桥提款/完成参数和通用 withdraw(uint256)。它们是有边界的候选适配器，不是全协议支持。已确认 nonce 仍固定区块，另有独立未固定的节点 pending nonce 视图，不取得原交易内容或替换规则。66 个钱包案例现包含 8 个简化账户交易和 4 个 DAI/ERC-3009 候选签名；其他新路径有 API/代码测试，不代表官方协议或公网钱包验收。详见[扩展能力与验收边界](EXTENDED-COVERAGE-2026-10-22.md)。
 
 ## 本轮具体修复
 

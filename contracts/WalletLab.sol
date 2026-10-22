@@ -130,3 +130,46 @@ contract LabWrapped is LocalOnly {
     function withdraw(uint256 amount) external {require(balanceOf[msg.sender]>=amount,"balance");balanceOf[msg.sender]-=amount;totalSupply-=amount;emit Transfer(msg.sender,address(0),amount);(bool ok,)=msg.sender.call{value:amount}("");require(ok,"native");}
 }
 contract LabOwned is LocalOnly {address public owner;constructor(address who){owner=who;}}
+
+// Local interface fixture ONLY. This is not Safe, a multisig, a module executor,
+// a guard enforcement implementation or an ERC-1271 signature validator.
+// Any listed owner may call directly regardless of the displayed threshold.
+// execTransaction supports CALL only and requires empty signatures/refund args;
+// no cryptographic signatures or production account policies are validated.
+contract LabAccount is LocalOnly {
+    address public immutable admin;
+    address[] private owners;
+    uint256 private threshold;
+    mapping(address=>bool) public isOwner;
+    mapping(address=>bool) public isModuleEnabled;
+    address[] private touchedModules;
+    address public fixtureGuard;
+    address public fixtureFallbackHandler;
+    constructor(address other){admin=msg.sender;_reset(msg.sender,other);}
+    modifier ownerOnly(){require(isOwner[msg.sender],"fixture owner");_;}
+    receive() external payable {}
+    function getOwners() external view returns(address[] memory){return owners;}
+    function getThreshold() external view returns(uint256){return threshold;}
+    function resetTester(address who,address other) external {require(msg.sender==admin,"admin");_reset(who,other);}
+    function _reset(address who,address other) internal {
+        require(who!=address(0)&&other!=address(0)&&who!=other,"fixture owners");
+        for(uint256 i;i<owners.length;i++)isOwner[owners[i]]=false;
+        delete owners;owners.push(who);owners.push(other);isOwner[who]=true;isOwner[other]=true;threshold=2;
+        for(uint256 i;i<touchedModules.length;i++)isModuleEnabled[touchedModules[i]]=false;
+        delete touchedModules;fixtureGuard=address(0);fixtureFallbackHandler=address(0);
+    }
+    function _threshold(uint256 next) internal {require(next>0&&next<=owners.length,"fixture threshold");threshold=next;}
+    function changeThreshold(uint256 next) external ownerOnly {_threshold(next);}
+    function addOwnerWithThreshold(address who,uint256 next) external ownerOnly {require(who!=address(0)&&!isOwner[who]&&owners.length<16,"fixture owner");owners.push(who);isOwner[who]=true;_threshold(next);}
+    function removeOwner(address,address who,uint256 next) external ownerOnly {require(isOwner[who]&&owners.length>1,"fixture owner");for(uint256 i;i<owners.length;i++)if(owners[i]==who){owners[i]=owners[owners.length-1];owners.pop();break;}isOwner[who]=false;_threshold(next);}
+    function swapOwner(address,address oldOwner,address newOwner) external ownerOnly {require(isOwner[oldOwner]&&newOwner!=address(0)&&!isOwner[newOwner],"fixture owner");for(uint256 i;i<owners.length;i++)if(owners[i]==oldOwner){owners[i]=newOwner;break;}isOwner[oldOwner]=false;isOwner[newOwner]=true;}
+    function enableModule(address module) external ownerOnly {require(module!=address(0)&&touchedModules.length<16,"fixture module");if(!isModuleEnabled[module])touchedModules.push(module);isModuleEnabled[module]=true;}
+    function disableModule(address,address module) external ownerOnly {isModuleEnabled[module]=false;}
+    function setGuard(address guard) external ownerOnly {fixtureGuard=guard;}
+    function setFallbackHandler(address handler) external ownerOnly {fixtureFallbackHandler=handler;}
+    function execTransaction(address to,uint256 value,bytes calldata data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,bytes calldata signatures) external payable ownerOnly returns(bool success){
+        require(operation==0&&signatures.length==0,"fixture CALL only");
+        require(safeTxGas==0&&baseGas==0&&gasPrice==0&&gasToken==address(0)&&refundReceiver==address(0),"fixture no refunds");
+        (success,)=to.call{value:value}(data);require(success,"fixture child call");
+    }
+}

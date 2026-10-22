@@ -3,6 +3,8 @@ import type { Operation, SecurityRequest } from './types.js';
 import { decodeExtended, rpcSummary } from './operations.js';
 import { typedRequest, permitProtocol } from './signatures.js';
 import {parseLoginMessage} from './siwe.js';
+import {decodeAccountOperation} from './account-operations.js';
+import {decodeProtocolOperation} from './protocol-operations.js';
 const abi = parseAbi([
   'function transfer(address to,uint256 amount)',
   'function approve(address spender,uint256 amount)',
@@ -79,7 +81,7 @@ export function decodeRequest(request: SecurityRequest): Operation {
     else op = { ...result('batch','Batch / complex contract call', {method:d.functionName}),complex:true,decoded:false };
     if (!op.token && (op.tokenStandard || op.category === 'operator_approval')) op.token = tx.to;
     return op;
-  } catch { return decodeExtended(request) ?? { ...result('contract_call','Unrecognized contract call', {selector:tx.data.slice(0,10)},[tx.to]),decoded:false,complex:true }; }
+  } catch { return decodeAccountOperation(request) ?? decodeProtocolOperation(request) ?? decodeExtended(request) ?? { ...result('contract_call','Unrecognized contract call', {selector:tx.data.slice(0,10)},[tx.to]),decoded:false,complex:true }; }
 }
 
 function decodeSignature(request: Extract<SecurityRequest,{kind:'signature'}>): Operation {
@@ -100,12 +102,25 @@ function decodeSignature(request: Extract<SecurityRequest,{kind:'signature'}>): 
   const fields: Operation['fields'] = {method,primaryType:primary,domainName:scalar(domain.name),domainChainId:scalar(domain.chainId),verifyingContract:scalar(domain.verifyingContract),signer:from};
   const put = (key:string, value:unknown) => { const s = scalar(value); if(s) fields[key] = s; };
   const targets: string[] = [];
-  for(const key of ['owner','spender','deadline','sigDeadline','nonce','value','tokenId']) put(key,committed[key]);
+  for(const key of ['owner','holder','spender','deadline','sigDeadline','nonce','value','tokenId','expiry','validAfter','validBefore']) put(key,committed[key]);
   if (addr(committed.spender)) targets.push(committed.spender);
   // Keep bounded financial claims for unfamiliar orders and account permissions;
   // never copy a raw message, signature or private fields into the AI packet.
   fields.parameterSummary=rpcSummary(method,{message:committed}).fields.parameterSummary;
   const protocol=encodingValid?permitProtocol(typed):undefined;
+  if(protocol==='dai_permit'&&addr(committed.holder)&&addr(committed.spender)&&typeof committed.allowed==='boolean'&&['nonce','expiry'].every(key=>typeof committed[key]==='string'&&/^\d+$/.test(committed[key]))){
+    fields.permitProtocol=protocol;fields.allowed=committed.allowed;fields.owner=committed.holder;fields.ownerSource='signed_holder';
+    fields.value=committed.allowed?String(maxUint256):'0';fields.amount=fields.value;fields.amountSource='derived_from_dai_allowed_not_a_signed_amount';
+    fields.unlimited=committed.allowed;fields.futureConsumptionUnverified=true;fields.recipientCommitted=false;fields.expiryIsSubmissionDeadline=true;
+    return {...result('dai_permit_signature',committed.allowed?'DAI-style unlimited Permit candidate':'DAI-style Permit revocation candidate',fields,[committed.spender]),token:addr(domain.verifyingContract)?domain.verifyingContract:undefined,tokenStandard:'erc20',addsPermission:committed.allowed,decoded:addr(domain.verifyingContract)};
+  }
+  if((protocol==='erc3009_transfer'||protocol==='erc3009_receive')&&addr(committed.from)&&addr(committed.to)&&typeof committed.nonce==='string'&&/^0x[\da-f]{64}$/i.test(committed.nonce)&&['value','validAfter','validBefore'].every(key=>typeof committed[key]==='string'&&/^\d+$/.test(committed[key]))){
+    fields.permitProtocol=protocol;fields.from=committed.from;fields.owner=committed.from;fields.ownerSource='signed_from';fields.recipient=committed.to;fields.amount=committed.value;
+    fields.authorizationType=primary;fields.permissionKind='single_authorization_transfer';fields.grantsTransferAuthorization=BigInt(committed.value)>0n;
+    fields.recipientCommitted=true;fields.actualTransferAmountCommitted=true;fields.futureConsumptionUnverified=true;
+    fields.relayerRestriction=protocol==='erc3009_receive'?'caller_must_be_recipient':'any_submitter';
+    return {...result('transfer_authorization','ERC-3009 transfer authorization candidate',fields,[committed.to]),token:addr(domain.verifyingContract)?domain.verifyingContract:undefined,tokenStandard:'erc20',addsPermission:false,decoded:addr(domain.verifyingContract)};
+  }
   const erc20Permit=protocol==='erc2612',nftPermit=protocol==='erc4494';
   if (primary === 'Permit' && (erc20Permit||nftPermit) && (nftPermit||addr(committed.owner)) && addr(committed.spender)) {
     const required=nftPermit?['tokenId','nonce','deadline']:['value','nonce','deadline'];

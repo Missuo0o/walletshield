@@ -19,22 +19,37 @@ export async function verifiedLab(){
  await Promise.all(Object.values(d.contracts).map(async c=>{const code=await labClient.getCode({address:c.address});if(!code||keccak256(code)!==c.codeHash)throw Error('The local test contract code changed. Deploy the lab contracts again.');}));return d;
 }
 export async function labArtifacts():Promise<Record<string,Artifact>>{return JSON.parse(await readFile(resolve(process.cwd(),'.local/lab-artifacts.json'),'utf8'));}
-export async function deployLab(){
- try {return await verifiedLab();}catch{/* Local fixtures may not yet exist. */}
- await assertLocalAnvil();const base=await localStatus();if(!base.ready||!base.deployment)throw Error('Deploy the base TEST-USD contract first.');
- const [owner,recipient]=await wallet.getAddresses();if(!owner||!recipient)throw Error('Local test accounts are unavailable.');
+export async function compileLabArtifacts():Promise<Record<string,Artifact>>{
  const source=await readFile(resolve(process.cwd(),'contracts/WalletLab.sol'),'utf8');
  const output=JSON.parse(solc.compile(JSON.stringify({language:'Solidity',sources:{'WalletLab.sol':{content:source}},settings:{evmVersion:'cancun',optimizer:{enabled:true,runs:200},outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}})));
  const errors=(output.errors??[]).filter((e:any)=>e.severity==='error');if(errors.length)throw Error(errors.map((e:any)=>e.formattedMessage).join('\n'));
  const artifacts:Record<string,Artifact>={};for(const [name,c] of Object.entries(output.contracts['WalletLab.sol']) as [string,any][])if(c.evm.bytecode.object)artifacts[name]={abi:c.abi,bytecode:`0x${c.evm.bytecode.object}`};
- const d:LabDeployment={version:1,chainId:31337,baseToken:base.deployment.token,owner,recipient,deployedAt:new Date().toISOString(),contracts:{}};
+ return artifacts;
+}
+export async function deployLab(){
+ let existing:LabDeployment|null=null;try {existing=await verifiedLab();}catch{/* Local fixtures may not yet exist. */}
+ await assertLocalAnvil();const base=await localStatus();if(!base.ready||!base.deployment)throw Error('Deploy the base TEST-USD contract first.');
+ const [nodeOwner,nodeRecipient]=await wallet.getAddresses();if(!nodeOwner||!nodeRecipient)throw Error('Local test accounts are unavailable.');
+ const owner=existing?.owner??nodeOwner,recipient=existing?.recipient??nodeRecipient;
+ const compiled=await compileLabArtifacts();
+ // An explicit deploy:lab may add optional fixtures to a verified older lab.
+ // Keep its existing contracts, addresses, artifacts and balances intact.
+ const previous=existing?await labArtifacts().catch(()=>({} as Record<string,Artifact>)):{};
+ const artifacts:Record<string,Artifact>={...compiled,...previous,LabAccount:compiled.LabAccount};
+ const d:LabDeployment=existing??{version:1,chainId:31337,baseToken:base.deployment.token,owner,recipient,deployedAt:new Date().toISOString(),contracts:{}};
  async function deploy(key:string,name:string,args:unknown[]=[]){const a=artifacts[name];const hash=await wallet.deployContract({account:owner,abi:a.abi,bytecode:a.bytecode,args});const r=await labClient.waitForTransactionReceipt({hash});if(r.status!=='success'||!r.contractAddress)throw Error('Test contract deployment failed.');const code=await labClient.getCode({address:r.contractAddress});if(!code)throw Error('Test contract code is missing.');d.contracts[key]={address:r.contractAddress,codeHash:keccak256(code)};return r.contractAddress;}
+ if(existing){
+  if(!d.contracts.account)await deploy('account','LabAccount',[recipient]);
+  await mkdir(resolve(process.cwd(),'.local'),{recursive:true});
+  await writeFile(resolve(process.cwd(),'.local/lab-artifacts.json'),JSON.stringify(artifacts));await writeFile(file(),JSON.stringify(d,null,2));return d;
+ }
  const token=await deploy('token','LabToken',['WalletShield Lab USD','LAB-USD',6]);
  const quote=await deploy('quote','LabToken',['WalletShield Lab Quote','LAB-Q',6]);
  const honey=await deploy('honey','LabToken',['WalletShield Blocked Sell Fixture','LAB-BLOCK',6]);
  await deploy('nft','LabNFT');await deploy('multi','LabMultiNFT');
  const router=await deploy('router','LabRouter');await deploy('vault','LabVault',[token]);await deploy('lending','LabLending',[token]);const actions=await deploy('actions','LabActions',[token]);
  await deploy('control','LabControl');await deploy('permit2','LabPermit2');await deploy('wrapped','LabWrapped');
+ await deploy('account','LabAccount',[recipient]);
  async function write(address:Address,name:string,args:unknown[]){const hash=await wallet.writeContract({account:owner,address,abi:artifacts.LabToken.abi,functionName:name,args});await labClient.waitForTransactionReceipt({hash});}
  for(const t of [token,quote,honey])await write(t,'seed',[router,1000000n*10n**6n]);
  await write(token,'seed',[actions,1000000n*10n**6n]);await write(honey,'blockRecipient',[router]);
@@ -45,9 +60,14 @@ export async function prepareLab(address:Address){
  const d=await verifiedLab(),artifacts=await labArtifacts();
  for(const [key,name] of [['token','LabToken'],['quote','LabToken'],['honey','LabToken'],['nft','LabNFT'],['multi','LabMultiNFT']] as const){const hash=await wallet.writeContract({account:d.owner,address:d.contracts[key].address,abi:artifacts[name].abi,functionName:'faucet',args:[address]});await labClient.waitForTransactionReceipt({hash});}
  const hash=await wallet.writeContract({account:d.owner,address:d.contracts.control.address,abi:artifacts.LabControl.abi,functionName:'resetTester',args:[address]});await labClient.waitForTransactionReceipt({hash});
+ if(d.contracts.account){
+  if(!artifacts.LabAccount)throw Error('Run npm run deploy:lab to add the optional account fixture artifact.');
+  const other=address.toLowerCase()===d.recipient.toLowerCase()?d.owner:d.recipient;
+  const reset=await wallet.writeContract({account:d.owner,address:d.contracts.account.address,abi:artifacts.LabAccount.abi,functionName:'resetTester',args:[address,other]});await labClient.waitForTransactionReceipt({hash:reset});
+ }
  const inventory=await labInventory(address);
  if(!inventory.ready)throw Error('Asset verification failed after preparation. Refresh the inventory.');
- return {address,inventory,token:d.contracts.token.address,quote:d.contracts.quote.address,nft:d.contracts.nft.address,scope:'local-fixtures',message:'LAB-USD, LAB-Q, a restricted-sale test token and NFTs are ready on the local chain. They have no real value. The control test contract is now owned by the current test account.'};
+ return {address,inventory,token:d.contracts.token.address,quote:d.contracts.quote.address,nft:d.contracts.nft.address,scope:'local-fixtures',message:'LAB-USD, LAB-Q, a restricted-sale test token and NFTs are ready on the local chain. They have no real value. The control fixture is reset for this test account. '+(d.contracts.account?'The optional simplified account fixture is reset too; this does not create a production multisig.':'Run npm run deploy:lab to add the optional simplified account fixture.')};
 }
 
 /** Read-only inventory: token display in MetaMask is separate from chain ownership.

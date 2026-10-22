@@ -6,11 +6,13 @@ WalletShield 是一个 EVM 钱包安全原型，包含本地钱包实验室，�
 
 它提供的是**签名前建议**。它不会强制阻止操作、代你签名、追回资金，也不会在签名后持续监控。自动分析仅覆盖 MetaMask 实际交给 Snap 的 EVM 交易和消息请求。安装 Snap 并不代表它会拦截每一项钱包操作。
 
-本地钱包实验室目前包含 **54 个代表性案例：43 笔交易和 11 次消息签名**，涉及 **30 个分析配置中的 25 个**。这些数字描述已实现的路径和本地示例，不代表检测准确率，也不代表覆盖了多少比例的钱包风险。当前界面、新生成的解释和英文操作文档均使用英语；本页和下列中文文档提供中文说明。旧报告保留原始语言，并带有相应标注。
+本地钱包实验室目前包含 **66 个代表性案例：51 笔交易和 15 次消息签名**，涉及 **30 个分析配置中的 25 个**。这些数字描述已实现的路径和本地示例，不代表检测准确率，也不代表覆盖了多少比例的钱包风险。当前界面、新生成的解释和英文操作文档均使用英语；本页和下列中文文档提供中文说明。旧报告保留原始语言，并带有相应标注。
 
 首次运行与故障恢复步骤请参阅[中文用户手册](docs/USER-MANUAL-zh.md)。每个分析配置提取的准确字段、尚存的不确定性和可扩展方向，请参阅[中文覆盖指南](docs/AI-COVERAGE-GUIDE-zh.md)。[README.md](README.md) 是主要英文说明，英文详细文档为[用户手册](docs/USER-MANUAL.md)和[自动生成的覆盖指南](docs/AI-COVERAGE-GUIDE.md)。
 
 当前已实现/部分实现/手动入口/未覆盖的对照表和本轮修复说明见[当前覆盖范围](docs/CURRENT-COVERAGE-zh.md)（[English](docs/CURRENT-COVERAGE.md)）。
+
+本轮还增加 DAI 结构 Permit、ERC-3009 单次转移授权、Safe 结构控制/执行、有界递归封装摘要、V3 仓位状态、部分桥提款/完成参数和通用 withdraw(uint256)。它们是有边界的候选适配器，不是全协议支持。已确认 nonce 仍固定区块，另有独立未固定的节点 pending nonce 视图，不取得原交易内容或替换规则。66 个钱包案例现包含 8 个简化账户交易和 4 个 DAI/ERC-3009 候选签名；其他新路径有 API/代码测试，不代表官方协议或公网钱包验收。详见[扩展能力与验收边界](docs/EXTENDED-COVERAGE-2026-10-22.md)。
 
 ## 一次操作会经历什么
 
@@ -187,6 +189,14 @@ curl -sS -X POST http://127.0.0.1:5173/api/security/ai/test \
 
 钱包可能在显示 insight 前报错或被取消。如果会话表示未观察到 Snap 报告，不应把它算作完成的 Snap 检查。节点级测试或 API 报告同样不能证明浏览器/Snap 请求交付成功。
 
+### 可选账户与签名变体测试
+
+新增 8 个 **Smart-account fixture** 交易测试 threshold 降低、module 标记开/关、guard 设置/移除、fallback 设置/移除和 CALL 封装。已有本地部署请明确运行 `npm run deploy:lab`，只补充可选 `LabAccount` 后，再点击 **Prepare local test assets**。部署保留原测试合约地址/状态；准备资产会将可选账户重置给当前测试者。移除类案例先完成对应设置。
+
+这是 owner 可直接调用的本地接口模型：无论显示 threshold 为多少，任一列出的 owner 都能直接调用。它**不是生产多签**；module/guard/fallback 只是标记，不实施真实约束。封装仅接受 CALL、空 signatures、零退款参数，故意拒绝 DELEGATECALL；不会修改真实智能钱包权限。
+
+另有 `dai-allow`、`dai-revoke`、`erc3009-transfer`、`erc3009-receive` 四个签名案例，使用现有 LAB-USD domain 发起真实钱包消息，以测格式和字段提取。LabToken 不实现 DAI/ERC-3009 消费方法，也没有 ERC-3009 authorizationState getter；缺失状态/消费证据是预期边界。签名本身不消费消息、不改 allowance、不转币，生成签名仍在浏览器丢弃。
+
 ## 使用真实网络，并区分本地资产
 
 **Public networks** 是独立页面，用于公共网络连接、只读检查，以及验证真实 Snap 请求交付的中性消息。它与本地实验室使用同一个选定的 EIP-1193 钱包 provider 和账户；不存在另一种“真实钱包”。变化的是网络，以及记录在该网络上的资产。钱包选择器在可用时使用 EIP-6963 发现机制，避免普通 MetaMask 与 Flask 争用同一个注入式 provider。请选择目标扩展；安装本地开发版 Snap 需要 Flask。
@@ -273,6 +283,8 @@ nonce/domain 断言现在检查摘要、原因、各维度、行动建议和缺�
 
 `pass` 只表示该项观察成功，不是地址或操作认证。`unknown` 表示检查未完成、不支持或缺失。转账成功不能证明收款方合法；有限额 allowance 仍可授权恶意支出；`eth_call` 成功、nonce 匹配或一次卖出成功，都不保证未来安全。
 
+DAI 权限来自 allowed 的参考语义推导；ERC-3009 承诺单次精确数量，Permit2 transfer 为单 nonce 上限，后两者都不是持续 allowance。ERC-3009 当前余额不足会明确记录，不制造较小可消费转移量；空 calldata 的 DELEGATECALL 仍是委托代码执行，不是原生币转账。
+
 支持的 EIP-712 无符号整数在风险解释前，会统一等值的十进制、十六进制与前导零表示，且保持被签 digest 不变。零地址按角色解释：支持的 NFT approval/Permit 撤销不会被误报为资产销毁；实际转账接收方及所有权变更仍按各自语义检查。transferFrom 的资产所有者与调用者分开；当前余额不足描述为执行/敞口问题，不再错误解释为授权覆盖未来入账。
 
 对于 EIP-712 消息，只有属于从 primary type 可达的声明类型图中的字段，才能作为已签名意图的证据。类型图之外的额外 JSON 属性不是签名字段，不能单独证明签名权限、所有者不一致、财务敞口或其他风险。Permit2 nonce/allowance 检查的 owner 来自真实签名账户，而非消息额外提供的 `owner` 属性。识别出规范类型结构也不能认证验证合约。
@@ -302,18 +314,18 @@ Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一
 | ERC-4626 结构金库 | 动作、assets/shares、receiver/owner；`asset`、`totalAssets`、`totalSupply`、动作 preview/max；可读取的底层资产余额/decimals/allowance 和份额单位 | 底层资产与份额单位分别处理；接口输出不证明身份、估值、偿付能力或未来赎回。 |
 | 借贷 / 抵押 | 资产、数量、受益人、利率模式或抵押开关；Aave 结构的抵押/债务/可借额度/LTV/阈值/健康因子和储备配置 | 仅当前状态；没有完整的操作后清算或价格/预言机压力模型。 |
 | 质押 / 解除质押 / 奖励 | 候选方法、数量、receiver；控制状态和通用分叉观察 | 不自动验证锁定期、罚没、奖励来源/公式或未来提款。 |
-| 流动性变更 | 代币、数量/最低数量或 LP 数量、收款方、deadline；通用观察到的变化量 | 没有完整池储备/身份、LP 估值、无常损失或退出模型。 |
-| 桥接存入 | 部分 OP 结构方法、本地/远程代币、数量/value、收款方、本地控制和分叉效果 | 未验证目标链/消息证明、验证者/托管及目标链到账。 |
+| 流动性 / V3 仓位变更 | V2 参数及严格 V3 mint/increaseLiquidity/decreaseLiquidity/collect 元组；固定区块的既有 positions、NFT owner/approval/operator、manager 代码及逐代币单位/余额 | 不认证 manager/pool、报价/当前 tick、LP/NFT 估值或完整退出/未来费用；mint 没有既有 position ID。 |
+| 跨链发起 / 提款 / 完成候选 | 部分 OP 结构 deposit/bridgeETH/bridgeERC20/withdraw/withdrawTo/finalizeBridgeETH/ERC20 的阶段、发送/接收者、token/数量/gas/extraData 大小；源链观察 | 不认证 portal/messenger/proof、目标链部署/到账或未来最终性；finalize 结构不是完成证明。 |
 | 领取 / 空投 | 常见 Merkle 结构的 index、account、amount、proof 项数、代码/控制及通用分叉效果 | 未完整验证 root/proof/领取资格或项目身份；proof 字节不会完整发送给 Muse。 |
-| 包装 / 无参存入 | `deposit()` 候选、value、目标、代码/控制和变化量 | 同一方法可能用于无关操作；未验证恒定赎回。通用 `withdraw(uint256)` 当前映射为质押候选。 |
+| 原生包装 / 通用提款 | deposit() 的原生值，withdraw(uint256) 的数量标为 unverified_protocol_units，保留代码/部分控制和可选变化量 | 不假定一参数 withdraw 是质押退出或原生赎回；身份、单位/比率、偿付与退出仍未知。 |
 | 铸造 / 销毁 | 候选方法、收款方、数量或 ID、代币及 value/变化量 | 数量与 NFT ID 可能仍有歧义；发行权、价格和所有销毁后果检查不完整。 |
-| 控制 / 角色 / 升级 | 新 owner/controller/implementation 或 role/account；代码哈希、ERC-1967 槽、可读取的 owner/paused、新目标代码及通用分叉效果 | 没有完整实现审计、存储布局兼容性、动态委托或隐藏管理员分析。空槽不证明不可升级。 |
+| 控制 / 角色 / 升级 / 智能账户 | 管理目标及 Safe 结构 owner/threshold/module/guard/fallback/hash 候选；固定区块独立读取最多 64 个 owner、threshold、选定 module 和账户/权限目标代码 | 不认证 Safe、完整权限图、存储/代码/策略或签名；移除也可能削弱保护，不等于安全。 |
 | 部署 | 发送者、value、初始化选择器/字节数和费用摘要；通用分叉效果 | 没有完整初始化字节码/源码/构造函数审计、验证构建对应关系或 CREATE2 身份证明。 |
-| 批量 / 聚合器 | 父请求、部分封装 deadline/调用数/选择器；有界分叉资产/调用摘要 | 不完整递归解码每个 `multicall`/`execute`、动态 delegatecall 或隐藏资产。 |
+| 批量 / Safe 执行 / 聚合器 | 标准编码 multicall、Safe execTransaction 和 packed MultiSend 子结构；CALL/delegatecall、目标/数量及有限字段，可选分叉 | 深度 3、32 子项、每 body 16384 字节、递归总量 32768 字节；结构不证明子调用者/owner/存储上下文、身份、签名或全部效果。 |
 | SIWE 类登录 | 支持的头部/账户、URI origin、version/顺序、nonce 格式/长度、声明链、issued/expiry/not-before 时间及最多 16 个资源 origin；source/account/domain/URI 和本地时钟检查 | 远程 nonce 签发/使用、audience、生成签名有效性和实际服务端会话均未验证。 |
 | 个人消息 | method、account、origin、最多 1,600 字符预览；用户情境和可用情报 | 任意服务器/合约如何解释消息未知；预览可能截断，钱包链可能不可用。 |
 | 原始 `eth_sign` | method、account、声明网络/来源和盲签信号；可用上下文 | 仅后端分析；Flask/SDK 可能不提供自动钩子。无法从哈希逆推出原意。实验室没有 raw-sign 按钮。 |
-| Permit / NFT Permit 签名 | EIP-712 domain/types/digest；规范 EIP-2612 owner nonce/domain；规范 ERC-4494 token-ID nonce、接口声明、NFT owner/当前 approval 与 operator 状态；可读取的 signer/verifier 代码和 deadline | 不做密码学签名验证或实际使用执行；DAI/自定义变体不完整；domain 与独立 provider 快照不证明请求绑定网络或协议真实性。 |
+| Permit / NFT Permit / DAI / ERC-3009 签名 | 实际签入字段、digest/domain、部分 nonce/interface/state；DAI holder/spender/allowed 推导最大值或零；ERC-3009 payer/recipient/amount/时间窗/bytes32 authorizationState | 只支持参考结构，不认证签名/消费/实现。ERC-3009 为单次转移，非持续 allowance；receive 形式有条件性调用者限制。 |
 | Permit2 签名 | 规范通用 types、token/amount/expiry/spender/deadline；domain、逐代币三方 allowance/nonce 或 nonce bitmap、signer/verifier 代码、参考地址/domain 比较；owner 来自签名者 | 零 expiration 使用提交区块语义。最多 16 项 allowance；witness/自定义变体和代码认证不完整。参考地址/接口/nonce 匹配不证明身份或未来支出安全。 |
 | 类型化订单 / 其他 EIP-712 | 编码 digest、primary type/domain/verifier；有界的已识别且实际纳入签名的财务字段、可用的 DOMAIN_SEPARATOR 比较与控制状态 | 没有完整 Seaport 类 consideration、履约、取消或自定义权限语义。 |
 | 钱包权限 / 会话 | method、source、白名单内的地址/范围/限制/expiry 和有界嵌套摘要 | **需要手动提交**；没有通用 Snap 钩子，不执行，也不证明 validator 强制执行限制；不采集秘密 session key。 |
@@ -351,7 +363,7 @@ Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一
 | 需要链下服务或独立调查 | 企业/域名身份、交易所内部余额、声称的投资回报、恶意客服对话、设备恶意软件或过去的密钥泄露 | 链上状态不能证明全部链下事实。额外采集需要单独的用户同意、隐私控制和合适集成。 |
 | 无法在签名前凭一次快照证明 | 保证未来价格/流动性、打包/排序/MEV、之后的黑名单/升级决定、未来桥/验证者行为、普遍不存在隐藏资产或任意代码漏洞 | 更多数据和情景测试可减少不确定性，但不能证明尚未发生的事件或普遍安全。签名前 AI 分数始终只是指标。 |
 
-这些是未来扩展方向，不是已启用功能。强制阻止和持续签名后监控仍不在本版本的建议行为范围内。检测质量需要独立标注数据、独立留出集评估及误报/漏报测量；54 个本地案例不能支持任何校准声明。
+这些是未来扩展方向，不是已启用功能。强制阻止和持续签名后监控仍不在本版本的建议行为范围内。检测质量需要独立标注数据、独立留出集评估及误报/漏报测量；66 个本地案例不能支持任何校准声明。
 
 ## 手动提交与开发者 API
 
@@ -413,6 +425,7 @@ Meta 请求使用 `store: false`；此请求选项不能断言提供方所有日
 npm test
 npm run build
 npm run test:security
+npm run test:extensions
 ```
 
 | 命令 | 验证内容 / 造成的变化 |
@@ -421,12 +434,13 @@ npm run test:security
 | `npm run typecheck` | 主项目与 Snap 的 TypeScript 检查。 |
 | `npm run build` | 重新生成覆盖指南，检查类型，构建前端和 Snap bundle/manifest。 |
 | `npm run test:security` | 在独立端口启动自己的临时 Anvil，验证模拟行为后关闭；不使用当前浏览器测试钱包链，也不调用付费模型。 |
+| `npm run test:extensions` | 启动另一个临时 Anvil，验证账户、仓位及 DAI/ERC-3009 的实际 getter 取数、部分失败和时间边界；仅主动写入测试合约状态，确认采集器不挖块后关闭。不会调用模型或浏览器钱包。 |
 | `npm run test:chain` | 在运行中的链 31337 上验证原始本地授权/资金准备流程；需要本地部署，会执行本地测试写入，然后恢复快照。 |
-| `npm run test:lab` | 使用本地节点账户执行当前 54 案例目录，验证交易回执和签名恢复，并写入 `docs/wallet-lab-acceptance.json`；会对运行中的本地链创建/恢复快照。 |
+| `npm run test:lab` | 使用本地节点账户执行当前 66 案例目录，验证交易回执和签名恢复，并写入 `docs/wallet-lab-acceptance.json`；会对运行中的本地链创建/恢复快照。 |
 | `npm run docs:coverage` | 从源码定义重新生成详细覆盖指南。 |
 | `node --import tsx --test tests/wallet-auth.test.ts tests/hosted-integration.test.ts` | 离线合成 EOA 登录、到期/重放/撤销、哈希凭据、所有者隔离、托管路由限制、主体绑定、原子预算和并发钱包限制。不调用真实钱包/RPC/模型。 |
 
-运行链检查前，先启动 `npm run demo`，再在另一终端执行。请在浏览器空闲时运行 `test:chain` 和 `test:lab`：恢复快照可能撤销并发的本地操作。实验室的 43 笔交易和 11 个节点生成的签名验证的是本地请求构造与行为，**不是** MetaMask UI 或真实 Snap 钩子交付。`docs/` 中的本地验收报告是带日期的观察记录，不证明当前远程连通性，也不是检测基准。
+运行链检查前，先启动 `npm run demo`，再在另一终端执行。请在浏览器空闲时运行 `test:chain` 和 `test:lab`：恢复快照可能撤销并发的本地操作。实验室的 51 笔交易和 15 个节点生成的签名验证的是本地请求构造与行为，**不是** MetaMask UI 或真实 Snap 钩子交付。`docs/` 中的本地验收报告是带日期的观察记录，不证明当前远程连通性，也不是检测基准。
 
 开发者可主动运行真实模型审计：
 

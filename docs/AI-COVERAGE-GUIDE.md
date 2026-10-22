@@ -1,6 +1,6 @@
 # WalletShield: tools, evidence, AI assessment and coverage
 
-This guide describes implemented version 0.4.1 paths and their limits. It is generated from the same coverage profiles used by the webpage and Snap. There are **30 analysis profiles**, with **54 local wallet cases** (43 transaction and 11 message requests) representing **25 profiles**. Counts are not detection accuracy, a safety rating or evidence that every method was tested.
+This guide describes implemented version 0.4.1 paths and their limits. It is generated from the same coverage profiles used by the webpage and Snap. There are **30 analysis profiles**, with **66 local wallet cases** (51 transaction and 15 message requests) representing **25 profiles**. Counts are not detection accuracy, a safety rating or evidence that every method was tested.
 
 ## 1. Request entry and component responsibilities
 
@@ -23,11 +23,14 @@ Pre-sign advice only. You decide in the wallet; this tool does not force a block
 | Tool / implementation | Specific observations | Limits |
 | --- | --- | --- |
 | Request decoder: decode.ts / operations.ts / viem | Exact supported selector/ABI candidate, addresses, amounts, recipients, limits, deadlines and committed EIP-712 fields | Unsupported/trailing/malformed input remains unknown. Matching a name or selector does not prove protocol identity. |
-| Trusted EVM RPC: providers.ts | eth_chainId, pinned block/hash/time, independently retained native balance/code, confirmed nonce, supplied fee versus current base fee and bounded eth_call with supplied execution fields | A call not reverting does not prove complete asset behavior, accepted nonce, future inclusion or honest recipient. |
+| Trusted EVM RPC: providers.ts | eth_chainId, pinned block/hash/time, independently retained native balance/code, confirmed nonce, a separate unpinned node pending-nonce view, supplied fee versus current base fee and bounded eth_call with supplied execution fields | A call not reverting does not prove complete asset behavior, accepted nonce, future inclusion or honest recipient. |
 | Asset reads: assets.ts | Code, ERC-165 declarations, symbol/decimals, balances, ERC-20 allowance, selected NFT owner/approval/operator state | Up to eight explicit assets and 16 NFT IDs per asset. Metadata/interfaces can lie; raw quantities are not dollars. |
 | Contract/protocol reads: protocols.ts | Code hash; ERC-1967 implementation/admin/beacon slots; readable owner/paused; vault asset/totals/preview/max; Aave-shaped current collateral/debt/LTV/threshold/health factor | Empty proxy slots do not prove immutability. Current interface returns do not authenticate a deployment, valuation or future solvency. |
-| Signature checks: signatures.ts | Valid type graph/encoding/digest/domainHash, generic typed DOMAIN_SEPARATOR and selected Permit/NFT Permit/Permit2 nonce/allowance reads, signer/verifier code, signer one-hop delegation target and declared scope | No generated signature recovery, ERC-1271 acceptance test or future consumption execution is performed by pre-sign analysis. |
+| Signature checks: signatures.ts | Valid type graph/encoding/digest/domainHash; canonical Permit/NFT/DAI, selected ERC-3009 and common Permit2 state reads; generic DOMAIN_SEPARATOR, signer/verifier code and one-hop delegation | No generated signature recovery, ERC-1271 acceptance test or future consumption execution is performed by pre-sign analysis; DAI authority is derived from allowed, while ERC-3009 is a single-transfer authorization. |
 | SIWE envelope inspection: siwe.ts | Supported EIP-4361 header, account, URI origin, version 1, field order, nonce format/length, issued/expiry/not-before times and up to 16 resource origins | Does not verify remote nonce issuance/use, signature, session/audience acceptance or website honesty. |
+| Smart-account candidates: account-operations.ts / account-evidence.ts | Exact Safe-style owner/threshold/module/guard/fallback/hash/execution parameters; independently pinned owners/threshold/selected module and code reads | No authenticated Safe identity, complete guard/module graph, signature acceptance, ERC-1271 or ERC-4337 validation. |
+| Selected protocol candidates: protocol-operations.ts / position-evidence.ts | Generic withdrawal, selected bridge stages and V3 position tuples; existing position/owner/approval/token-unit/balance reads | No verified manager/pool/bridge/wrapper identity, valuation, destination proof or guaranteed exit. |
+| Structural batch inspection: batch-evidence.ts | Canonical multicall/Safe/MultiSend summaries, bounded child parameters, CALL/delegatecall and unknown/truncation markers | Depth 3, 32 entries, 16384 bytes/body, 32768 recursive bytes. Structure is not verified execution or child authority. |
 | Evidence inventory: quality.ts | Status counts, source groups, observation-time flags, block provenance, mixed upstream blocks, conflicting same-height hashes and authenticated-credential attribution | No risk score, coverage percentage, calibration or cryptographic Snap attestation. |
 | Independent Snap-provider snapshot | Read-only eth_chainId with source and observation time, stored separately in signature.providerContext | Not bound to the initiating dApp or request time. Domain matches do not prove request network; differences are contextual warnings. |
 | Isolated Anvil fork: simulation.ts | Verifies upstream chain/base block hash; executes only on a temporary local fork; records execution block, native deltas/gas, discovered standard assets and bounded calls | Preserves supplied gas/fees/nonce; missing gas uses an explicit default. It does not forge user balances/permissions or broadcast upstream. Hidden/nonstandard assets and future state remain incomplete. |
@@ -37,7 +40,7 @@ Pre-sign advice only. You decide in the wallet; this tool does not force a block
 | Meta Responses API | Fixed muse-wonder-1.0 model assesses the whitelisted packet and cites actual evidence IDs | A score is an uncalibrated risk indicator, not a loss probability or authenticity certificate. |
 | Hosted EOA authentication | Exact one-use domain/URI/nonce login challenge; recovered signer; hashed web/Snap credentials, owner-scoped reports and per-address quota | Separate from asset-risk analysis. Contract-wallet authentication is unsupported; login does not authorize assets. |
 
-Each collector verifies/pins its own reads. Their blocks and observation times can differ; the complete report is not one atomic global snapshot. Independent RPC/header/balance/code reads retain successful results when another read fails. Fork execution mines child blocks after its recorded base. Tool selection/availability and successful data collection are recorded separately. The quality inventory flags observations older than five minutes relative to report creation, missing/invalid timestamps and timestamps over 30 seconds ahead. These are freshness diagnostics, not numeric risk thresholds; an observation timestamp does not establish the provider data age. Reads are pinned by block number, not atomically by block hash. Recorded hashes are provenance and do not rule out reorganizations or inconsistent provider replies. Conflicting hashes at one chain/height require a fresh independent check and prevent overall low/strong confidence.
+Confirmed-state collectors verify/pin their own reads. The additional pending nonce is explicitly one node’s unpinned view: it can omit private/remote transactions and supplies no original payload, cancellation intent or replacement-fee policy. Their blocks and observation times can differ; the complete report is not one atomic global snapshot. Independent RPC/header/balance/code reads retain successful results when another read fails. Fork execution mines child blocks after its recorded base. Tool selection/availability and successful data collection are recorded separately. The quality inventory flags observations older than five minutes relative to report creation, missing/invalid timestamps and timestamps over 30 seconds ahead. These are freshness diagnostics, not numeric risk thresholds; an observation timestamp does not establish the provider data age. Reads are pinned by block number, not atomically by block hash. Recorded hashes are provenance and do not rule out reorganizations or inconsistent provider replies. Conflicting hashes at one chain/height require a fresh independent check and prevent overall low/strong confidence.
 
 ## 3. Exact model input fields
 
@@ -64,6 +67,8 @@ Ordinary messages have at most 1,600 preview characters. Generic RPC summaries t
 
 Raw amount strings are smallest units unless the same asset's decimals were read. valueWei/native balances/gasWei are wei; gas is an execution-unit count and fee rates are wei per gas; nonce is a counter. Shares differ from underlying assets. NFT IDs are not financial amounts. roundTripReturnPercent is already a percentage and includes more than tax. Aave-shaped healthFactor uses 1e18 for one; Base-field currency is not automatically verified. Without a price source, dollar loss cannot be inferred.
 
+DAI allowed mapping is reference-derived authority, not another signed amount. ERC-3009 commits one exact transfer, whereas Permit2 transfer is a single-nonce cap; neither is a standing allowance. If the current ERC-3009 balance cannot cover the exact amount, balanceCoversDeclaredAmount=false is recorded and no smaller partial-transfer bound is invented. Conditional allowance/cap bounds are not measured future loss. Empty-data DELEGATECALL remains delegated execution rather than a native payment. See [the extension notes](EXTENDED-COVERAGE-2026-10-22.md) for test and identity boundaries.
+
 ## 4. All profiles: evidence attempted and remaining gaps
 
 The following fields describe the attempted path. Only successful observations become facts. Missing configuration, unavailable interfaces, timeouts and unsupported semantics remain in the packet. **Candidate decoding, automatic entry and complete protocol verification are different claims.**
@@ -72,7 +77,7 @@ The following fields describe the attempted path. Only successful observations b
 
 - **Entry:** Automatic when the wallet supplies a transaction.
 - **Current scope:** Common transaction checks; recipient identity is unverified.
-- **Fields/evidence supplied when obtained:** from, to, value, chainId, source origin, gas and supplied fee parameters; Verified RPC chain/block, nativeBalanceWei, target code and one-hop delegation code; confirmed nonce and supplied fee versus observed base fee; optional fork native deltas, gas and bounded calls; Available address and website intelligence, only when enabled.
+- **Fields/evidence supplied when obtained:** from, to, value, chainId, source origin, gas and supplied fee parameters; Verified RPC chain/block, nativeBalanceWei, target code and one-hop delegation code; confirmed nonce at a pinned block, separate unpinned node pending-nonce view and supplied fee versus observed base fee; optional fork native deltas, gas and bounded calls; Available address and website intelligence, only when enabled.
 - **Still unknown:** A transfer does not prove recipient identity, payment purpose, correct destination network, future honesty or final fees.
 - **Possible extension and its boundary:** Add trusted address-book/name resolution, verified recipients, supported-chain policies and fee references. These still cannot guarantee recipient honesty.
 
@@ -98,7 +103,7 @@ The following fields describe the attempted path. Only successful observations b
 - **Current scope:** Common permission parameters; spender identity remains incomplete.
 - **Fields/evidence supplied when obtained:** spender, amountOrTokenId, large-allowance flag, and supported owner/deadline fields; Asset-standard queries; existing ERC-20 allowance where supported; Current balance, partial controls, optional intelligence and fork excess-spending evidence.
 - **Still unknown:** ERC-20 and ERC-721 approve share an encoding. Finite permissions can be malicious; on-chain Permit variants and future spending are not fully covered.
-- **Possible extension and its boundary:** Add per-NFT permissions, DAI/custom Permit adapters, verified spender identity and history. Future upgrades or permission abuse cannot be ruled out.
+- **Possible extension and its boundary:** Add per-NFT permissions, additional custom Permit adapters, verified spender identity and history. Future upgrades or permission abuse cannot be ruled out.
 
 ### 5. NFT operator approval / revocation
 
@@ -156,21 +161,21 @@ The following fields describe the attempted path. Only successful observations b
 - **Still unknown:** Lock periods, slashing, reward formulas and funding sources are not automatically read. A withdraw method can belong to another protocol.
 - **Possible extension and its boundary:** Add adapters for verified protocols, positions, lock/exit conditions and simulation. Future yield, slashing and solvency cannot be promised.
 
-### 12. Add / remove liquidity
+### 12. Liquidity / concentrated-liquidity position changes
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Selected V2-shaped router parameters.
-- **Fields/evidence supplied when obtained:** tokenA/tokenB, desired/minimum amounts or liquidity quantity; recipient, deadline, target and recognized fork asset deltas; Available controls and primary-token intelligence.
-- **Still unknown:** Pool identity, reserves, LP valuation and impermanent loss are incomplete. Exit is not guaranteed and intelligence may not cover every token.
-- **Possible extension and its boundary:** Add verified factory/pool, reserves, prices, LP shares and exit scenarios. Future prices, liquidity and impermanent loss remain estimates.
+- **Current scope:** Selected V2 router and V3 position-manager candidates; partial current position reads.
+- **Fields/evidence supplied when obtained:** V2 token amounts/minima/LP quantity/recipient/deadline; V3 mint/increase/decrease/collect tuple fields, tokenId, ticks, fee, liquidity units and per-token amount limits; For existing V3 IDs: pinned positions, NFT owner/current approval/caller operator, manager code, token decimals and caller balances when readable; independent partial results retained; Generic fork deltas, partial controls and one primary-token intelligence candidate.
+- **Still unknown:** Pool/deployment identity, quotes/current tick validity, NFT or LP valuation, impermanent loss, complete fee/exit economics and future liquidity remain unverified. Mint has no existing position ID to inspect.
+- **Possible extension and its boundary:** Add trusted factory/pool/manager identity, pool state, prices, quotes and exit/stress adapters. Future prices and liquidity remain uncertain.
 
-### 13. Selected bridge deposit
+### 13. Selected bridge initiation / withdrawal / finalization
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Selected OP-shaped bridge methods and source-chain behavior.
-- **Fields/evidence supplied when obtained:** localToken/remoteToken, amount or native value, recipient and candidate action; Target code and partial controls; Source-chain fork asset deltas and explicit destination-unverified flag.
-- **Still unknown:** Destination chain ID, arrival, message proofs, validators and custody are not verified. extraData is not completely interpreted.
-- **Possible extension and its boundary:** Add bridge-specific source/destination RPC, deployment identity, proof checks and destination execution. Future relay, consensus, outages and arrival remain uncertain.
+- **Current scope:** Selected OP-shaped parameter decoding and source-chain observations only.
+- **Fields/evidence supplied when obtained:** Supported bridgeETH/bridgeERC20/deposit/withdraw/withdrawTo and finalizeBridgeETH/ERC20 candidates; local/remote token, amount/value, recipient, claimed message sender, minimum gas and extraData byte count; Candidate stage: bridge request, withdrawal request or finalization request; target code/partial controls; Optional source-chain fork effects with destinationVerified=false.
+- **Still unknown:** Messenger/portal authority, proofs, destination deployment identity, message status, target-chain settlement/arrival, validators and custody are unverified. A finalize selector is not proof of a valid finalization.
+- **Possible extension and its boundary:** Add bridge-version-specific source/destination identity, portal/messenger proof/state adapters and destination execution. Future relay, consensus and arrival cannot be guaranteed.
 
 ### 14. Airdrop / reward claim
 
@@ -180,13 +185,13 @@ The following fields describe the attempted path. Only successful observations b
 - **Still unknown:** The Merkle root, project identity and entitlement are unverified. Full proof bytes and website content are not supplied to AI for complete verification.
 - **Possible extension and its boundary:** Verify roots/proofs/entitlements and official deployments for known projects, including attached permissions. Future root changes or project fraud remain possible.
 
-### 15. Native wrapping / no-argument deposit candidate
+### 15. Native wrapping / generic withdrawal candidate
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** deposit() shape and native value.
-- **Fields/evidence supplied when obtained:** valueWei, receiving contract and no-argument method; Code, partial controls and optional fork asset deltas.
-- **Still unknown:** deposit() need not be a trusted wrapped coin. withdraw(uint256) currently maps to the staking candidate; constant redemption is unverified.
-- **Possible extension and its boundary:** For verified wrappers, add deployment/code identity and both-direction redemption checks. Arbitrary same-name contracts remain untrusted.
+- **Current scope:** deposit() and withdraw(uint256) parameter candidates; redemption identity and units unknown.
+- **Fields/evidence supplied when obtained:** For deposit(): receiving contract and native value; for withdraw(uint256): amount with amountKind=unverified_protocol_units and redeemabilityVerified=false; Code, partial controls, readable selected asset state and optional fork deltas.
+- **Still unknown:** A same-name deposit or withdrawal need not be a trusted wrapper. withdraw(uint256) is not assumed to be staking or guaranteed native redemption; exchange rate, units, solvency and exit restrictions remain unverified.
+- **Possible extension and its boundary:** Add verified wrapper or protocol deployment identity, explicit units/rates and both-direction redemption/exit checks. Arbitrary same-name contracts remain untrusted.
 
 ### 16. Mint / burn
 
@@ -196,13 +201,13 @@ The following fields describe the attempted path. Only successful observations b
 - **Still unknown:** Issuance entitlement, supply policy, actual price and every burn consequence are unverified.
 - **Possible extension and its boundary:** Add specific token/NFT mint standards, supply, pricing and permission checks. Issuer promises and future value cannot be proved by one call.
 
-### 17. Ownership / role / upgrade change
+### 17. Ownership / role / upgrade / smart-account controls
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Common administrator-operation candidates.
-- **Fields/evidence supplied when obtained:** transferOwnership/renounceOwnership/grantRole/revokeRole/upgradeToAndCall; newController, role and account where decoded; Current code hash, common ERC-1967 slots, readable owner/paused, new-target code and optional fork behavior.
-- **Still unknown:** New implementation auditing, storage compatibility, dynamic delegatecall and hidden administrator discovery are incomplete.
-- **Possible extension and its boundary:** Add verified source/bytecode, permission graphs, storage-layout comparisons and formal properties. Arbitrary code and all future behavior cannot be universally proved safe.
+- **Current scope:** Common admin methods and exact Safe-style control candidates; no deployment authentication.
+- **Fields/evidence supplied when obtained:** Ownership/role/upgrade target parameters; Safe-style add/remove/swap owner and threshold, enable/disable module, set/remove guard/fallback handler and approveHash candidates; Verified RPC chain and fixed block; independently retained getOwners (at most 64 retained), getThreshold, selected isModuleEnabled and selected account/authority code; Requested versus observed threshold; removal/granting roles remain distinct. approveHash supplies no recoverable action preimage or verified authorization.
+- **Still unknown:** Complete module/guard/fallback graphs, implementation identity/audit, owner contract policies, linked-list validity, signature acceptance and future execution are unverified. getGuard is internal and no fictional public getter is used.
+- **Possible extension and its boundary:** Add authenticated versions/deployments, supported storage layouts and full authority graphs/code/policy analysis. Generic Safe-shaped calldata does not provide full ERC-4337 or ERC-1271 support.
 
 ### 18. Contract deployment
 
@@ -212,13 +217,13 @@ The following fields describe the attempted path. Only successful observations b
 - **Still unknown:** Full initialization code is not sent to AI. New-contract permissions, source/build correspondence, constructor semantics and CREATE2 identity are incomplete.
 - **Possible extension and its boundary:** Add bytecode/constructor decoding, verified builds, address prediction and initialization checks. Complete arbitrary contract semantics remain unproved.
 
-### 19. Batch / aggregator / complex call
+### 19. Batch / Safe execution / aggregator candidates
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Parent transaction and selected wrapper parameters; child semantics incomplete.
-- **Fields/evidence supplied when obtained:** method; supported wrappers add deadline, callCount and bounded selectors; Recognized parent-transaction fork asset deltas and bounded call tree; Target, code and optional intelligence.
-- **Still unknown:** Children of arbitrary multicall(bytes[]) or execute calls are not fully decoded. Hidden assets, cross-protocol effects and dynamic delegation may be missed.
-- **Possible extension and its boundary:** Add recursive protocol-specific decoding and stepwise execution with wider asset tracking. Dynamic code and resource limits prevent a universal completeness guarantee.
+- **Current scope:** Bounded canonical structural summaries of selected wrappers, distinct from execution proof.
+- **Fields/evidence supplied when obtained:** multicall(bytes[]), multicall(uint256,bytes[]), Safe-style execTransaction and packed MultiSend encodings; nested candidate targets/selectors/amounts and recognized bounded parameters; Up to depth 3, 32 child entries, 16384 bytes per body and 32768 recursively inspected bytes; explicit truncation/malformed/unsupported gaps; CALL versus DELEGATECALL, candidate encoded value and context, wrapper refunds and signature byte count only; raw child calldata/signatures omitted from structural evidence.
+- **Still unknown:** Structural decoding does not authenticate code or actual CALL/delegatecall behavior, child sender/owner/storage context, signature validity or full effects. Unknown wrappers, opaque router commands and hidden/nonstandard assets remain incomplete.
+- **Possible extension and its boundary:** Add authenticated wrappers/protocol adapters, state-aware child execution and broader asset tracking. Dynamic code and resource limits prevent universal completeness.
 
 ### 20. Wallet login / SIWE-like message
 
@@ -244,13 +249,13 @@ The following fields describe the attempted path. Only successful observations b
 - **Still unknown:** A hash cannot uniquely reveal its original message. The Snap may not receive eth_sign, and authority/replay scope can remain unknown.
 - **Possible extension and its boundary:** If the caller supplies the original message, protocol and hash correspondence, verify those separately. Automatic delivery needs wallet support; a one-way hash cannot reveal a unique original.
 
-### 23. Permit / NFT Permit signature
+### 23. Permit / NFT Permit / DAI / transfer-authorization signatures
 
 - **Entry:** Automatic when the wallet supplies a message signature request.
-- **Current scope:** Canonical EIP-2612 and ERC-4494 state checks; custom variants incomplete.
-- **Fields/evidence supplied when obtained:** Declared domain/verifyingContract and committed owner/spender/value or tokenId/nonce/deadline; supported unsigned integers normalize equivalent decimal/hex/leading-zero forms without changing the EIP-712 digest; EIP-712 digest/domainHash; owner or token-ID nonce and DOMAIN_SEPARATOR where readable; ERC-4494 interface/owner/current approval/operator state; signer/verifier code, units, permissions and independent provider-context provenance.
-- **Still unknown:** No generated signature is recovered, ERC-1271-validated or consumed. DAI/custom variants, true protocol identity and future state remain unverified; provider/domain match does not prove request-bound network.
-- **Possible extension and its boundary:** Add trusted deployments and specific variants/consumption paths. Future nonce/code changes and actual signature use still require separate evidence.
+- **Current scope:** Canonical EIP-2612, ERC-4494, DAI-style Permit and selected ERC-3009 state checks.
+- **Fields/evidence supplied when obtained:** Committed declared type/domain, owner or holder/from, spender or recipient, value/tokenId/allowed, nonce and deadline/expiry or validAfter/validBefore; exact normalized unsigned representations preserve digest; DAI allowed=true derives uint256 maximum, false derives zero: mapped authority is not a separately signed amount; expiry=0 follows reference no-submission-deadline semantics; ERC-3009 TransferWithAuthorization/ReceiveWithAuthorization is a single committed transfer, not standing allowance; reads authorizationState(authorizer,bytes32), exact open time window and conditional receive-caller restriction; Typed digest/domainHash and observed DOMAIN_SEPARATOR; selected owner/token-ID nonce, NFT interface/owner/approval/operator and signer/verifier code plus bounded current balance exposure.
+- **Still unknown:** Reference-shaped semantics do not authenticate implementations. Generated signature validity, ERC-1271 acceptance, future consumption, custom variants and full request-bound network remain unverified. Used ERC-3009 state does not distinguish used from canceled.
+- **Possible extension and its boundary:** Add verified deployments/versions and consuming-transaction adapters. Future nonce/code changes, third-party calls and actual acceptance still need separate evidence.
 
 ### 24. Permit2 signature
 
@@ -373,7 +378,7 @@ The configured backend sends necessary evidence to Meta Muse Wonder when enabled
 
 ## 9. Source and external references
 
-Implementation: assessment-scope.ts (server-derived observable-request boundary), decode.ts/operations.ts (decoding), providers.ts/assets.ts (RPC/assets/intelligence), protocols.ts (controls/vault/lending), signatures.ts (typed structure/state), siwe.ts (bounded login envelope), quality.ts (evidence inventory), simulation.ts (fork/round trip), ai.ts (packet/model/validation), wallet-auth.ts (hosted authentication), coverage.ts (shared descriptions).
+Implementation: account-operations.ts/account-evidence.ts (bounded smart-account candidates), protocol-operations.ts/position-evidence.ts (selected withdrawal/bridge/position paths), batch-evidence.ts (structural child summaries), assessment-scope.ts (server-derived observable-request boundary), decode.ts/operations.ts (decoding), providers.ts/assets.ts (RPC/assets/intelligence), protocols.ts (controls/vault/lending), signatures.ts (typed structure/state), siwe.ts (bounded login envelope), quality.ts (evidence inventory), simulation.ts (fork/round trip), ai.ts (packet/model/validation), wallet-auth.ts (hosted authentication), coverage.ts (shared descriptions).
 
 - [MetaMask entry points](https://docs.metamask.io/snaps/reference/entry-points/): transaction/signature hooks differ; onRpcRequest requires an explicit Snap invocation.
 - [MetaMask permissions](https://docs.metamask.io/snaps/reference/permissions/): a provider snapshot and dynamic account permissions are distinct from hook input.

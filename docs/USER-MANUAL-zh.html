@@ -290,7 +290,7 @@ id="toc-8-了解准确字段提取与覆盖边界">8.
 <p><a href="../README.zh-CN.md">中文 README</a> 提供配置与开发参考；<a
 href="AI-COVERAGE-GUIDE-zh.md">中文能力覆盖指南</a> 列出全部 30
 个分析类别（profile）的准确提取字段、工具、缺失检查和可扩展方向。当前本地实验室有
-<strong>54 个代表性案例：43 个交易请求和 11 个消息签名请求，涉及 30
+<strong>66 个代表性案例：51 个交易请求和 15 个消息签名请求，涉及 30
 个分析类别中的 25 个</strong>。这些案例不是检测准确率基准。本手册对应<a
 href="USER-MANUAL.md">英文使用手册</a>；当前界面及新生成的说明为英文，旧报告保留原记录语言。</p>
 <p><a
@@ -535,6 +535,25 @@ Snap 提交；返回签名、仅 API
 刻意限制卖出，用于测试相关证据路径。</p>
 <p>实验室生成的签名在浏览器中完成格式检查后即丢弃，不上传、不持久化，也不提交用于资产操作。未签名消息仍会到达后端，其受长度限制的预览可能发送给
 Muse。</p>
+<h3 id="可选账户与签名变体测试">可选账户与签名变体测试</h3>
+<p>新增 8 个 <strong>Smart-account fixture</strong> 交易测试 threshold
+降低、module 标记开/关、guard 设置/移除、fallback 设置/移除和 CALL
+封装。已有本地部署请明确运行 <code>npm run deploy:lab</code>，只补充可选
+<code>LabAccount</code> 后，再点击 <strong>Prepare local test
+assets</strong>。部署保留原测试合约地址/状态；准备资产会将可选账户重置给当前测试者。移除类案例先完成对应设置。</p>
+<p>这是 owner 可直接调用的本地接口模型：无论显示 threshold
+为多少，任一列出的 owner
+都能直接调用。它<strong>不是生产多签</strong>；module/guard/fallback
+只是标记，不实施真实约束。封装仅接受 CALL、空
+signatures、零退款参数，故意拒绝
+DELEGATECALL；不会修改真实智能钱包权限。</p>
+<p>另有
+<code>dai-allow</code>、<code>dai-revoke</code>、<code>erc3009-transfer</code>、<code>erc3009-receive</code>
+四个签名案例，使用现有 LAB-USD domain
+发起真实钱包消息，以测格式和字段提取。LabToken 不实现 DAI/ERC-3009
+消费方法，也没有 ERC-3009 authorizationState
+getter；缺失状态/消费证据是预期边界。签名本身不消费消息、不改
+allowance、不转币，生成签名仍在浏览器丢弃。</p>
 <h2 id="6-使用公网和自己的账户">6. 使用公网和自己的账户</h2>
 <p><strong>Public networks</strong> 用于查询公网数据并检查实际 Snap
 送达。先使用 Sepolia 和专用测试账户。主网可能持有真实资产，本地 Flask
@@ -643,6 +662,14 @@ selector
 条缺失检查摘要。使用报告 ID 在 <strong>Check history</strong>
 查阅完整报告。显示截断不意味着被省略检查已经通过。旧的非英文历史报告保留原文，不凭空翻译或重新评估。</p>
 <h2 id="8-了解准确字段提取与覆盖边界">8. 了解准确字段提取与覆盖边界</h2>
+<p>本轮还增加 DAI 结构 Permit、ERC-3009 单次转移授权、Safe
+结构控制/执行、有界递归封装摘要、V3 仓位状态、部分桥提款/完成参数和通用
+withdraw(uint256)。它们是有边界的候选适配器，不是全协议支持。已确认
+nonce 仍固定区块，另有独立未固定的节点 pending nonce
+视图，不取得原交易内容或替换规则。66 个钱包案例现包含 8 个简化账户交易和
+4 个 DAI/ERC-3009 候选签名；其他新路径有
+API/代码测试，不代表官方协议或公网钱包验收。详见<a
+href="EXTENDED-COVERAGE-2026-10-22.md">扩展能力与验收边界</a>。</p>
 <p>解码器提取受支持的 ABI
 字段和被签名类型实际包含的消息字段，<strong>不会仅凭操作关键词猜测风险</strong>。<a
 href="../README.md#evidence-collected-for-each-operation">README
@@ -701,6 +728,10 @@ point/paymaster/factory/nonce，以及受限 calldata 摘要</td>
 </tr>
 </tbody>
 </table>
+<p>DAI 权限来自 allowed 的参考语义推导；ERC-3009
+承诺单次精确数量，Permit2 transfer 为单 nonce 上限，后两者都不是持续
+allowance。ERC-3009 当前余额不足会明确记录，不制造较小可消费转移量；空
+calldata 的 DELEGATECALL 仍是委托代码执行，不是原生币转账。</p>
 <p>支持的 EIP-712
 无符号整数在风险解释前，会统一等值的十进制、十六进制与前导零表示，且保持被签
 digest 不变。零地址按角色解释：支持的 NFT approval/Permit

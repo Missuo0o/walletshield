@@ -1,7 +1,7 @@
 {
-  "passed": 54,
-  "transactionCount": 43,
-  "signatureCount": 11,
+  "passed": 66,
+  "transactionCount": 51,
+  "signatureCount": 15,
   "profiles": 25,
   "cases": [
     {
@@ -252,8 +252,8 @@
     {
       "id": "unwrap",
       "kind": "transaction",
-      "category": "staking",
-      "evidenceCount": 0,
+      "category": "withdrawal",
+      "evidenceCount": 1,
       "result": "success"
     },
     {
@@ -285,6 +285,62 @@
       "result": "success"
     },
     {
+      "id": "account-threshold",
+      "kind": "transaction",
+      "category": "account_control",
+      "evidenceCount": 5,
+      "result": "success"
+    },
+    {
+      "id": "account-module-enable",
+      "kind": "transaction",
+      "category": "account_control",
+      "evidenceCount": 6,
+      "result": "success"
+    },
+    {
+      "id": "account-module-disable",
+      "kind": "transaction",
+      "category": "account_control",
+      "evidenceCount": 5,
+      "result": "success"
+    },
+    {
+      "id": "account-guard-set",
+      "kind": "transaction",
+      "category": "account_control",
+      "evidenceCount": 5,
+      "result": "success"
+    },
+    {
+      "id": "account-guard-remove",
+      "kind": "transaction",
+      "category": "account_control",
+      "evidenceCount": 4,
+      "result": "success"
+    },
+    {
+      "id": "account-fallback-set",
+      "kind": "transaction",
+      "category": "account_control",
+      "evidenceCount": 5,
+      "result": "success"
+    },
+    {
+      "id": "account-fallback-remove",
+      "kind": "transaction",
+      "category": "account_control",
+      "evidenceCount": 4,
+      "result": "success"
+    },
+    {
+      "id": "account-call",
+      "kind": "transaction",
+      "category": "account_execution",
+      "evidenceCount": 9,
+      "result": "success"
+    },
+    {
       "id": "deployment",
       "kind": "transaction",
       "category": "deployment",
@@ -295,7 +351,7 @@
       "id": "batch",
       "kind": "transaction",
       "category": "batch",
-      "evidenceCount": 0,
+      "evidenceCount": 5,
       "result": "success"
     },
     {
@@ -330,34 +386,62 @@
       "id": "permit",
       "kind": "signature",
       "category": "permit_signature",
-      "evidenceCount": 12,
+      "evidenceCount": 13,
       "result": "local-node-signature-verified-not-snap"
     },
     {
       "id": "permit-unlimited",
       "kind": "signature",
       "category": "permit_signature",
-      "evidenceCount": 12,
+      "evidenceCount": 13,
       "result": "local-node-signature-verified-not-snap"
     },
     {
       "id": "permit-expired",
       "kind": "signature",
       "category": "permit_signature",
-      "evidenceCount": 12,
+      "evidenceCount": 13,
       "result": "local-node-signature-verified-not-snap"
     },
     {
       "id": "permit-owner",
       "kind": "signature",
       "category": "permit_signature",
-      "evidenceCount": 12,
+      "evidenceCount": 13,
       "result": "local-node-signature-verified-not-snap"
     },
     {
       "id": "permit-nonce",
       "kind": "signature",
       "category": "permit_signature",
+      "evidenceCount": 13,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "dai-allow",
+      "kind": "signature",
+      "category": "dai_permit_signature",
+      "evidenceCount": 13,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "dai-revoke",
+      "kind": "signature",
+      "category": "dai_permit_signature",
+      "evidenceCount": 13,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "erc3009-transfer",
+      "kind": "signature",
+      "category": "transfer_authorization",
+      "evidenceCount": 12,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "erc3009-receive",
+      "kind": "signature",
+      "category": "transfer_authorization",
       "evidenceCount": 12,
       "result": "local-node-signature-verified-not-snap"
     },
@@ -365,24 +449,24 @@
       "id": "permit2",
       "kind": "signature",
       "category": "permit2_signature",
-      "evidenceCount": 12,
+      "evidenceCount": 13,
       "result": "local-node-signature-verified-not-snap"
     },
     {
       "id": "permit2-batch",
       "kind": "signature",
       "category": "permit2_signature",
-      "evidenceCount": 16,
+      "evidenceCount": 17,
       "result": "local-node-signature-verified-not-snap"
     },
     {
       "id": "order",
       "kind": "signature",
       "category": "order_signature",
-      "evidenceCount": 6,
+      "evidenceCount": 7,
       "result": "local-node-signature-verified-not-snap"
     }
   ],
   "scope": "local-node-transactions-and-signature-format-not-MetaMask-Snap-UI",
-  "generatedAt": "2026-10-22T22:39:50.575Z"
+  "generatedAt": "2026-10-22T23:09:47.976Z"
 }

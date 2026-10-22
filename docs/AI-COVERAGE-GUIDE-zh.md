@@ -4,7 +4,7 @@
 
 本文人工翻译自当前自动生成的[英文能力与覆盖指南](AI-COVERAGE-GUIDE.md)。英文指南由网页与 Snap 共用的覆盖配置生成，是当前生成源的参照；本文不是自动生成文件。以后修改覆盖配置时，应先运行 `npm run docs:coverage` 更新英文指南，再同步修订本文。安装与命令见[中文 README](../README.zh-CN.md)，操作步骤见[中文使用手册](USER-MANUAL-zh.md)。本轮修复及已实现/部分实现/手动入口/未覆盖对照见[当前覆盖范围](CURRENT-COVERAGE-zh.md)。
 
-本指南说明已实现的路径及其限制。当前有 **30 个分析配置（analysis profiles）**，以及 **54 个本地钱包案例**（43 个交易请求、11 个消息请求），案例涉及 **25 个配置**。**30 个配置不等于 30 个完整协议集成；案例数量不代表检测准确率、安全评级，也不证明每种方法都已测试。**
+本指南说明已实现的路径及其限制。当前有 **30 个分析配置（analysis profiles）**，以及 **66 个本地钱包案例**（51 个交易请求、15 个消息请求），案例涉及 **25 个配置**。**30 个配置不等于 30 个完整协议集成；案例数量不代表检测准确率、安全评级，也不证明每种方法都已测试。**
 
 ## 1. 请求入口与组件分工
 
@@ -29,11 +29,14 @@
 | 工具 / 实现 | 具体观察内容 | 限制 |
 | --- | --- | --- |
 | 请求解码器：`decode.ts` / `operations.ts` / viem | 精确支持的 selector/ABI 候选、地址、数量、接收方、限制、截止时间，以及 EIP-712 实际签署承诺的字段 | 不支持、含多余尾部数据或格式错误的输入保留为未知。名称或 selector 匹配不证明协议身份。 |
-| 可信 EVM RPC：`providers.ts` | `eth_chainId`、固定区块/哈希/时间，独立保留的原生币余额与代码读取结果，已确认 nonce，所供费用与当前 base fee 的比较，以及使用所供执行字段的有限 `eth_call` | 调用未回退不证明已覆盖全部资产行为、nonce 会被接受、未来会打包，或接收方诚实。 |
+| 可信 EVM RPC：`providers.ts` | `eth_chainId`、固定区块/哈希/时间，独立保留的原生币余额与代码读取结果，已确认 nonce、独立未固定的 pending nonce 视图、所供费用与当前 base fee 的比较，以及使用所供执行字段的有限 `eth_call` | 调用未回退不证明已覆盖全部资产行为、nonce 会被接受、未来会打包，或接收方诚实。 |
 | 资产读取：`assets.ts` | 代码、ERC-165 声明、symbol/decimals、余额、ERC-20 allowance，以及部分 NFT owner/approval/operator 状态 | 最多读取 8 个明确资产，每个资产最多 16 个 NFT ID。元数据和接口可能说谎；原始数量不是美元金额。 |
 | 合约/协议读取：`protocols.ts` | 代码哈希；ERC-1967 implementation/admin/beacon 槽；可读的 owner/paused；金库 asset/totals/preview/max；符合 Aave 结构的当前抵押/债务/LTV/清算阈值/健康因子 | 空代理槽不证明不可升级。当前接口返回值不能认证部署、估值或未来偿付能力。 |
 | 签名检查：`signatures.ts` | 类型图/编码/digest/domainHash 是否有效，通用 typed `DOMAIN_SEPARATOR`，部分 Permit/NFT Permit/Permit2 nonce/allowance 读取，签名者/验证合约代码，签名者一跳委托目标及声明的范围 | 签名前分析不恢复尚未生成的签名，不进行 ERC-1271 接受测试，也不执行未来的签名消费。 |
 | SIWE 消息结构检查：`siwe.ts` | 支持的 EIP-4361 头部、账户、URI origin、版本 1、字段顺序、nonce 格式/长度、签发/到期/生效时间，以及最多 16 个资源 origin | 不验证远程 nonce 的签发/使用、签名、会话/受众接受状态或网站是否诚实。 |
+| 智能账户：account-operations.ts/account-evidence.ts | 严格 Safe 结构 owner/threshold/module/guard/fallback/hash/执行参数，固定区块独立 owner/threshold/选定 module/代码 | 不认证 Safe、完整权限图、签名或 ERC-4337/ERC-1271。 |
+| 协议候选：protocol-operations.ts/position-evidence.ts | 通用提款、部分桥阶段、V3 元组与既有仓位/owner/approval/代币单位/余额 | 不认证池/manager/桥/wrapper、估值、目标证明或退出。 |
+| 批量结构：batch-evidence.ts | 标准编码 multicall/Safe/MultiSend 子结构、CALL/delegatecall 和缺口 | 深度 3、32 项、body 16384 字节、递归 32768 字节，不证明执行或子权限。 |
 | 证据清单：`quality.ts` | 状态数量、来源分组、观察时间标记、区块来源记录、上游区块混用、同高度哈希冲突，以及认证凭据的来源归属 | 不是风险分数、覆盖百分比、校准结果，也不是 Snap 的密码学执行证明。 |
 | 独立 Snap-provider 快照 | 只读 `eth_chainId`，附来源与观察时间，单独存放在 `signature.providerContext` | 不绑定发起 dApp 或请求时刻。domain 匹配不证明请求网络；不一致只构成上下文警告。 |
 | 隔离 Anvil 分叉：`simulation.ts` | 验证上游链与基础区块哈希；只在临时本地分叉执行；记录执行区块、原生币变化/gas、发现的标准资产和有限调用 | 保留所供 gas/费用/nonce；缺少 gas 时使用明确的默认值。不伪造用户余额/权限，也不向上游广播。隐藏/非标准资产与未来状态仍不完整。 |
@@ -47,7 +50,7 @@
 
 GoPlus 的仓库默认仍关闭；本次复核的开发机已明确启用。其他安装请查看 `/api/security/status`，不要假设继承本机开关。上述一个代币、三个明确交易对手的范围没有扩大。
 
-每个采集器验证并固定自己的读取。不同采集器的区块与观察时间可能不同，完整报告不是全局原子快照。独立 RPC/header/balance/code 读取中的某一项失败时，其他成功结果仍会保留。分叉执行在记录的基础区块之后挖出子区块。工具是否被选择/可用，与数据是否成功采集分开记录。
+已确认状态采集器验证并固定自己的读取。额外的 pending nonce 明确为单节点未固定视图，可能缺少私有/远端交易，不包含原交易内容、取消意图或替换费率规则。不同采集器的区块与观察时间可能不同，完整报告不是全局原子快照。独立 RPC/header/balance/code 读取中的某一项失败时，其他成功结果仍会保留。分叉执行在记录的基础区块之后挖出子区块。工具是否被选择/可用，与数据是否成功采集分开记录。
 
 证据质量清单会标记：相对报告创建时刻已超过 5 分钟的观察、缺失/无效时间戳，以及领先超过 30 秒的时间戳。这些是新鲜度诊断，不是数值风险阈值；观察时间也不能证明 provider 数据本身有多新。读取按区块号固定，不是按区块哈希原子固定。记录的哈希用于追溯来源，不能排除重组或 provider 回复不一致。同一链同一高度发生哈希冲突时，需要新的独立检查，并且不能给出整体低风险或强证据置信度。
 
@@ -75,6 +78,8 @@ GoPlus 的仓库默认仍关闭；本次复核的开发机已明确启用。其�
 普通消息最多预览 1,600 个字符。通用 RPC 摘要通常检查最多 5 层嵌套、每个数组 16 项、40 个可识别标量字段及 8 个目标地址。即使模型只收到摘要，完整请求数据仍可能保存在后端。模拟处理有限日志（最多 256 条）、发现的资产（最多 32 个）和调用（最多 128 次）；明确资产和 ID 读取另有更小限制。截断属于覆盖缺口。
 
 除非已读取同一资产的 decimals，否则原始数量字符串均表示最小单位。`valueWei`/原生币余额/`gasWei` 的单位是 wei；`gas` 是执行单位数量，费率单位是 wei/gas；`nonce` 是计数器。份额不同于底层资产。NFT ID 不是财务数量。`roundTripReturnPercent` 已经是百分比，且不只包含税费影响。Aave 结构的 `healthFactor` 以 1e18 表示 1；`Base` 字段的计价币种不会自动得到验证。没有价格来源，就不能推断美元损失。
+
+DAI allowed 是参考语义推导，不是另一签入数量。ERC-3009 为单次精确转移，Permit2 transfer 为单 nonce 上限，均非持续 allowance。ERC-3009 当前余额不足时标明 balanceCoversDeclaredAmount=false，不假设可消费较小数量；条件性 allowance/上限比较不代表未来损失。空 calldata 的 DELEGATECALL 是委托执行，不是原生付款。具体测试与身份边界见[扩展说明](EXTENDED-COVERAGE-2026-10-22.md)。
 
 ## 4. 全部配置：尝试取得的证据与剩余缺口
 
@@ -110,7 +115,7 @@ GoPlus 的仓库默认仍关闭；本次复核的开发机已明确启用。其�
 - **当前范围：** 常见权限参数；spender 身份仍不完整。
 - **取得后提供的字段/证据：** `spender`, `amountOrTokenId`、大额 allowance 标记，以及支持的 owner/deadline 字段；资产标准查询；支持时读取现有 ERC-20 allowance；当前余额、部分控制权、可选情报和分叉超额支出证据。
 - **仍未知：** ERC-20 和 ERC-721 的 approve 共用编码。有限额度也可能恶意；链上 Permit 变体与未来支出未完全覆盖。
-- **可扩展方向与边界：** 增加逐 NFT 权限、DAI/自定义 Permit 适配器、经验证的 spender 身份与历史。不能排除未来升级或权限滥用。
+- **可扩展方向与边界：** 增加逐 NFT 权限、其他自定义 Permit 适配器、经验证的 spender 身份与历史。不能排除未来升级或权限滥用。
 
 ### 5. NFT operator 授权 / 撤销
 
@@ -168,21 +173,21 @@ GoPlus 的仓库默认仍关闭；本次复核的开发机已明确启用。其�
 - **仍未知：** 不自动读取锁定期、罚没、奖励公式和资金来源。`withdraw` 方法可能属于另一种协议。
 - **可扩展方向与边界：** 增加已验证协议、仓位、锁定/退出条件和模拟适配器。不能承诺未来收益、不发生罚没或偿付能力。
 
-### 12. 添加 / 移除流动性
+### 12. 流动性 / 集中流动性仓位变更
 
 - **入口：** 钱包提供交易时自动进入。
-- **当前范围：** 部分 V2 结构路由参数。
-- **取得后提供的字段/证据：** `tokenA`/`tokenB`、期望/最小数量或流动性数量；recipient、deadline、target 和分叉中识别的资产变化；可取得的控制权与主要代币情报。
-- **仍未知：** 池身份、储备、LP 估值和无常损失仍不完整。不保证能退出，情报也可能不覆盖每个代币。
-- **可扩展方向与边界：** 增加已验证 factory/pool、储备、价格、LP 份额与退出情景。未来价格、流动性和无常损失仍是估计。
+- **当前范围：** 部分 V2 路由和 V3 仓位管理器候选；读取部分当前仓位。
+- **取得后提供的字段/证据：** V2 数量/最小值/LP/收款者/deadline；V3 mint/increase/decrease/collect 元组、tokenId、ticks、fee、liquidity 单位与逐代币限额。对于既有 ID，固定区块独立读取 positions、NFT owner/approval/调用者 operator、manager 代码、代币 decimals 和调用者余额；保留成功的部分结果。可选通用分叉/控制与主要代币情报。
+- **仍未知：** pool/部署身份、报价/当前 tick 有效性、NFT/LP 估值、无常损失、完整费用/退出经济性与未来流动性；mint 没有既有 ID。
+- **可扩展方向与边界：** 增加可信 factory/pool/manager 身份、池状态、价格/报价和退出/压力适配器；未来价格和流动性仍不确定。
 
-### 13. 部分跨链桥存入
+### 13. 部分跨链发起 / 提款 / 完成候选
 
 - **入口：** 钱包提供交易时自动进入。
-- **当前范围：** 部分 OP 结构跨链桥方法与源链行为。
-- **取得后提供的字段/证据：** `localToken`/`remoteToken`、amount 或原生币 value、recipient 与候选动作；目标代码和部分控制权；源链分叉资产变化，以及明确的目标端未验证标记。
-- **仍未知：** 目标 chain ID、到账、消息证明、验证者和托管情况未验证。`extraData` 未完全解释。
-- **可扩展方向与边界：** 增加桥专用源链/目标链 RPC、部署身份、证明检查和目标端执行。未来中继、共识、停机与到账仍不确定。
+- **当前范围：** 部分 OP 结构参数解码及源链观察，不验证跨链证明。
+- **取得后提供的字段/证据：** 支持的 bridgeETH/bridgeERC20/deposit/withdraw/withdrawTo/finalizeBridgeETH/ERC20 候选；local/remote token、数量或原生值、接收者、声称消息发送者、最小 gas 和 extraData 字节数；阶段标记 bridge/withdrawal/finalization request、代码/部分控制权和可选源链分叉效果，destinationVerified 保持 false。
+- **仍未知：** messenger/portal 权限、证明、目标部署身份、消息状态/到账、验证者和托管；finalize selector 不是有效完成证明。
+- **可扩展方向与边界：** 增加桥版本专用双链身份/portal/messenger/proof/state 与目标执行适配；未来中继/共识/到账仍不能保证。
 
 ### 14. 空投 / 奖励领取
 
@@ -192,13 +197,13 @@ GoPlus 的仓库默认仍关闭；本次复核的开发机已明确启用。其�
 - **仍未知：** Merkle root、项目身份和领取资格未验证。不会向 AI 提供完整 proof 字节和网站内容来做完整验证。
 - **可扩展方向与边界：** 对已知项目验证 root/proof/领取资格和官方部署，包括附带权限。未来 root 变化或项目诈骗仍可能发生。
 
-### 15. 原生币封装 / 无参数 deposit 候选
+### 15. 原生币封装 / 通用提款候选
 
 - **入口：** 钱包提供交易时自动进入。
-- **当前范围：** `deposit()` 结构和原生币 value。
-- **取得后提供的字段/证据：** `valueWei`、接收合约和无参数方法；代码、部分控制权与可选分叉资产变化。
-- **仍未知：** `deposit()` 不一定是可信封装币。`withdraw(uint256)` 当前归入质押候选；恒定赎回未验证。
-- **可扩展方向与边界：** 对已验证封装合约增加部署/代码身份和双向赎回检查。同名任意合约仍不可信。
+- **当前范围：** deposit() 与 withdraw(uint256) 参数候选，赎回身份和单位未知。
+- **取得后提供的字段/证据：** deposit() 的接收合约/原生值；withdraw(uint256) 的 amount 标为 unverified_protocol_units、redeemabilityVerified=false；代码、部分控制权、可读资产状态与可选分叉变化。
+- **仍未知：** 同名 deposit/withdraw 不一定是可信 wrapper；不把一参数 withdraw 自动当成质押退出或原生币赎回。比率/单位/偿付/限制未知。
+- **可扩展方向与边界：** 为已验证 wrapper/协议增加单位、比率和双向赎回/退出检查；同名任意合约仍不可信。
 
 ### 16. 铸造 / 销毁
 
@@ -208,13 +213,13 @@ GoPlus 的仓库默认仍关闭；本次复核的开发机已明确启用。其�
 - **仍未知：** 发行资格、供应政策、实际价格和每种销毁后果未验证。
 - **可扩展方向与边界：** 增加特定 token/NFT 铸造标准、供应、价格和权限检查。一次调用不能证明发行者承诺或未来价值。
 
-### 17. 所有权 / 角色 / 升级变更
+### 17. 所有权 / 角色 / 升级 / 智能账户控制
 
 - **入口：** 钱包提供交易时自动进入。
-- **当前范围：** 常见管理员操作候选。
-- **取得后提供的字段/证据：** `transferOwnership`/`renounceOwnership`/`grantRole`/`revokeRole`/`upgradeToAndCall`；解码得到的 `newController`, `role`, `account`；当前代码哈希、常见 ERC-1967 槽、可读 owner/paused、新目标代码和可选分叉行为。
-- **仍未知：** 新实现审计、存储兼容性、动态 delegatecall 和隐藏管理员发现不完整。
-- **可扩展方向与边界：** 增加已验证源码/字节码、权限图、存储布局比较和形式化性质。不能普遍证明任意代码及全部未来行为安全。
+- **当前范围：** 常见管理方法与严格 Safe 结构候选，不认证部署。
+- **取得后提供的字段/证据：** 管理目标，Safe 结构 add/remove/swap owner/threshold、enable/disable module、set/remove guard/fallback、approveHash；固定可信链/区块，独立读取 getOwners（最多保留 64 个）、getThreshold、选定 isModuleEnabled、账户/权限目标代码。区分移除和授予，比较新旧 threshold。approveHash 不提供可反推的动作原文或已验证授权。
+- **仍未知：** 完整 module/guard/fallback 图、实现/代码审计、owner 合约策略、链表有效性、签名接受及未来执行。getGuard 为 internal，不调用虚构 public getter。
+- **可扩展方向与边界：** 增加真实版本/部署、已支持存储布局、完整权限图和代码/策略；Safe 结构不等于完整 ERC-4337/ERC-1271 支持。
 
 ### 18. 合约部署
 
@@ -224,13 +229,13 @@ GoPlus 的仓库默认仍关闭；本次复核的开发机已明确启用。其�
 - **仍未知：** 不向 AI 发送完整初始化代码。新合约权限、源码/构建对应关系、构造函数语义和 CREATE2 身份不完整。
 - **可扩展方向与边界：** 增加字节码/构造函数解码、已验证构建、地址预测和初始化检查。完整任意合约语义仍未证明。
 
-### 19. 批量 / 聚合器 / 复杂调用
+### 19. 批量 / Safe 执行 / 聚合器候选
 
 - **入口：** 钱包提供交易时自动进入。
-- **当前范围：** 父交易和部分封装参数；子调用语义不完整。
-- **取得后提供的字段/证据：** method；支持的封装还提供 deadline、callCount 和有限 selector；父交易分叉中识别的资产变化和有限调用树；目标、代码与可选情报。
-- **仍未知：** 不完整解码任意 `multicall(bytes[])` 或 execute 的子调用。可能遗漏隐藏资产、跨协议效果和动态委托。
-- **可扩展方向与边界：** 增加协议专用递归解码、逐步执行和更广资产跟踪。动态代码与资源限制使普遍完整性保证无法成立。
+- **当前范围：** 部分封装的有界标准编码结构摘要，区别于执行证明。
+- **取得后提供的字段/证据：** multicall(bytes[])、multicall(uint256,bytes[])、Safe execTransaction 和 packed MultiSend；嵌套候选目标/selector/数量及白名单参数。深度最多 3、全局 32 子项、body 16384 字节、递归总量 32768 字节；明确畸形/不支持/截断。标记 CALL/DELEGATECALL、编码值/上下文、refund 和签名字节数；结构证据不包含子 calldata 原文或签名字节。
+- **仍未知：** 不认证代码、实际调用模式、子 msg.sender/资产 owner/存储上下文、签名及全部效果。未知封装、opaque router commands 和隐藏/非标准资产仍有缺口。
+- **可扩展方向与边界：** 增加已认证封装/协议、状态感知子执行与资产追踪；动态代码和资源限制阻止普遍完整性。
 
 ### 20. 钱包登录 / 类 SIWE 消息
 
@@ -256,13 +261,13 @@ GoPlus 的仓库默认仍关闭；本次复核的开发机已明确启用。其�
 - **仍未知：** 哈希不能唯一揭示原始消息。Snap 可能收不到 `eth_sign`，权限/重放范围可能仍未知。
 - **可扩展方向与边界：** 如果调用方提供原始消息、协议及哈希对应关系，分别验证它们。自动交付需要钱包支持；单向哈希不能揭示唯一原文。
 
-### 23. Permit / NFT Permit 签名
+### 23. Permit / NFT Permit / DAI / 转移授权签名
 
-- **入口：** 钱包提供消息签名请求时自动进入。
-- **当前范围：** 标准 EIP-2612 与 ERC-4494 状态检查；自定义变体不完整。
-- **取得后提供的字段/证据：** 声明的 domain/verifyingContract 和签署承诺的 owner/spender/value 或 tokenId/nonce/deadline；EIP-712 digest/domainHash；可读的 owner 或 token-ID nonce 及 `DOMAIN_SEPARATOR`；ERC-4494 interface/owner/当前 approval/operator 状态；signer/verifier 代码、单位、权限和独立 provider 上下文来源记录。
-- **仍未知：** 不恢复尚未生成的签名，不通过 ERC-1271 验证，也不消费签名。DAI/自定义变体、真实协议身份与未来状态仍未验证；provider/domain 匹配不证明绑定请求的网络。
-- **可扩展方向与边界：** 增加可信部署和特定变体/消费路径。未来 nonce/代码变化及实际签名使用仍需独立证据。
+- **入口：** 钱包提供消息时自动进入。
+- **当前范围：** 标准 EIP-2612、ERC-4494、DAI 结构 Permit 和部分 ERC-3009 状态检查。
+- **取得后提供的字段/证据：** 实际签入 type/domain、owner/holder/from、spender/recipient、value/tokenId/allowed、nonce、deadline/expiry 或 validAfter/validBefore；无符号表示归一化且保持 digest。DAI allowed=true 推导 uint256 最大值、false 为零，属于语义推导而非另签数量；expiry=0 按参考实现无提交截止。ERC-3009 Transfer/ReceiveWithAuthorization 为单次指定转移，非持续 allowance，读取 authorizationState(authorizer,bytes32)、严格开放时间窗及 receive 的条件性调用者限制。DOMAIN_SEPARATOR、对应 nonce/NFT 状态、账户代码及条件余额敞口按支持路径读取。
+- **仍未知：** 同结构不认证实现；不验证生成的签名、ERC-1271、未来消费、自定义变体或绑定请求网络。ERC-3009 状态为 used 时，不区分已用或已取消。
+- **可扩展方向与边界：** 增加已验证部署/版本与消费交易适配；未来 nonce/代码变化、第三方调用和接受仍需独立证据。
 
 ### 24. Permit2 签名
 

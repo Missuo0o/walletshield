@@ -4,7 +4,7 @@
 
 本手册说明当前英文界面以及已经实现的本地和托管使用流程。WalletShield 在你通过钱包作出决定之前，对尚未签名的 EVM 请求提供建议。它不能保证安全、强制拒绝、代你签名、追回资产，也不会持续监控已签名请求。
 
-[中文 README](../README.zh-CN.md) 提供配置与开发参考；[中文能力覆盖指南](AI-COVERAGE-GUIDE-zh.md) 列出全部 30 个分析类别（profile）的准确提取字段、工具、缺失检查和可扩展方向。当前本地实验室有 **54 个代表性案例：43 个交易请求和 11 个消息签名请求，涉及 30 个分析类别中的 25 个**。这些案例不是检测准确率基准。本手册对应[英文使用手册](USER-MANUAL.md)；当前界面及新生成的说明为英文，旧报告保留原记录语言。
+[中文 README](../README.zh-CN.md) 提供配置与开发参考；[中文能力覆盖指南](AI-COVERAGE-GUIDE-zh.md) 列出全部 30 个分析类别（profile）的准确提取字段、工具、缺失检查和可扩展方向。当前本地实验室有 **66 个代表性案例：51 个交易请求和 15 个消息签名请求，涉及 30 个分析类别中的 25 个**。这些案例不是检测准确率基准。本手册对应[英文使用手册](USER-MANUAL.md)；当前界面及新生成的说明为英文，旧报告保留原记录语言。
 
 [当前覆盖范围对照表](CURRENT-COVERAGE-zh.md)区分代表性实现、部分证据、手动入口和未覆盖内容，并记录本轮正确性与依赖修复。
 
@@ -101,6 +101,14 @@ Snap 权限允许交易和消息洞察、网络访问、主页显示、状态存
 
 实验室生成的签名在浏览器中完成格式检查后即丢弃，不上传、不持久化，也不提交用于资产操作。未签名消息仍会到达后端，其受长度限制的预览可能发送给 Muse。
 
+### 可选账户与签名变体测试
+
+新增 8 个 **Smart-account fixture** 交易测试 threshold 降低、module 标记开/关、guard 设置/移除、fallback 设置/移除和 CALL 封装。已有本地部署请明确运行 `npm run deploy:lab`，只补充可选 `LabAccount` 后，再点击 **Prepare local test assets**。部署保留原测试合约地址/状态；准备资产会将可选账户重置给当前测试者。移除类案例先完成对应设置。
+
+这是 owner 可直接调用的本地接口模型：无论显示 threshold 为多少，任一列出的 owner 都能直接调用。它**不是生产多签**；module/guard/fallback 只是标记，不实施真实约束。封装仅接受 CALL、空 signatures、零退款参数，故意拒绝 DELEGATECALL；不会修改真实智能钱包权限。
+
+另有 `dai-allow`、`dai-revoke`、`erc3009-transfer`、`erc3009-receive` 四个签名案例，使用现有 LAB-USD domain 发起真实钱包消息，以测格式和字段提取。LabToken 不实现 DAI/ERC-3009 消费方法，也没有 ERC-3009 authorizationState getter；缺失状态/消费证据是预期边界。签名本身不消费消息、不改 allowance、不转币，生成签名仍在浏览器丢弃。
+
 ## 6. 使用公网和自己的账户
 
 **Public networks** 用于查询公网数据并检查实际 Snap 送达。先使用 Sepolia 和专用测试账户。主网可能持有真实资产，本地 Flask 开发钱包不应存放这些资产。
@@ -144,6 +152,8 @@ Snap 优先展示最多 24 条证据、6 行主要参数和 6 条缺失检查摘
 
 ## 8. 了解准确字段提取与覆盖边界
 
+本轮还增加 DAI 结构 Permit、ERC-3009 单次转移授权、Safe 结构控制/执行、有界递归封装摘要、V3 仓位状态、部分桥提款/完成参数和通用 withdraw(uint256)。它们是有边界的候选适配器，不是全协议支持。已确认 nonce 仍固定区块，另有独立未固定的节点 pending nonce 视图，不取得原交易内容或替换规则。66 个钱包案例现包含 8 个简化账户交易和 4 个 DAI/ERC-3009 候选签名；其他新路径有 API/代码测试，不代表官方协议或公网钱包验收。详见[扩展能力与验收边界](EXTENDED-COVERAGE-2026-10-22.md)。
+
 解码器提取受支持的 ABI 字段和被签名类型实际包含的消息字段，**不会仅凭操作关键词猜测风险**。[README 操作表](../README.md#evidence-collected-for-each-operation)和[中文覆盖指南](AI-COVERAGE-GUIDE-zh.md)列出全部类别。典型示例如下：
 
 | 请求 | 发送给 Muse 前提取的字段与检查 | 剩余边界 |
@@ -155,6 +165,8 @@ Snap 优先展示最多 24 条证据、6 行主要参数和 6 条缺失检查摘
 | 链上 Permit2 结构 approve | token/spender/uint160 上限/expiration；分别读取底层 owner→Permit2 ERC-20 授权和内部 owner/token/最终 spender 的 amount/expiry/nonce | 读取不认证合约，每层不可用分别保留未知 |
 | Permit2 签名 | 签名 type/domain、token/amount/expiration/spender；从实际签名者取得 owner；allowance 三元组或 nonce bitmap | 最多 16 项；witness/自定义变体和代码认证不完整 |
 | 会话/UserOperation/RPC | method、白名单地址/限额/到期，或 sender/entry point/paymaster/factory/nonce，以及受限 calldata 摘要 | 需要显式提交；没有通用钩子，不授予权限，也不执行 bundler 请求 |
+
+DAI 权限来自 allowed 的参考语义推导；ERC-3009 承诺单次精确数量，Permit2 transfer 为单 nonce 上限，后两者都不是持续 allowance。ERC-3009 当前余额不足会明确记录，不制造较小可消费转移量；空 calldata 的 DELEGATECALL 仍是委托代码执行，不是原生币转账。
 
 支持的 EIP-712 无符号整数在风险解释前，会统一等值的十进制、十六进制与前导零表示，且保持被签 digest 不变。零地址按角色解释：支持的 NFT approval/Permit 撤销不会被误报为资产销毁；实际转账接收方及所有权变更仍按各自语义检查。transferFrom 的资产所有者与调用者分开；当前余额不足描述为执行/敞口问题，不再错误解释为授权覆盖未来入账。
 
