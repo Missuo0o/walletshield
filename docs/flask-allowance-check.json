@@ -1,0 +1,16 @@
+{
+  "network": "local Anvil only",
+  "chainId": 31337,
+  "observedBlock": "3",
+  "currentAllowance": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+  "currentBalanceTestUsd": "5000",
+  "matchingSuccessfulApprovalCount": 1,
+  "transactionHash": "0x9906859776f623dea5ef92dfe50bd5141efeb9dc884f7075f0865b3baeef2f9c",
+  "transactionMatchesOriginalRequest": true,
+  "userReportedDecisions": {
+    "2026-10-20 23:30:40 America/New_York": "allowed",
+    "2026-10-20 23:32:47 America/New_York": "canceled",
+    "2026-10-20 23:33:33 America/New_York": "canceled"
+  },
+  "limits": "Later cancellations are user-reported. Chain has one matching successful Approval event; no additional matching Approval events observed. Existing allowance remains active. Analysis rows still store unknown outcome."
+}

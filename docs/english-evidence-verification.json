@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-22",
+  "version": "0.4.1",
+  "scope": "English interface and documentation; evidence collection and Muse output validation",
+  "unitAndRegression": {
+    "passed": 197,
+    "failed": 0
+  },
+  "localWalletCases": {
+    "passed": 54,
+    "transactions": 43,
+    "messages": 11,
+    "representedProfiles": 25,
+    "analysisProfiles": 30,
+    "chainRestored": true,
+    "browserSnapDeliveryVerified": false
+  },
+  "securityAcceptance": {
+    "isolatedFork": "passed",
+    "upstreamStateUnchanged": true
+  },
+  "builds": {
+    "local": "passed",
+    "isolatedHosted": "passed",
+    "hostedPackage": "passed",
+    "npmPackDryRun": "passed",
+    "published": false,
+    "packageFileCount": 5
+  },
+  "modelAcceptance": {
+    "model": "muse-wonder-1.0",
+    "sample": "fixed local Permit request",
+    "score": 34,
+    "durationMsApprox": 11206,
+    "acceptedFirstResponse": true,
+    "userWalletSignatureRequested": false,
+    "realNetworkTransactionSent": false,
+    "artifact": "muse-english-quality-acceptance.json",
+    "accuracyOrCalibrationMeasured": false
+  },
+  "browser": {
+    "englishNavigationAndLab": "verified",
+    "englishHistoryAndReport": "verified",
+    "evidenceQualityRendering": "verified",
+    "proof": [
+      "english-wallet-lab.png",
+      "english-muse-report.png",
+      "english-evidence-quality.png"
+    ],
+    "extensionReloadAndSigning": "manual acceptance still required"
+  },
+  "documentation": {
+    "localLinks": "passed",
+    "codeFences": "passed",
+    "language": "English"
+  },
+  "externalIntelligenceEnabled": false,
+  "remaining": [
+    "Trusted market quotes and price sources",
+    "Authenticated protocol and deployment identity",
+    "Additional protocol, bridge and batch adapters",
+    "Remote relying-party nonce state",
+    "Generic permission/UserOperation interception",
+    "Non-EVM coverage",
+    "Off-chain fraud context",
+    "Held-out labeled model evaluation",
+    "Public deployment and distribution acceptance"
+  ]
+}

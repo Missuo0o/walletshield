@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-10-22T20:02:57.103Z",
+  "scope": "three-fixed-local-requests-real-Muse-API-not-MetaMask-Snap-UI-not-accuracy-benchmark",
+  "accepted": 0,
+  "total": 3,
+  "results": [
+    {
+      "case": "approve-unlimited",
+      "reportId": "c77af95e-594f-48d4-a1ba-89b4a42c1ffb",
+      "accepted": false,
+      "elapsedMs": 18106,
+      "status": "failed",
+      "message": "模型请求超时；未生成分数，请稍后重试。",
+      "score": null,
+      "scoreSource": "none"
+    },
+    {
+      "case": "swap-blocked",
+      "reportId": "9c2473d8-7a73-402a-83f7-e2da86a77f75",
+      "accepted": false,
+      "elapsedMs": 18249,
+      "status": "failed",
+      "message": "模型请求超时；未生成分数，请稍后重试。",
+      "score": null,
+      "scoreSource": "none"
+    },
+    {
+      "case": "permit",
+      "reportId": "58e1e96e-4131-4172-beb1-cdeb791c0f76",
+      "accepted": false,
+      "elapsedMs": 18028,
+      "status": "failed",
+      "message": "模型请求超时；未生成分数，请稍后重试。",
+      "score": null,
+      "scoreSource": "none"
+    }
+  ]
+}

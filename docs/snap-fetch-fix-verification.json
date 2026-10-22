@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-10-22T21:21:51.534Z",
+  "cause": "Vite dev CORS consumes Origin:null Authorization preflight before API proxy",
+  "fix": "Local Snap connects directly to Fastify8787; hosted HTTPS path unchanged",
+  "apiBase": "http://127.0.0.1:8787/api",
+  "preflight": {
+    "status": 204,
+    "allowOrigin": "null",
+    "allowHeaders": "Content-Type, Authorization, X-WalletShield-Test-Session"
+  },
+  "servedBundleUsesDirectBackend": true,
+  "manifestVersion": "0.4.1",
+  "automatedTests": {
+    "passed": 174,
+    "failed": 0
+  },
+  "build": "passed",
+  "actualWalletReload": "user action required; previously installed bundle uses old endpoint",
+  "paidModelCalls": 0,
+  "realTransactions": 0
+}

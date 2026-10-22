@@ -1,0 +1,242 @@
+{
+  "generatedAt": "2026-10-22T21:11:14.989Z",
+  "scope": "fixed-local-requests-real-Muse-API-not-MetaMask-Snap-UI-not-accuracy-benchmark",
+  "accepted": 2,
+  "total": 2,
+  "results": [
+    {
+      "case": "permit",
+      "reportId": "eb3a7bf4-641f-4a4d-9b0c-c00c0b65ece4",
+      "accepted": true,
+      "elapsedMs": 22861,
+      "status": "completed",
+      "message": "Muse Wonder 经一次输出修复完成；分数为未校准风险指标，不是损失概率。",
+      "score": 35,
+      "scoreSource": "ai",
+      "model": "muse-wonder-1.0",
+      "dimensions": [
+        {
+          "dimension": "authority",
+          "assessment": "high",
+          "reason": "授予spender 0x3333…的ERC-2612常设额度，上限100 LAB-USD且未承诺最终收款人；deadline仅为提交期限，提交后额度持续至消费或撤销。",
+          "evidence_ids": [
+            "signature_scope",
+            "signature_exposure",
+            "signature_deadline"
+          ]
+        },
+        {
+          "dimension": "exposure",
+          "assessment": "low",
+          "reason": "当前余额5000 LAB-USD，本次上限100，占2%；既有额度为0，但未来消费以有效签名和标准实现为条件。",
+          "evidence_ids": [
+            "token_identity",
+            "existing_allowance",
+            "signature_exposure"
+          ]
+        },
+        {
+          "dimension": "execution",
+          "assessment": "unknown",
+          "reason": "未生成或验证签名，也未模拟未来Permit消费交易，实际转出金额、收款人和时点未知。",
+          "evidence_ids": [
+            "asset_simulation",
+            "signature_validation",
+            "signature_effects"
+          ]
+        },
+        {
+          "dimension": "identity",
+          "assessment": "unknown",
+          "reason": "spender当前无代码且身份未核实，地址与网站情报未启用；无代码或本地来源均不证明其可信。",
+          "evidence_ids": [
+            "signature_spender_controls",
+            "signature_verifier_code",
+            "address_reputation",
+            "website_reputation"
+          ]
+        },
+        {
+          "dimension": "protocol",
+          "assessment": "unknown",
+          "reason": "结构、domain与nonce已核对匹配，但合约身份未验证，代理槽为空也不证明不可升级或实现安全。",
+          "evidence_ids": [
+            "typed_structure",
+            "signature_domain",
+            "signature_nonce",
+            "contract_controls"
+          ]
+        },
+        {
+          "dimension": "deception",
+          "assessment": "unknown",
+          "reason": "平台意图和钱包当前网络未核实，无法判断该签名是否由受信任业务场景发起。",
+          "evidence_ids": [
+            "fraud_context",
+            "signature_chain"
+          ]
+        }
+      ],
+      "confidence": "moderate",
+      "honeypot": "unknown",
+      "reasons": [
+        {
+          "text": "有限额度为100 LAB-USD，占当前同币余额2%，未见无限授权或即时转出。",
+          "evidence_ids": [
+            "signature_scope",
+            "signature_exposure"
+          ]
+        },
+        {
+          "text": "domain、nonce、owner与signer已核对一致，且在观测区块未过期，支持结构与状态完整性。",
+          "evidence_ids": [
+            "signature_domain",
+            "signature_nonce",
+            "signature_owner_binding",
+            "signature_deadline"
+          ]
+        },
+        {
+          "text": "spender身份未核实且为常设额度，未来可由其在上限内选择消费，实际用途尚未模拟。",
+          "evidence_ids": [
+            "signature_spender_controls",
+            "asset_simulation",
+            "signature_validation"
+          ]
+        }
+      ],
+      "missingData": [
+        "签名后续用途尚未完全验证",
+        "未取得当前钱包网络",
+        "平台与用户意图不能仅靠交易确定",
+        "签名未来消费未模拟",
+        "地址风险情报未启用",
+        "网站风险情报未启用",
+        "代币风险情报未启用",
+        "签名网络与查询来源",
+        "尚未验证有效签名或未来消费",
+        "钱包当前网络未核实",
+        "签名未来消费未模拟且未验证有效签名",
+        "spender与来源网站信誉情报未启用",
+        "代币安全情报未启用",
+        "平台及用户真实意图未核实"
+      ]
+    },
+    {
+      "case": "permit2",
+      "reportId": "7255cb34-0ca9-4bd7-a44b-35977d49db53",
+      "accepted": true,
+      "elapsedMs": 27873,
+      "status": "completed",
+      "message": "Muse Wonder 经一次输出修复完成；分数为未校准风险指标，不是损失概率。",
+      "score": 78,
+      "scoreSource": "ai",
+      "model": "muse-wonder-1.0",
+      "dimensions": [
+        {
+          "dimension": "authority",
+          "assessment": "high",
+          "reason": "向 spender 授予 Permit2 长期 standing_allowance，额度标示 unlimited，且不承诺最终收款人。",
+          "evidence_ids": [
+            "operation",
+            "signature_scope",
+            "signature_nonce_0"
+          ]
+        },
+        {
+          "dimension": "exposure",
+          "assessment": "high",
+          "reason": "同币余额为 5000 LAB-USD，声明上限远超余额；当前基础额度为 0 不消除新签名及未来入账暴露。",
+          "evidence_ids": [
+            "token_identity",
+            "signature_exposure",
+            "existing_allowance"
+          ]
+        },
+        {
+          "dimension": "execution",
+          "assessment": "unknown",
+          "reason": "签名未来消费未模拟、未验证签名接受与实际转账，无法确认提交后的资产变化。",
+          "evidence_ids": [
+            "asset_simulation",
+            "signature_validation",
+            "signature_effects"
+          ]
+        },
+        {
+          "dimension": "identity",
+          "assessment": "unknown",
+          "reason": "验证合约与公开地址及标准域不匹配且 spender 无代码，但缺少不利情报或一致性证据，身份保留未知。",
+          "evidence_ids": [
+            "signature_protocol",
+            "signature_spender_controls",
+            "address_reputation",
+            "website_reputation"
+          ]
+        },
+        {
+          "dimension": "protocol",
+          "assessment": "unknown",
+          "reason": "nonce 0 与声明一致且期限未过期，但 domain 分隔符未取得，无法完整确认域与重放范围。",
+          "evidence_ids": [
+            "signature_domain",
+            "signature_nonce_0",
+            "signature_deadline"
+          ]
+        },
+        {
+          "dimension": "deception",
+          "assessment": "unknown",
+          "reason": "本地测试用途只是未核实背景，平台意图及网站、地址情报未查，无证据确认或排除诱导签名。",
+          "evidence_ids": [
+            "fraud_context",
+            "address_reputation",
+            "website_reputation"
+          ]
+        }
+      ],
+      "confidence": "moderate",
+      "honeypot": "unknown",
+      "reasons": [
+        {
+          "text": "请求授予 unlimited 的 Permit2 长期权限，spender 可在上限内决定实际消费金额且最终收款人未承诺。",
+          "evidence_ids": [
+            "operation",
+            "signature_scope"
+          ]
+        },
+        {
+          "text": "验证合约不匹配公开 Permit2 地址和标准域字段，且 domain 分隔符未取得，协议身份存在疑点但身份维度保留未知。",
+          "evidence_ids": [
+            "signature_protocol",
+            "signature_domain"
+          ]
+        },
+        {
+          "text": "余额 5000 LAB-USD 全部在声明上限覆盖内；当前 ERC-20 基础额度为 0 降低即时可消费性，但不抵消签名形成的新权限。",
+          "evidence_ids": [
+            "token_identity",
+            "existing_allowance",
+            "signature_exposure"
+          ]
+        }
+      ],
+      "missingData": [
+        "签名后续用途尚未完全验证",
+        "未取得当前钱包网络",
+        "平台与用户意图不能仅靠交易确定",
+        "签名未来消费未模拟",
+        "地址风险情报未启用",
+        "网站风险情报未启用",
+        "代币风险情报未启用",
+        "签名网络与查询来源",
+        "尚未验证有效签名或未来消费",
+        "Permit domain 分隔符未取得",
+        "签名 spender / 资产代码与控制观测",
+        "签名未来消费未模拟，domain 分隔符未取得",
+        "当前钱包网络未核实，地址、网站及代币外部情报未启用",
+        "验证合约与 spender 的真实身份和实现未核实"
+      ]
+    }
+  ]
+}

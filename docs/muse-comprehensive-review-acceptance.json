@@ -1,0 +1,228 @@
+{
+  "checkedAt": "2026-10-22T20:37:11.108Z",
+  "scope": "two-fixed-local-synthetic-requests-real-Muse-API-not-Snap-delivery-not-detection-accuracy",
+  "accepted": 2,
+  "total": 2,
+  "results": [
+    {
+      "case": "permit",
+      "reportId": "343987e4-0f95-406e-88fd-da89adb38b52",
+      "accepted": true,
+      "elapsedMs": 16299,
+      "status": "completed",
+      "message": "Muse Wonder 分析完成；分数为未校准风险指标，不是损失概率。",
+      "score": null,
+      "scoreSource": "none",
+      "model": "muse-wonder-1.0",
+      "dimensions": [
+        {
+          "dimension": "authority",
+          "assessment": "unknown",
+          "reason": "Permit 将授予未知 spender 有限额度，但签名可被后续提交消费，当前链上额度仍为 0。",
+          "evidence_ids": [
+            "operation",
+            "permission_scope",
+            "signature_effects",
+            "existing_allowance"
+          ]
+        },
+        {
+          "dimension": "exposure",
+          "assessment": "low",
+          "reason": "额度按 6 位小数计为 100 LAB-USD，低于已读余额 5000，单次直接暴露约占 2%。",
+          "evidence_ids": [
+            "token_identity",
+            "operation"
+          ]
+        },
+        {
+          "dimension": "execution",
+          "assessment": "unknown",
+          "reason": "未模拟签名未来消费交易，无法确认 spender 实际提交后的资产变化。",
+          "evidence_ids": [
+            "asset_simulation",
+            "signature_effects"
+          ]
+        },
+        {
+          "dimension": "identity",
+          "assessment": "unknown",
+          "reason": "domain 与 nonce 已核对，但 spender、代币合约及 localhost 来源均无外部信誉验证。",
+          "evidence_ids": [
+            "signature_domain",
+            "signature_nonce",
+            "address_reputation",
+            "website_reputation"
+          ]
+        },
+        {
+          "dimension": "protocol",
+          "assessment": "unknown",
+          "reason": "仅读取部分合约控制状态，未核实代币权限、暂停升级机制及钱包当前网络一致性。",
+          "evidence_ids": [
+            "contract_controls",
+            "token_security",
+            "signature_chain"
+          ]
+        },
+        {
+          "dimension": "deception",
+          "assessment": "unknown",
+          "reason": "无已观察的诱导或保证收益证据，但平台背景与真实用户意图无法仅凭请求确认。",
+          "evidence_ids": [
+            "fraud_context",
+            "tool_plan"
+          ]
+        }
+      ],
+      "confidence": "limited",
+      "honeypot": "unknown",
+      "reasons": [
+        {
+          "text": "签名本身不立即转账，但有效 Permit 可被第三方在截止期前提交并形成额度。",
+          "evidence_ids": [
+            "permission_scope",
+            "signature_effects"
+          ]
+        },
+        {
+          "text": "额度有限且约占同币余额 2%，并非无限授权，潜在直接损失范围相对受限。",
+          "evidence_ids": [
+            "token_identity",
+            "operation"
+          ]
+        },
+        {
+          "text": "spender 与来源信誉、代币安全及钱包当前网络均未核实，不能据 domain 和 nonce 匹配认定可信。",
+          "evidence_ids": [
+            "address_reputation",
+            "website_reputation",
+            "token_security",
+            "signature_chain"
+          ]
+        }
+      ],
+      "missingData": [
+        "签名后续用途尚未完全验证",
+        "未取得当前钱包网络",
+        "平台与用户意图不能仅靠交易确定",
+        "签名未来消费未模拟",
+        "地址风险情报未启用",
+        "网站风险情报未启用",
+        "代币风险情报未启用",
+        "签名未来消费交易未模拟",
+        "钱包当前网络未取得",
+        "spender、网站及代币外部风险情报未启用",
+        "用户与平台真实意图未核实"
+      ]
+    },
+    {
+      "case": "approve-unlimited",
+      "reportId": "0cffd52f-452a-410e-bb8e-4ff353b865a9",
+      "accepted": true,
+      "elapsedMs": 24708,
+      "status": "completed",
+      "message": "Muse Wonder 分析完成；分数为未校准风险指标，不是损失概率。",
+      "score": 66,
+      "scoreSource": "ai",
+      "model": "muse-wonder-1.0",
+      "dimensions": [
+        {
+          "dimension": "authority",
+          "assessment": "high",
+          "reason": "对未核实 spender 授予无上限 ERC-20 授权且未见期限，当前额度为 0，后续可被持续消费。仅引用 operation",
+          "evidence_ids": [
+            "operation",
+            "permission_scope",
+            "existing_allowance"
+          ]
+        },
+        {
+          "dimension": "exposure",
+          "assessment": "high",
+          "reason": "钱包可见余额为 5000 LAB-USD，无上限额度覆盖当前及未来同币资产，潜在暴露超过现余额。",
+          "evidence_ids": [
+            "over_balance",
+            "token_identity",
+            "permission_scope"
+          ]
+        },
+        {
+          "dimension": "execution",
+          "assessment": "unknown",
+          "reason": "本地副本执行成功且未见即时资产转出，仅消耗 gas；资产发现有覆盖边界，不能保证未来消费行为。",
+          "evidence_ids": [
+            "simulation_execution",
+            "asset_simulation",
+            "basic_call"
+          ]
+        },
+        {
+          "dimension": "identity",
+          "assessment": "unknown",
+          "reason": "链为本地 31337、来源为 localhost，但 spender、网站及代币身份均未核实，不能确认真实用途。",
+          "evidence_ids": [
+            "address_reputation",
+            "website_reputation",
+            "token_identity",
+            "chain_context"
+          ]
+        },
+        {
+          "dimension": "protocol",
+          "assessment": "unknown",
+          "reason": "仅读取部分合约控制状态，未取得 spender 协议机制、撤销路径及后续消费约束证据。",
+          "evidence_ids": [
+            "contract_controls",
+            "tool_plan"
+          ]
+        },
+        {
+          "dimension": "deception",
+          "assessment": "unknown",
+          "reason": "情报未启用且平台背景不可由交易确认，未见直接诱导证据，也无法排除冒用场景。",
+          "evidence_ids": [
+            "fraud_context",
+            "address_reputation",
+            "website_reputation"
+          ]
+        }
+      ],
+      "confidence": "limited",
+      "honeypot": "unknown",
+      "reasons": [
+        {
+          "text": "请求为无上限授权，spender 可在额度内未来转走该代币。",
+          "evidence_ids": [
+            "operation",
+            "permission_scope"
+          ]
+        },
+        {
+          "text": "授权超过当前 5000 LAB-USD 余额，未来入账同币亦在暴露范围内。",
+          "evidence_ids": [
+            "over_balance",
+            "token_identity"
+          ]
+        },
+        {
+          "text": "模拟未见即时资产损失且网络为本地测试链，降低本次实际执行损失迹象，但不证明 spender 可信。",
+          "evidence_ids": [
+            "simulation_execution",
+            "chain_context"
+          ]
+        }
+      ],
+      "missingData": [
+        "请求费用未完整提供",
+        "平台与用户意图不能仅靠交易确定",
+        "地址风险情报未启用",
+        "网站风险情报未启用",
+        "代币风险情报未启用",
+        "资产发现存在覆盖边界",
+        "地址、网站与代币风险情报未启用",
+        "资产发现覆盖不完整，spender 身份与协议用途未核实"
+      ]
+    }
+  ]
+}

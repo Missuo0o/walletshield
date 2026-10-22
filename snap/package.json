@@ -1,0 +1,8 @@
+{
+  "name": "walletshield-snap",
+  "version": "0.4.1",
+  "private": true,
+  "description": "EVM transaction and signature evidence with isolated simulation and optional AI",
+  "main": "dist/bundle.js",
+  "license": "UNLICENSED"
+}

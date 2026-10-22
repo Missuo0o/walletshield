@@ -1,0 +1,23 @@
+node_modules/
+dist/
+snap/dist/
+.local/
+.env
+*.log
+
+.env.*
+!.env.example
+
+# Local machine metadata, credential files, and runtime databases.
+.DS_Store
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.token
+*.pem
+*.key
+*.p12
+*.pfx

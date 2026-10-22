@@ -1,0 +1,114 @@
+{
+  "generatedAt": "2026-10-22T20:07:14.228Z",
+  "scope": "three-fixed-local-requests-real-Muse-API-not-MetaMask-Snap-UI-not-accuracy-benchmark",
+  "accepted": 1,
+  "total": 1,
+  "results": [
+    {
+      "case": "permit",
+      "reportId": "4f67eedf-b690-4cca-9240-f95f99bf5bb5",
+      "accepted": true,
+      "elapsedMs": 15830,
+      "status": "completed",
+      "message": "Muse Wonder 分析完成；分数为未校准风险指标，不是损失概率。",
+      "score": 55,
+      "scoreSource": "ai",
+      "model": "muse-wonder-1.0",
+      "dimensions": [
+        {
+          "dimension": "authority",
+          "assessment": "high",
+          "reason": "Permit授予spender 0x3333…未来使用100 LAB-USD的权限，签名后可被他人提交且撤销方式未证实。",
+          "evidence_ids": [
+            "permission_scope",
+            "operation"
+          ]
+        },
+        {
+          "dimension": "exposure",
+          "assessment": "low",
+          "reason": "额度为100000000原始单位、即100 LAB-USD，占已读余额5000的2%，既有额度为0且非无限授权。",
+          "evidence_ids": [
+            "token_identity",
+            "existing_allowance"
+          ]
+        },
+        {
+          "dimension": "execution",
+          "assessment": "unknown",
+          "reason": "签名未来消费未模拟，无法确认提交时的实际资产变化与费用。",
+          "evidence_ids": [
+            "signature_effects",
+            "asset_simulation"
+          ]
+        },
+        {
+          "dimension": "identity",
+          "assessment": "unknown",
+          "reason": "未取得钱包当前网络且地址与网站情报未启用，spender及来源身份未核实。",
+          "evidence_ids": [
+            "signature_chain",
+            "address_reputation",
+            "website_reputation"
+          ]
+        },
+        {
+          "dimension": "protocol",
+          "assessment": "not_applicable",
+          "reason": "本次为Permit签名，不涉及滑点、退出、清算或锁仓机制。",
+          "evidence_ids": [
+            "contract_controls",
+            "operation"
+          ]
+        },
+        {
+          "dimension": "deception",
+          "assessment": "unknown",
+          "reason": "平台背景与真实用户意图未核实，不能仅凭本地测试陈述排除诱导签名。",
+          "evidence_ids": [
+            "fraud_context"
+          ]
+        }
+      ],
+      "confidence": "limited",
+      "honeypot": "unknown",
+      "reasons": [
+        {
+          "text": "有限额度降低单次暴露，但签名可被第三方在deadline前提交，未来用途未验证。",
+          "evidence_ids": [
+            "permission_scope",
+            "signature_effects"
+          ]
+        },
+        {
+          "text": "nonce与domain已核对且结构可编码，支持签名参数一致性，但不证明合约或spender可信。",
+          "evidence_ids": [
+            "signature_nonce",
+            "signature_domain",
+            "typed_structure"
+          ]
+        },
+        {
+          "text": "额度仅占同币余额2%且当前既有授权为0，潜在直接损失范围相对有限。",
+          "evidence_ids": [
+            "token_identity",
+            "existing_allowance"
+          ]
+        }
+      ],
+      "missingData": [
+        "签名后续用途尚未完全验证",
+        "未取得当前钱包网络",
+        "平台与用户意图不能仅靠交易确定",
+        "签名未来消费未模拟",
+        "地址风险情报未启用",
+        "网站风险情报未启用",
+        "代币风险情报未启用",
+        "签名后续用途及未来消费模拟",
+        "当前钱包网络",
+        "spender、网站与代币风险情报",
+        "平台与真实用户意图核实"
+      ]
+    }
+  ]
+}

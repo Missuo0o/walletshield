@@ -1,0 +1,54 @@
+{
+  "checkedAt": "2026-10-22T21:14:23.847200+00:00",
+  "version": "0.4.1",
+  "offlineTests": {
+    "passed": 172,
+    "failed": 0
+  },
+  "localBuild": "passed",
+  "hostedBuild": "passed-isolated-example-settings",
+  "hostedPackage": {
+    "name": "@walletshield-review/validation-only",
+    "fileCount": 5,
+    "files": [
+      "README.md",
+      "dist/bundle.js",
+      "images/icon.svg",
+      "package.json",
+      "snap.manifest.json"
+    ],
+    "dryRun": "passed",
+    "published": false
+  },
+  "isolatedSecurityTest": "passed",
+  "localLab": {
+    "passed": 54,
+    "transactions": 43,
+    "signatures": 11,
+    "profiles": 25,
+    "chainRestored": true,
+    "snapUIValidated": false
+  },
+  "realMuse": {
+    "artifact": "muse-public-upgrade-acceptance.json",
+    "accepted": 2,
+    "total": 2,
+    "repairPerSample": 1,
+    "accuracyBenchmark": false
+  },
+  "publiclyDeployed": false,
+  "realNetworkWalletUITest": "requires manual Flask acceptance; embedded browser has no wallet extension",
+  "realRPC": {
+    "ethereum": {
+      "chainId": 1,
+      "block": "26250777",
+      "status": "passed"
+    },
+    "sepolia": {
+      "chainId": 11155111,
+      "block": "11972150",
+      "status": "passed"
+    },
+    "parallelProbe": "second concurrent probe correctly rate-limited; sequential retry passed"
+  }
+}

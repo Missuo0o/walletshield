@@ -1,0 +1,55 @@
+{
+  "name": "walletshield-local",
+  "version": "0.4.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^24.0.0"
+  },
+  "scripts": {
+    "demo": "npm run build && node scripts/demo.mjs",
+    "dev": "node scripts/dev.mjs",
+    "dev:api": "tsx watch src/server/index.ts",
+    "dev:web": "vite --config vite.config.ts",
+    "dev:snap": "node scripts/serve-snap.mjs",
+    "chain": "node scripts/chain.mjs",
+    "deploy:local": "node --import tsx scripts/deploy.ts",
+    "deploy:lab": "node --import tsx scripts/deploy-lab.ts",
+    "typecheck": "tsc --noEmit && tsc -p snap/tsconfig.json --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:chain": "node --import tsx scripts/test-chain.ts",
+    "test:lab": "node --import tsx scripts/test-lab.ts",
+    "build:web": "vite build --config vite.config.ts",
+    "build:snap": "cd snap && mm-snap build",
+    "build": "npm run runtime:configure && npm run docs:coverage && npm run typecheck && npm run build:web && npm run build:snap && node scripts/build-state.mjs",
+    "test:security": "node --import tsx scripts/test-security.ts",
+    "docs:coverage": "node --import tsx scripts/coverage-guide.ts",
+    "runtime:configure": "node scripts/configure-runtime.mjs",
+    "build:hosted": "node scripts/service.mjs build",
+    "start:hosted": "node scripts/service.mjs start",
+    "package:hosted": "node scripts/service.mjs package"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.0",
+    "@fastify/static": "^8.0.0",
+    "@metamask/snaps-sdk": "^12.1.0",
+    "fastify": "^5.0.0",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "viem": "^2.38.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@foundry-rs/anvil": "^1.7.1",
+    "@metamask/snaps-cli": "^8.4.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "solc": "^0.8.30",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vite": "^6.3.0"
+  }
+}

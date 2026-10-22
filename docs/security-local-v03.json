@@ -1,0 +1,161 @@
+{
+  "id": "95fb2630-1c92-41e4-8888-f464ce40fff4",
+  "createdAt": "2026-10-21T04:57:08.860Z",
+  "source": "rpc",
+  "request": {
+    "chainId": 31337,
+    "origin": "http://127.0.0.1:5173",
+    "context": {
+      "guaranteedProfit": false,
+      "withdrawalFee": false,
+      "requestedBy": "unknown"
+    },
+    "kind": "transaction",
+    "transaction": {
+      "from": "0x991a7266f01d6b67651d308225278824b36448eb",
+      "to": "0x3333333333333333333333333333333333333333",
+      "data": "0x",
+      "value": "0x1"
+    }
+  },
+  "operation": {
+    "category": "native_transfer",
+    "label": "原生币转账 / 合约收款",
+    "fields": {
+      "recipient": "0x3333333333333333333333333333333333333333",
+      "valueWei": "1"
+    },
+    "targets": [
+      "0x3333333333333333333333333333333333333333"
+    ],
+    "decoded": true
+  },
+  "level": "unknown",
+  "title": "无法判断",
+  "summary": "原生币转账 / 合约收款。仍有未完成检查，不能据此认定安全。",
+  "complete": false,
+  "checks": [
+    {
+      "id": "operation",
+      "status": "pass",
+      "title": "原生币转账 / 合约收款",
+      "detail": "已解析该请求的常用参数；函数外观不证明目标协议可信。",
+      "source": "rules/0.3.0",
+      "observedAt": "2026-10-21T04:57:08.860Z"
+    },
+    {
+      "id": "fraud_context",
+      "status": "unknown",
+      "title": "平台与用户意图不能仅靠交易确定",
+      "detail": "正常代币和成功转账也可能被用于杀猪盘；用户提供的背景只是待核实陈述，不证明平台身份或业务真实性。",
+      "source": "rules/0.3.0",
+      "observedAt": "2026-10-21T04:57:08.860Z"
+    },
+    {
+      "id": "chain_context",
+      "status": "pass",
+      "title": "链上状态已读取",
+      "detail": "在区块 6 查询状态。",
+      "source": "rpc",
+      "observedAt": "2026-10-21T04:57:08.570Z",
+      "data": {
+        "chainId": 31337,
+        "claimedNetwork": false,
+        "blockNumber": "6",
+        "nativeBalanceWei": "9999763065421801924",
+        "target": "0x3333333333333333333333333333333333333333",
+        "targetHasCode": false
+      }
+    },
+    {
+      "id": "basic_call",
+      "status": "pass",
+      "title": "基础调用未回滚",
+      "detail": "仅 eth_call；没有完整资产变化、卖出测试或未来执行保证。",
+      "source": "rpc",
+      "observedAt": "2026-10-21T04:57:08.573Z",
+      "data": {
+        "blockNumber": "6"
+      }
+    },
+    {
+      "id": "website_reputation",
+      "status": "unknown",
+      "title": "来源网站未核实",
+      "detail": "来源缺失、本地开发域名或格式无效。",
+      "source": "coverage",
+      "observedAt": "2026-10-21T04:57:08.859Z"
+    },
+    {
+      "id": "address_reputation",
+      "status": "unknown",
+      "title": "情报源未确认支持此网络",
+      "detail": "不把测试链或未知网络地址发送为另一条链的风险查询。",
+      "source": "goplus",
+      "observedAt": "2026-10-21T04:57:08.859Z"
+    },
+    {
+      "id": "token_security",
+      "status": "unknown",
+      "title": "代币情报源未确认支持此网络",
+      "detail": "没有取得该网络的有效代币风险结果。",
+      "source": "goplus",
+      "observedAt": "2026-10-21T04:57:08.859Z"
+    },
+    {
+      "id": "simulation_execution",
+      "status": "pass",
+      "title": "独立链副本执行完成",
+      "detail": "仅在临时本机副本执行，原链未发送交易。结果固定于指定区块；不是未来执行保证。",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-21T04:57:08.708Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "6",
+        "blockHash": "0x56e9a7a852df5d78ee3965e137096fe3c6b48d86c40572e4e9fbf31a9de7e8af",
+        "status": "success",
+        "native": {
+          "before": "9999763065421801924",
+          "after": "9999732538473979923",
+          "gasWei": "30526947822000",
+          "deltaExcludingGas": "-1"
+        },
+        "assets": [],
+        "calls": [
+          {
+            "type": "CALL",
+            "from": "0x991a7266f01d6b67651d308225278824b36448eb",
+            "to": "0x3333333333333333333333333333333333333333",
+            "value": "0x1",
+            "selector": "0x"
+          }
+        ],
+        "traceAvailable": true
+      }
+    },
+    {
+      "id": "asset_simulation",
+      "status": "unknown",
+      "title": "资产发现存在覆盖边界",
+      "detail": "已查询已识别资产和 Transfer 事件涉及资产的前后状态；无事件资产、非标准存储、代理未来变化和跨链结果仍可能遗漏。",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-21T04:57:08.708Z"
+    }
+  ],
+  "ruleScoreFloor": null,
+  "score": null,
+  "scoreSource": "none",
+  "ai": {
+    "status": "not_configured",
+    "message": "未配置 OpenAI API Key；没有请求外部模型，未生成 AI 分数。"
+  },
+  "missingData": [
+    "平台与用户意图不能仅靠交易确定",
+    "来源网站未核实",
+    "情报源未确认支持此网络",
+    "代币情报源未确认支持此网络",
+    "资产发现存在覆盖边界"
+  ],
+  "fingerprint": "fea126d7fce819611e03f5bf1b86611e5673a922408236f959c9c88ebf9516ef",
+  "version": "security/0.3.0"
+}

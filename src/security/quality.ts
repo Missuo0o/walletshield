@@ -1,0 +1,52 @@
+import type {EvidenceQuality,SecurityReport} from './types.js';
+
+/** This is an evidence inventory, not a risk score or confidence percentage.
+ * Observation time is when our collector recorded a result, not the upstream
+ * provider's data age. Block timestamps are reported separately. */
+export function evidenceQuality(report:SecurityReport):EvidenceQuality {
+ const reference=Date.parse(report.createdAt);
+ const now=Number.isFinite(reference)?reference:Date.now();
+ const counts={pass:0,warning:0,risk:0,unknown:0};
+ const sources=new Map<string,{source:string;observed:number;unknown:number}>();
+ const stale:string[]=[],future:string[]=[],missing:string[]=[];
+ const snapshots:EvidenceQuality['snapshots']=[];
+ const blocks=new Map<string,Set<string>>();
+ const hashes=new Map<string,Set<string>>();
+ for(const check of report.checks){
+  counts[check.status]++;
+  const source=sources.get(check.source)??{source:check.source,observed:0,unknown:0};
+  check.status==='unknown'?source.unknown++:source.observed++;sources.set(check.source,source);
+  const timestamp=Date.parse(check.observedAt);
+  if(!Number.isFinite(timestamp))missing.push(check.id);
+  else if(timestamp>now+30000)future.push(check.id);
+  else if(now-timestamp>300000)stale.push(check.id);
+  const data=check.data;if(!data)continue;
+  const block=data.blockNumber??data.baseBlock;
+  if(typeof block!=='string'||!/^\d+$/.test(block))continue;
+  const chain=typeof data.chainId==='number'&&Number.isSafeInteger(data.chainId)&&data.chainId>0?data.chainId:undefined;
+  const blockHash=typeof data.blockHash==='string'&&/^0x[\da-f]{64}$/i.test(data.blockHash)?data.blockHash:undefined;
+  const timestampSeconds=typeof data.blockTimestampSeconds==='string'&&/^\d+$/.test(data.blockTimestampSeconds)?data.blockTimestampSeconds:undefined;
+  snapshots.push({checkId:check.id,source:check.source,blockNumber:block,...(chain?{chainId:chain}:{}),...(blockHash?{blockHash}:{}),...(timestampSeconds?{blockTimestampSeconds:timestampSeconds}:{})});
+  // An isolated fork's mined blocks are a different state space. Never merge
+  // them with upstream blocks, even when the configured chain ID is identical.
+  if(chain&&check.source==='rpc'){const set=blocks.get(String(chain))??new Set<string>();set.add(block);blocks.set(String(chain),set);
+   if(blockHash){const key=`${chain}:${block}`,seen=hashes.get(key)??new Set<string>();seen.add(blockHash.toLowerCase());hashes.set(key,seen);}
+  }
+ }
+ const mixed=[...blocks].filter(([,set])=>set.size>1).map(([chain])=>Number(chain));
+ const conflicts=[...hashes].filter(([,set])=>set.size>1).map(([key,set])=>({chainId:Number(key.split(':')[0]),blockNumber:key.split(':')[1],hashes:[...set]}));
+ const caveats=[
+  'Counts describe collected checks, not detection accuracy or a confidence percentage.',
+  'A recorded observation time is not a guarantee of provider freshness; examine its block and source.',
+  'Reads are pinned by block number, not atomically by block hash. Recorded hashes are provenance; reorganizations or inconsistent provider responses are not ruled out. Fork execution is distinct from upstream and future state.',
+  'User purpose and context are unverified statements, even when sent by an authenticated wallet.'
+ ];
+ if(report.request.kind==='signature'&&!report.request.chainId)caveats.push('The signature hook did not supply a request-bound network. A domain or separate provider snapshot does not establish it.');
+ if(stale.length)caveats.push('Some observations were recorded more than five minutes before report creation; this is a freshness flag, not a risk-score threshold.');
+ if(future.length||missing.length)caveats.push('Some observation timestamps are missing, invalid, or more than 30 seconds ahead of report creation.');
+ if(mixed.length)caveats.push('At least one network has observations from different upstream blocks; do not assume one atomic snapshot.');
+ if(conflicts.length)caveats.push('Conflicting block hashes were observed at the same chain and height. Reorganization or inconsistent provider data requires a fresh independent check.');
+ return {computedAt:new Date(now).toISOString(),counts,sources:[...sources.values()].sort((a,b)=>a.source.localeCompare(b.source)),snapshots,
+  freshness:{staleCheckIds:stale,futureCheckIds:future,missingTimestampCheckIds:missing,staleAfterSeconds:300,futureToleranceSeconds:30},mixedBlockChains:mixed,conflictingBlockHashes:conflicts,
+  capture:report.capture?.channel??'unattributed',walletBinding:report.capture?.wallet?'authenticated-credential':'not-established',caveats};
+}

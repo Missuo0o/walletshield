@@ -1,0 +1,388 @@
+{
+  "passed": 54,
+  "transactionCount": 43,
+  "signatureCount": 11,
+  "profiles": 25,
+  "cases": [
+    {
+      "id": "approve-unlimited",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "approve-limited",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "approve-revoke",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "native",
+      "kind": "transaction",
+      "category": "native_transfer",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "native-contract",
+      "kind": "transaction",
+      "category": "native_transfer",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "token-transfer",
+      "kind": "transaction",
+      "category": "token_transfer",
+      "evidenceCount": 1,
+      "result": "success"
+    },
+    {
+      "id": "nft-approve",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 3,
+      "result": "success"
+    },
+    {
+      "id": "nft-revoke",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 3,
+      "result": "success"
+    },
+    {
+      "id": "nft-all",
+      "kind": "transaction",
+      "category": "operator_approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "nft-all-revoke",
+      "kind": "transaction",
+      "category": "operator_approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "multi-all",
+      "kind": "transaction",
+      "category": "operator_approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "nft-transfer",
+      "kind": "transaction",
+      "category": "erc721_transfer",
+      "evidenceCount": 3,
+      "result": "success"
+    },
+    {
+      "id": "multi-transfer",
+      "kind": "transaction",
+      "category": "erc1155_transfer",
+      "evidenceCount": 3,
+      "result": "success"
+    },
+    {
+      "id": "multi-batch",
+      "kind": "transaction",
+      "category": "erc1155_batch",
+      "evidenceCount": 4,
+      "result": "success"
+    },
+    {
+      "id": "permit2-approve",
+      "kind": "transaction",
+      "category": "permit2_approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "approve-router",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "approve-blocked",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "swap-normal",
+      "kind": "transaction",
+      "category": "swap",
+      "evidenceCount": 4,
+      "result": "success"
+    },
+    {
+      "id": "swap-blocked",
+      "kind": "transaction",
+      "category": "swap",
+      "evidenceCount": 4,
+      "result": "success"
+    },
+    {
+      "id": "sell-blocked",
+      "kind": "transaction",
+      "category": "swap",
+      "evidenceCount": 4,
+      "result": "reverted"
+    },
+    {
+      "id": "swap-v3",
+      "kind": "transaction",
+      "category": "swap_v3",
+      "evidenceCount": 4,
+      "result": "success"
+    },
+    {
+      "id": "approve-vault",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "vault-deposit",
+      "kind": "transaction",
+      "category": "vault",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "vault-redeem",
+      "kind": "transaction",
+      "category": "vault",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "approve-lending",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "lending-supply",
+      "kind": "transaction",
+      "category": "lending",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "lending-borrow",
+      "kind": "transaction",
+      "category": "lending",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "approve-actions",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "approve-quote",
+      "kind": "transaction",
+      "category": "approval",
+      "evidenceCount": 2,
+      "result": "success"
+    },
+    {
+      "id": "stake",
+      "kind": "transaction",
+      "category": "staking",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "unstake",
+      "kind": "transaction",
+      "category": "staking",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "liquidity",
+      "kind": "transaction",
+      "category": "liquidity",
+      "evidenceCount": 4,
+      "result": "success"
+    },
+    {
+      "id": "bridge",
+      "kind": "transaction",
+      "category": "bridge",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "claim",
+      "kind": "transaction",
+      "category": "claim",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "wrap",
+      "kind": "transaction",
+      "category": "wrap",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "unwrap",
+      "kind": "transaction",
+      "category": "staking",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "mint",
+      "kind": "transaction",
+      "category": "mint_burn",
+      "evidenceCount": 1,
+      "result": "success"
+    },
+    {
+      "id": "burn",
+      "kind": "transaction",
+      "category": "mint_burn",
+      "evidenceCount": 1,
+      "result": "success"
+    },
+    {
+      "id": "ownership",
+      "kind": "transaction",
+      "category": "control_change",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "upgrade",
+      "kind": "transaction",
+      "category": "control_change",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "deployment",
+      "kind": "transaction",
+      "category": "deployment",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "batch",
+      "kind": "transaction",
+      "category": "batch",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "unknown",
+      "kind": "transaction",
+      "category": "contract_call",
+      "evidenceCount": 0,
+      "result": "success"
+    },
+    {
+      "id": "message",
+      "kind": "signature",
+      "category": "personal_signature",
+      "evidenceCount": 0,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "siwe",
+      "kind": "signature",
+      "category": "siwe",
+      "evidenceCount": 0,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "siwe-mismatch",
+      "kind": "signature",
+      "category": "siwe",
+      "evidenceCount": 0,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "permit",
+      "kind": "signature",
+      "category": "permit_signature",
+      "evidenceCount": 12,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "permit-unlimited",
+      "kind": "signature",
+      "category": "permit_signature",
+      "evidenceCount": 12,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "permit-expired",
+      "kind": "signature",
+      "category": "permit_signature",
+      "evidenceCount": 12,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "permit-owner",
+      "kind": "signature",
+      "category": "permit_signature",
+      "evidenceCount": 12,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "permit-nonce",
+      "kind": "signature",
+      "category": "permit_signature",
+      "evidenceCount": 12,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "permit2",
+      "kind": "signature",
+      "category": "permit2_signature",
+      "evidenceCount": 12,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "permit2-batch",
+      "kind": "signature",
+      "category": "permit2_signature",
+      "evidenceCount": 16,
+      "result": "local-node-signature-verified-not-snap"
+    },
+    {
+      "id": "order",
+      "kind": "signature",
+      "category": "order_signature",
+      "evidenceCount": 6,
+      "result": "local-node-signature-verified-not-snap"
+    }
+  ],
+  "scope": "local-node-transactions-and-signature-format-not-MetaMask-Snap-UI",
+  "generatedAt": "2026-10-22T21:40:43.756Z"
+}

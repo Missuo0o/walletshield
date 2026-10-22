@@ -1,0 +1,118 @@
+{
+  "generatedAt": "2026-10-22T21:43:00.273Z",
+  "scope": "fixed-local-requests-real-Muse-API-not-MetaMask-Snap-UI-not-accuracy-benchmark",
+  "accepted": 1,
+  "total": 1,
+  "results": [
+    {
+      "case": "permit",
+      "reportId": "3e85b82c-93fa-4267-a13a-03af3d88d2f8",
+      "accepted": true,
+      "elapsedMs": 11206,
+      "status": "completed",
+      "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+      "score": 34,
+      "scoreSource": "ai",
+      "model": "muse-wonder-1.0",
+      "dimensions": [
+        {
+          "dimension": "authority",
+          "assessment": "review",
+          "reason": "The Permit grants a finite 100-token standing allowance to spender 0x3333333333333333333333333333333333333333, while the deadline only limits signature submission, not allowance duration after submission.",
+          "evidence_ids": [
+            "permission_scope",
+            "signature_scope",
+            "signature_deadline"
+          ]
+        },
+        {
+          "dimension": "exposure",
+          "assessment": "low",
+          "reason": "The declared cap is 100 LAB-USD against a 5,000 LAB-USD same-token balance, with current allowance 0, limiting conditional exposure at this snapshot to about 2% of that balance.",
+          "evidence_ids": [
+            "signature_exposure",
+            "token_identity",
+            "existing_allowance"
+          ]
+        },
+        {
+          "dimension": "execution",
+          "assessment": "unknown",
+          "reason": "Future Permit submission and consumption were not simulated or executed, so actual asset movement remains unverified.",
+          "evidence_ids": [
+            "asset_simulation",
+            "signature_effects",
+            "signature_validation"
+          ]
+        },
+        {
+          "dimension": "identity",
+          "assessment": "unknown",
+          "reason": "The spender has no observed code and no verified identity, reputation checks are disabled, and the request-bound signing network was not established despite matching domain and nonce checks.",
+          "evidence_ids": [
+            "signature_spender_controls",
+            "address_reputation",
+            "website_reputation",
+            "signature_network_context"
+          ]
+        },
+        {
+          "dimension": "protocol",
+          "assessment": "unknown",
+          "reason": "Contract owner and pause controls are missing and token intelligence is disabled, so protocol controls and exit behavior cannot be assessed.",
+          "evidence_ids": [
+            "contract_controls",
+            "token_security"
+          ]
+        },
+        {
+          "dimension": "deception",
+          "assessment": "unknown",
+          "reason": "The off-chain purpose is unverified, leaving inducement or social-engineering context unassessed.",
+          "evidence_ids": [
+            "fraud_context"
+          ]
+        }
+      ],
+      "confidence": "moderate",
+      "honeypot": "unknown",
+      "reasons": [
+        {
+          "text": "Finite cap equals about 2% of the visible same-token balance.",
+          "evidence_ids": [
+            "signature_exposure",
+            "token_identity"
+          ]
+        },
+        {
+          "text": "The standing allowance goes to an unverified codeless spender and does not commit a final transfer recipient.",
+          "evidence_ids": [
+            "signature_scope",
+            "signature_spender_controls"
+          ]
+        },
+        {
+          "text": "Domain and nonce match at block 56 and the deadline had not expired then, supporting structure but not future use.",
+          "evidence_ids": [
+            "signature_domain",
+            "signature_nonce",
+            "signature_deadline"
+          ]
+        }
+      ],
+      "missingData": [
+        "Future signature use is unverified",
+        "Request-bound wallet network unavailable",
+        "Off-chain purpose is unverified",
+        "Future signature consumption was not simulated",
+        "Address intelligence is disabled",
+        "Website intelligence is disabled",
+        "Token intelligence is disabled",
+        "Signature network and query provenance",
+        "Signature validity and future consumption remain unverified",
+        "Partial contract controls observed",
+        "Future signature consumption, request-bound signing network, spender/protocol identity, contract owner and pause controls, and reputation or token intelligence are unavailable."
+      ]
+    }
+  ]
+}

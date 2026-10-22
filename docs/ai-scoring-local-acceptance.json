@@ -1,0 +1,145 @@
+{
+  "test": "local-test-contract-evidence-only-no-broadcast",
+  "recordId": "b462bd84-effe-4572-9da6-6a5de5e656a7",
+  "version": "security/0.4.1-ai-evidence",
+  "score": 68,
+  "scoreSource": "ai",
+  "presetFloorPresent": false,
+  "aiStatus": "completed",
+  "message": "Muse Wonder 分析完成；分数为未校准风险指标，不是损失概率。",
+  "modelResult": {
+    "score": 68,
+    "assessment": "high",
+    "summary": "本地测试环境降低了可见真实资产暴露，但无限授权给未经核实的 spender 仍形成明确的未来盗用权限；证据不足以判定其可信。",
+    "reasons": [
+      {
+        "text": "本次请求向未经核实的 spender 授予无限 ERC-20 authorization，且额度超过当前余额；未来进入该钱包的同种代币也可能被转走，这是主要风险来源。",
+        "evidence_ids": [
+          "permission_scope",
+          "operation",
+          "over_balance"
+        ]
+      },
+      {
+        "text": "证据显示 chainId 31337、本地来源和 TEST-USD 测试代币，模拟仅消耗 gas、未观察到资产转出，既有 allowance 为 0；这些因素降低了当前可见的真实资产暴露，但不能证明 spender 可信。",
+        "evidence_ids": [
+          "token_identity",
+          "chain_context",
+          "simulation_execution"
+        ]
+      },
+      {
+        "text": "关键外部情报和完整资产覆盖仍缺失，无法确认 spender 的用途、撤销安排或代币控制风险，因此不能评为低风险。",
+        "evidence_ids": [
+          "address_reputation",
+          "website_reputation",
+          "token_security",
+          "asset_simulation",
+          "fraud_context"
+        ]
+      }
+    ],
+    "missing_data": [
+      "平台与用户意图不能仅靠交易确定",
+      "地址风险情报未启用",
+      "网站风险情报未启用",
+      "代币风险情报未启用",
+      "资产发现存在覆盖边界",
+      "spender 0x3333…3333 的身份与信誉未核实",
+      "地址、网站及代币安全情报未启用，包括 honeypot、税费、黑名单和管理员权限",
+      "资产模拟存在覆盖边界，非标准存储和未来合约变化可能遗漏",
+      "平台及用户真实意图无法仅由本次交易确认"
+    ],
+    "suggested_action": "不要在真实钱包或主网执行；仅在隔离的本地测试钱包中继续，并避免复用真实账户。若必须授权，优先改为有限额度并在使用后撤销。",
+    "honeypot": "unknown",
+    "model": "muse-wonder-1.0",
+    "generatedAt": "2026-10-22T19:27:29.358Z",
+    "usage": {
+      "input_tokens": 2644,
+      "output_tokens": 894
+    }
+  },
+  "checks": [
+    {
+      "id": "operation",
+      "status": "pass",
+      "source": "rules/0.3.0"
+    },
+    {
+      "id": "permission_scope",
+      "status": "risk",
+      "source": "rules/0.3.0"
+    },
+    {
+      "id": "fee_budget",
+      "status": "pass",
+      "source": "rules/0.4.0"
+    },
+    {
+      "id": "over_balance",
+      "status": "warning",
+      "source": "rules/0.3.0"
+    },
+    {
+      "id": "fraud_context",
+      "status": "unknown",
+      "source": "rules/0.3.0"
+    },
+    {
+      "id": "tool_plan",
+      "status": "pass",
+      "source": "router/0.4.0"
+    },
+    {
+      "id": "chain_context",
+      "status": "pass",
+      "source": "rpc"
+    },
+    {
+      "id": "basic_call",
+      "status": "pass",
+      "source": "rpc"
+    },
+    {
+      "id": "token_identity",
+      "status": "pass",
+      "source": "rpc"
+    },
+    {
+      "id": "existing_allowance",
+      "status": "pass",
+      "source": "rpc"
+    },
+    {
+      "id": "address_reputation",
+      "status": "unknown",
+      "source": "configuration"
+    },
+    {
+      "id": "website_reputation",
+      "status": "unknown",
+      "source": "configuration"
+    },
+    {
+      "id": "token_security",
+      "status": "unknown",
+      "source": "configuration"
+    },
+    {
+      "id": "simulation_execution",
+      "status": "pass",
+      "source": "isolated-fork"
+    },
+    {
+      "id": "asset_simulation",
+      "status": "unknown",
+      "source": "isolated-fork"
+    },
+    {
+      "id": "contract_controls",
+      "status": "pass",
+      "source": "rpc"
+    }
+  ],
+  "note": "One initial attempt failed visibly; a diagnostic retry on the same test report completed. No transaction was broadcast to the source chain."
+}

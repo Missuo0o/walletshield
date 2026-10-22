@@ -1,0 +1,197 @@
+{
+  "version": "security/0.4.1-ai-evidence",
+  "chainId": 31337,
+  "origin": "https://demo.walletshield.example",
+  "intent": "文档合成样本；不是实际钱包请求，也不是模型调用。",
+  "feeParameters": {},
+  "requestSummary": {
+    "from": "0x2222222222222222222222222222222222222222",
+    "target": "0x1111111111111111111111111111111111111111",
+    "valueWei": "0",
+    "selector": "0x095ea7b3",
+    "calldataBytes": 68
+  },
+  "userReportedContext": null,
+  "operation": {
+    "category": "approval",
+    "label": "代币 / NFT 单项授权",
+    "fields": {
+      "spender": "0x3333333333333333333333333333333333333333",
+      "amountOrTokenId": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+      "unlimited": true
+    },
+    "targets": [
+      "0x3333333333333333333333333333333333333333"
+    ],
+    "decoded": true,
+    "tokenStandard": "ambiguous",
+    "addsPermission": true,
+    "token": "0x1111111111111111111111111111111111111111"
+  },
+  "checks": [
+    {
+      "id": "approval_standard",
+      "status": "unknown",
+      "title": "授权语义待核实",
+      "detail": "ERC-20 金额与 ERC-721 tokenId 使用相同 approve 编码，不能把 NFT #0 当作撤销授权。",
+      "source": "rules/0.3.0",
+      "observedAt": "2026-10-22T19:26:17.978Z"
+    },
+    {
+      "id": "operation",
+      "status": "pass",
+      "title": "代币 / NFT 单项授权",
+      "detail": "已解析该请求的常用参数；函数外观不证明目标协议可信。",
+      "source": "rules/0.3.0",
+      "observedAt": "2026-10-22T19:26:17.978Z"
+    },
+    {
+      "id": "permission_scope",
+      "status": "risk",
+      "title": "请求授予资产使用权限",
+      "detail": "权限可能允许未来转走资产；有限额度或无 gas 签名也可能有风险。",
+      "source": "rules/0.3.0",
+      "observedAt": "2026-10-22T19:26:17.978Z"
+    },
+    {
+      "id": "fee_budget",
+      "status": "unknown",
+      "title": "请求费用未完整提供",
+      "detail": "缺少 gas 上限或单价，不能评估费用预算；钱包最终费用仍需核对。",
+      "source": "rules/0.3.0",
+      "observedAt": "2026-10-22T19:26:17.978Z"
+    },
+    {
+      "id": "fraud_context",
+      "status": "unknown",
+      "title": "平台与用户意图不能仅靠交易确定",
+      "detail": "正常代币和成功转账也可能被用于杀猪盘；用户提供的背景只是待核实陈述，不证明平台身份或业务真实性。",
+      "source": "rules/0.3.0",
+      "observedAt": "2026-10-22T19:26:17.978Z"
+    },
+    {
+      "id": "tool_plan",
+      "status": "pass",
+      "title": "已按操作选择取数工具",
+      "detail": "这里只说明工具选择；结果和失败原因见各项证据。未识别请求同样进入 AI 分析，不视为安全。",
+      "source": "router/0.4.0",
+      "observedAt": "2026-10-22T19:26:17.978Z",
+      "data": {
+        "category": "approval",
+        "tools": [
+          {
+            "tool": "rpc_context",
+            "selected": true,
+            "purpose": "核对网络、区块、余额、代码与代币接口",
+            "available": null
+          },
+          {
+            "tool": "contract_controls",
+            "selected": true,
+            "purpose": "读取代码哈希、代理槽、owner 与暂停状态；接口外观不证明身份",
+            "available": null
+          },
+          {
+            "tool": "isolated_simulation",
+            "selected": true,
+            "purpose": "在独立副本执行本次请求，比较可识别资产变化",
+            "available": null
+          },
+          {
+            "tool": "round_trip",
+            "selected": false,
+            "purpose": "常见 V2 路由买入后反向卖出；结果不保证未来可卖出",
+            "available": null
+          },
+          {
+            "tool": "signature_verification",
+            "selected": false,
+            "purpose": "EIP-712 编码、domain、部分 Permit nonce 与重放范围",
+            "available": null
+          },
+          {
+            "tool": "vault_preview",
+            "selected": false,
+            "purpose": "读取 ERC-4626 资产、总份额、操作预览和限额",
+            "available": null
+          },
+          {
+            "tool": "lending_account",
+            "selected": false,
+            "purpose": "读取 Aave 风格账户健康因子与抵押配置",
+            "available": null
+          },
+          {
+            "tool": "protocol_limits",
+            "selected": false,
+            "purpose": "保留路由、锁仓、桥目标、内部权限等未验证语义",
+            "available": null
+          },
+          {
+            "tool": "wallet_rpc_summary",
+            "selected": false,
+            "purpose": "白名单提取权限、会话、智能账户及未知 RPC 参数；不执行请求",
+            "available": null
+          },
+          {
+            "tool": "external_intelligence",
+            "selected": true,
+            "purpose": "地址、网站、代币与 honeypot 情报",
+            "available": null
+          },
+          {
+            "tool": "ai_assessment",
+            "selected": true,
+            "purpose": "模型结合已取得证据给分并列出缺失数据；失败不补造分数",
+            "available": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "chain_context",
+      "status": "pass",
+      "title": "固定演示上下文",
+      "detail": "未连接真实节点，不代表此地址存在资产。",
+      "source": "demo-fixture",
+      "observedAt": "2026-10-22T19:26:17.977Z",
+      "data": {
+        "blockNumber": "demo",
+        "nativeBalanceWei": "10000000000000000000"
+      }
+    },
+    {
+      "id": "asset_simulation",
+      "status": "unknown",
+      "title": "完整模拟未运行",
+      "detail": "固定样本不执行真实买入或卖出。",
+      "source": "demo-fixture",
+      "observedAt": "2026-10-22T19:26:17.977Z"
+    },
+    {
+      "id": "token_security",
+      "status": "unknown",
+      "title": "真实代币风险未知",
+      "detail": "未向外部情报源查询。",
+      "source": "demo-fixture",
+      "observedAt": "2026-10-22T19:26:17.977Z"
+    },
+    {
+      "id": "address_reputation",
+      "status": "unknown",
+      "title": "真实地址信誉未知",
+      "detail": "未核实示例地址的信誉。",
+      "source": "demo-fixture",
+      "observedAt": "2026-10-22T19:26:17.977Z"
+    }
+  ],
+  "missing_checks": [
+    "授权语义待核实",
+    "请求费用未完整提供",
+    "平台与用户意图不能仅靠交易确定",
+    "完整模拟未运行",
+    "真实代币风险未知",
+    "真实地址信誉未知"
+  ],
+  "score_meaning": "由 Muse 根据本次证据独立给出的 0-100 风险指标；无规则预设分数、最低分、固定加分或固定权重。不是损失概率；信息不足时 score 可以为 null。"
+}

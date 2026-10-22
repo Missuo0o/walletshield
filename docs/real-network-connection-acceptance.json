@@ -1,0 +1,43 @@
+{
+  "checkedAt": "2026-10-22T20:35:20.402Z",
+  "scope": "read-only-network-block-probes-not-wallet-or-Snap-delivery",
+  "model": "muse-wonder-1.0",
+  "configured": [
+    {
+      "chainId": 11155111,
+      "name": "Sepolia",
+      "testnet": true,
+      "configured": true
+    },
+    {
+      "chainId": 1,
+      "name": "Ethereum Mainnet",
+      "testnet": false,
+      "configured": true
+    }
+  ],
+  "results": [
+    {
+      "chainId": 11155111,
+      "httpStatus": 200,
+      "network": "Sepolia",
+      "checkedAt": "2026-10-22T20:35:20.208Z",
+      "blockNumber": "11971953",
+      "blockHash": "0xed987023d2fe693e486d8c68054ee2dceac890c1d08d35aff7a8b6662a887fb8",
+      "blockTime": "2026-10-22T20:35:12.000Z",
+      "latencyMs": 218,
+      "cached": false
+    },
+    {
+      "chainId": 1,
+      "httpStatus": 200,
+      "network": "Ethereum Mainnet",
+      "checkedAt": "2026-10-22T20:35:20.400Z",
+      "blockNumber": "26250583",
+      "blockHash": "0xe23c0faf1b819ef7af21075cb73b28591b2f36afed3adcab2ef1be1b31926083",
+      "blockTime": "2026-10-22T20:35:11.000Z",
+      "latencyMs": 184,
+      "cached": false
+    }
+  ]
+}

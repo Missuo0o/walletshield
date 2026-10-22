@@ -1,0 +1,374 @@
+{
+  "kind": "isolated-test-fixtures",
+  "matching": [
+    {
+      "id": "signature_network_context",
+      "status": "pass",
+      "title": "Signature network and query provenance",
+      "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+      "source": "eip712",
+      "observedAt": "2026-10-22T21:42:24.454Z",
+      "data": {
+        "requestChainId": 31337,
+        "declaredChainId": "31337",
+        "readChainId": 31337,
+        "readChainSource": "request",
+        "signingNetworkVerified": false,
+        "replayScopeDeclared": true
+      }
+    },
+    {
+      "id": "signature_validation",
+      "status": "unknown",
+      "title": "Signature validity and future consumption remain unverified",
+      "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+      "source": "coverage",
+      "observedAt": "2026-10-22T21:42:24.454Z",
+      "data": {
+        "signatureSupplied": false,
+        "cryptographicSignerVerified": false,
+        "consumptionExecuted": false
+      }
+    },
+    {
+      "id": "signature_scope",
+      "status": "warning",
+      "title": "Declared signature authority identified",
+      "detail": "The standard signature commits to a spender and amount cap or NFT identifier, not the final recipient. A zero cap or zero NFT spender expresses a revocation under standard semantics. Implementation and signature validity remain unverified. A Permit2 single-transfer spender can choose an amount within the cap.",
+      "source": "eip712",
+      "observedAt": "2026-10-22T21:42:24.454Z",
+      "data": {
+        "protocol": "erc2612",
+        "spender": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+        "declaredGrant": true,
+        "ownerSource": "signed_owner",
+        "recipientCommitted": false,
+        "actualTransferAmountCommitted": false,
+        "permissionKind": "standing_allowance"
+      }
+    },
+    {
+      "id": "signature_signer_account",
+      "status": "pass",
+      "title": "Signing account code observed",
+      "detail": "No account code was observed at this block. This does not prove private-key control or exclude an undeployed smart account or future delegation.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.467Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "accountKind": "no_code",
+        "hasCode": false,
+        "erc1271Validation": "not_attempted",
+        "cryptographicSignerVerified": false
+      }
+    },
+    {
+      "id": "signature_verifier_code",
+      "status": "pass",
+      "title": "Verifier code observation",
+      "detail": "Code is observed only on the stated network and block. Code presence does not establish protocol identity, standard behavior, or safety.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.469Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "verifyingContract": "0x0165878a594ca255338adfa4d48449f69242eb8f",
+        "hasCode": true,
+        "codeHash": "0xe01f3f5d797abe54c836a14987610cfc0ce3e80cc108bcd6cbe537eba16212da",
+        "identityVerified": false
+      }
+    },
+    {
+      "id": "signature_domain",
+      "status": "pass",
+      "title": "Typed-message domain separator comparison",
+      "detail": "The message domain hash matches the contract return value. This does not establish contract trust or actual signature validity.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.472Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "expected": "0xf9464122947fcdce980307629c1db754950bbe9b02cbb756ad617f591e5ea0ad",
+        "observed": "0xf9464122947fcdce980307629c1db754950bbe9b02cbb756ad617f591e5ea0ad",
+        "verifyingContract": "0x0165878a594ca255338adfa4d48449f69242eb8f"
+      }
+    },
+    {
+      "id": "signature_owner_binding",
+      "status": "pass",
+      "title": "Declared owner compared with signing account",
+      "detail": "This is an address comparison, not cryptographic signature verification. A difference requires review of the authority and any contract-account extension.",
+      "source": "eip712",
+      "observedAt": "2026-10-22T21:42:24.472Z",
+      "data": {
+        "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "ownerMatchesSigner": true,
+        "cryptographicSignerVerified": false
+      }
+    },
+    {
+      "id": "signature_deadline",
+      "status": "pass",
+      "title": "Signature submission deadline compared with block time",
+      "detail": "Only the observed block time and signature deadline are compared. Future submission time, allowance expiration, and actual consumption are separate questions.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.472Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "deadline": "2000000000",
+        "expiredAtObservedBlock": false
+      }
+    },
+    {
+      "id": "signature_nonce",
+      "status": "pass",
+      "title": "Permit nonce matched",
+      "detail": "A nonce match at a fixed block does not guarantee future validity or replace signature verification.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.473Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "verifyingContract": "0x0165878a594ca255338adfa4d48449f69242eb8f",
+        "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "nonceScope": "owner",
+        "nonce": "0",
+        "declaredNonce": "0"
+      }
+    }
+  ],
+  "mismatch": [
+    {
+      "id": "signature_network_context",
+      "status": "pass",
+      "title": "Signature network and query provenance",
+      "detail": "The RPC network comes from the request or the claimed message domain. An independent provider snapshot is not bound to this signing origin or request; a match does not prove the signing network.",
+      "source": "eip712",
+      "observedAt": "2026-10-22T21:42:24.474Z",
+      "data": {
+        "requestChainId": 31337,
+        "declaredChainId": "31337",
+        "readChainId": 31337,
+        "readChainSource": "request",
+        "signingNetworkVerified": false,
+        "replayScopeDeclared": true
+      }
+    },
+    {
+      "id": "signature_validation",
+      "status": "unknown",
+      "title": "Signature validity and future consumption remain unverified",
+      "detail": "Only an unsigned message is available. No signature was requested or generated, and no ecrecover, ERC-1271 isValidSignature, or Permit consumption was performed. Encoding and nonce/domain matches do not prove acceptance or safe future use.",
+      "source": "coverage",
+      "observedAt": "2026-10-22T21:42:24.474Z",
+      "data": {
+        "signatureSupplied": false,
+        "cryptographicSignerVerified": false,
+        "consumptionExecuted": false
+      }
+    },
+    {
+      "id": "signature_scope",
+      "status": "warning",
+      "title": "Declared signature authority identified",
+      "detail": "The standard signature commits to a spender and amount cap or NFT identifier, not the final recipient. A zero cap or zero NFT spender expresses a revocation under standard semantics. Implementation and signature validity remain unverified. A Permit2 single-transfer spender can choose an amount within the cap.",
+      "source": "eip712",
+      "observedAt": "2026-10-22T21:42:24.474Z",
+      "data": {
+        "protocol": "erc2612",
+        "spender": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+        "declaredGrant": true,
+        "ownerSource": "signed_owner",
+        "recipientCommitted": false,
+        "actualTransferAmountCommitted": false,
+        "permissionKind": "standing_allowance"
+      }
+    },
+    {
+      "id": "signature_signer_account",
+      "status": "pass",
+      "title": "Signing account code observed",
+      "detail": "No account code was observed at this block. This does not prove private-key control or exclude an undeployed smart account or future delegation.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.480Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "accountKind": "no_code",
+        "hasCode": false,
+        "erc1271Validation": "not_attempted",
+        "cryptographicSignerVerified": false
+      }
+    },
+    {
+      "id": "signature_verifier_code",
+      "status": "pass",
+      "title": "Verifier code observation",
+      "detail": "Code is observed only on the stated network and block. Code presence does not establish protocol identity, standard behavior, or safety.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.482Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "verifyingContract": "0x0165878a594ca255338adfa4d48449f69242eb8f",
+        "hasCode": true,
+        "codeHash": "0xe01f3f5d797abe54c836a14987610cfc0ce3e80cc108bcd6cbe537eba16212da",
+        "identityVerified": false
+      }
+    },
+    {
+      "id": "signature_domain",
+      "status": "risk",
+      "title": "Typed-message domain separator comparison",
+      "detail": "The message domain hash differs from the current contract return value.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.483Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "expected": "0x195681e29cb0d3b6e9255964e20aa4f1b6bd9d97644a83691bc2a375688b60eb",
+        "observed": "0xf9464122947fcdce980307629c1db754950bbe9b02cbb756ad617f591e5ea0ad",
+        "verifyingContract": "0x0165878a594ca255338adfa4d48449f69242eb8f"
+      }
+    },
+    {
+      "id": "signature_owner_binding",
+      "status": "pass",
+      "title": "Declared owner compared with signing account",
+      "detail": "This is an address comparison, not cryptographic signature verification. A difference requires review of the authority and any contract-account extension.",
+      "source": "eip712",
+      "observedAt": "2026-10-22T21:42:24.483Z",
+      "data": {
+        "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "ownerMatchesSigner": true,
+        "cryptographicSignerVerified": false
+      }
+    },
+    {
+      "id": "signature_deadline",
+      "status": "pass",
+      "title": "Signature submission deadline compared with block time",
+      "detail": "Only the observed block time and signature deadline are compared. Future submission time, allowance expiration, and actual consumption are separate questions.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.483Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "deadline": "2000000000",
+        "expiredAtObservedBlock": false
+      }
+    },
+    {
+      "id": "signature_nonce",
+      "status": "risk",
+      "title": "Permit nonce differs from contract state",
+      "detail": "A nonce match at a fixed block does not guarantee future validity or replace signature verification.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.485Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "7",
+        "blockHash": "0x5bccc7136c54ba08936a2dce6ad174959b427275146be92ce229cb26d3abaceb",
+        "blockTimestampSeconds": "1792705344",
+        "verifyingContract": "0x0165878a594ca255338adfa4d48449f69242eb8f",
+        "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "nonceScope": "owner",
+        "nonce": "0",
+        "declaredNonce": "1"
+      }
+    }
+  ],
+  "monitor": {
+    "watch": {
+      "chainId": 31337,
+      "address": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "tokens": [
+        "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+      ],
+      "id": "d6e5b35f-bc72-4836-ab06-07d60a489641",
+      "createdAt": "2026-10-22T21:42:24.521Z",
+      "active": true,
+      "status": "ok",
+      "message": "Legacy read cycle complete for watched accounts, standard logs and selected tokens only.",
+      "lastCheckedAt": "2026-10-22T21:42:24.531Z",
+      "cursor": "10",
+      "cursorHash": "0x6a984ba2dbcc56cbf3fb8fc0df35790aadfa2c15fbda79064f1a089d1a47e19a",
+      "nativeBalance": "9999993222978327283314",
+      "tokenBalances": {
+        "0x5fbdb2315678afecb367f032d93f642f64180aa3": "999999999999999999999993"
+      }
+    },
+    "alerts": [
+      {
+        "id": "8e9d52e5a5c6651ac1bc3f9e83413dbd2f28d1fe89fb9069161a51c85046e6fd",
+        "watchId": "d6e5b35f-bc72-4836-ab06-07d60a489641",
+        "createdAt": "2026-10-22T21:42:24.537Z",
+        "level": "review",
+        "title": "Observed outgoing-asset event",
+        "detail": "Observed chain logs do not establish maliciousness or all asset changes; verify whether the action was intended.",
+        "transactionHash": "0x3370231c39224dcca936b02da1657b0cb7c11bf91f7ef7805112dd324dd6ae08",
+        "blockNumber": "0xa",
+        "data": {
+          "contract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "0x0000000000000000000000003333333333333333333333333333333333333333"
+          ],
+          "value": "0x0000000000000000000000000000000000000000000000000000000000000007"
+        }
+      },
+      {
+        "id": "86c83468293a39e23a72d76cc002620d43e891722a8da687a5610dd39d8171d4",
+        "watchId": "d6e5b35f-bc72-4836-ab06-07d60a489641",
+        "createdAt": "2026-10-22T21:42:24.542Z",
+        "level": "review",
+        "title": "Native balance decreased",
+        "detail": "The change can include gas, transfers and calls; a balance decrease alone does not establish an attack.",
+        "blockNumber": "10",
+        "data": {
+          "before": "9999993294156191074023",
+          "after": "9999993222978327283314"
+        }
+      },
+      {
+        "id": "f220f1af25af700aff3fd9a668ddd5df93ab969ffc38dedcc58dd8538e018e0c",
+        "watchId": "d6e5b35f-bc72-4836-ab06-07d60a489641",
+        "createdAt": "2026-10-22T21:42:24.542Z",
+        "level": "review",
+        "title": "Watched token balance decreased",
+        "detail": "The watched balance decreased; ordinary spending, delegated use and unexpected use need review.",
+        "blockNumber": "10",
+        "data": {
+          "token": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+          "before": "1000000000000000000000000",
+          "after": "999999999999999999999993"
+        }
+      }
+    ]
+  }
+}

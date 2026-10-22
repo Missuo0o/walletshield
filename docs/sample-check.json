@@ -1,0 +1,77 @@
+{
+  "ruleVersion": "erc20-approval/0.1.0",
+  "source": "demo",
+  "input": {
+    "chainId": 31337,
+    "origin": "https://demo.walletshield.example",
+    "transaction": {
+      "from": "0x2222222222222222222222222222222222222222",
+      "to": "0x1111111111111111111111111111111111111111",
+      "value": "0x0",
+      "data": "0x095ea7b30000000000000000000000003333333333333333333333333333333333333333ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  },
+  "token": {
+    "address": "0x1111111111111111111111111111111111111111",
+    "symbol": "TEST-USD",
+    "decimals": 6
+  },
+  "balance": "5000000000",
+  "allowance": "0",
+  "blockNumber": "演示快照",
+  "simulation": {
+    "status": "passed",
+    "detail": "预设样本：调用成功。未连接链上节点，未执行真实交易模拟。"
+  },
+  "outcome": "unknown",
+  "operation": "approve",
+  "spender": "0x3333333333333333333333333333333333333333",
+  "amount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+  "formattedAmount": "115792089237316195423570985008687907853269984665640564039457584007913129.639935",
+  "unlimited": true,
+  "checks": [
+    {
+      "id": "SUPPORTED_OPERATION",
+      "status": "pass",
+      "title": "已解析授权请求",
+      "detail": "被授权地址 0x3333333333333333333333333333333333333333；原始额度 115792089237316195423570985008687907853269984665640564039457584007913129639935。"
+    },
+    {
+      "id": "TOKEN_IDENTITY",
+      "status": "pass",
+      "title": "代币信息已核对",
+      "detail": "TEST-USD · 0x1111111111111111111111111111111111111111；以合约地址识别代币，名称不是信任凭据。"
+    },
+    {
+      "id": "APPROVAL_SCOPE",
+      "status": "warning",
+      "title": "请求极高额度授权",
+      "detail": "额度为 uint256 最大值，通常称为无限授权；风险可能涉及当前及以后转入的同一代币。"
+    },
+    {
+      "id": "SPENDER_IDENTITY",
+      "status": "risk",
+      "title": "被授权方可信度未确认",
+      "detail": "无外部地址信誉数据。同时请求极高额度，权限暴露较大；这并非已证实诈骗的结论。"
+    },
+    {
+      "id": "CALL_CHECK",
+      "status": "pass",
+      "title": "基础调用检查通过",
+      "detail": "预设样本：调用成功。未连接链上节点，未执行真实交易模拟。"
+    }
+  ],
+  "complete": true,
+  "level": "high",
+  "title": "高风险",
+  "summary": "此操作会授予 0x3333333333333333333333333333333333333333 极高额度 TEST-USD 支出权限。授权有效且额度足够时，对方可转走相应代币，无需逐笔确认。建议在钱包中拒绝本次请求，并核实授权对象。",
+  "id": "6a4211fe-ee22-446d-9bce-b1724fe4db8d",
+  "createdAt": "2026-10-21T02:59:26.545Z",
+  "fingerprint": "0832e6250d91eb3fe943ec1b880aec93d500257e7c9c79377c89355e81ff14bc",
+  "demoEvents": [
+    {
+      "action": "cancel",
+      "createdAt": "2026-10-21T02:59:27.052Z"
+    }
+  ]
+}

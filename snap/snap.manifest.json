@@ -1,0 +1,35 @@
+{
+  "version": "0.4.1",
+  "description": "WalletShield development Snap: EVM transaction and message evidence with optional AI risk analysis.",
+  "proposedName": "WalletShield Local",
+  "source": {
+    "shasum": "OuElnTrSbfuY5gOEXXt6hk44pSjVUEhH+ODS0gqLmhU=",
+    "location": {
+      "npm": {
+        "filePath": "dist/bundle.js",
+        "iconPath": "images/icon.svg",
+        "packageName": "walletshield-snap",
+        "registry": "https://registry.npmjs.org/"
+      }
+    }
+  },
+  "initialPermissions": {
+    "endowment:transaction-insight": {
+      "allowTransactionOrigin": true,
+      "maxRequestTime": 90000
+    },
+    "endowment:network-access": {},
+    "endowment:page-home": {},
+    "endowment:signature-insight": {
+      "allowSignatureOrigin": true,
+      "maxRequestTime": 90000
+    },
+    "snap_manageState": {},
+    "endowment:rpc": {
+      "dapps": true
+    },
+    "endowment:ethereum-provider": {}
+  },
+  "platformVersion": "12.1.0",
+  "manifestVersion": "0.1"
+}

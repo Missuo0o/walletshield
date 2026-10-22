@@ -1,0 +1,214 @@
+{
+  "kind": "isolated-test-fixtures",
+  "noRealNetwork": true,
+  "upstreamUnchanged": true,
+  "normal": [
+    {
+      "id": "simulation_execution",
+      "status": "pass",
+      "title": "Isolated fork execution completed",
+      "detail": "Execution occurred only on a temporary local fork; no transaction was sent upstream. Supplied gas, fees, and nonce were preserved; a fork cap was used if gas was absent. The fork mines from the stated base block, so this is not a guarantee of future execution.",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-22T21:42:21.860Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "5",
+        "blockHash": "0x58db0dde066804751956e14f1c05aaee333ec6912c5e5c8077b208162a75af4b",
+        "executionBlockNumber": "6",
+        "gasLimit": "0xb71b00",
+        "gasLimitSource": "simulation_default",
+        "status": "success",
+        "native": {
+          "before": "9999995538582040358125",
+          "after": "9999995417771962365961",
+          "deltaIncludingGas": "-120810077992164",
+          "gasWei": "120810077992164",
+          "deltaExcludingGas": "0"
+        },
+        "assets": [
+          {
+            "kind": "erc20",
+            "contract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "before": "1000000000000000000000000",
+            "after": "999999999999999999999900",
+            "delta": "-100"
+          },
+          {
+            "kind": "erc20",
+            "contract": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "before": "1000000000000000000000000",
+            "after": "1000000000000000000000100",
+            "delta": "100"
+          }
+        ],
+        "calls": [
+          {
+            "type": "CALL",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "value": "0x0",
+            "selector": "0x38ed1739"
+          },
+          {
+            "type": "CALL",
+            "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "value": "0x0",
+            "selector": "0x23b872dd"
+          },
+          {
+            "type": "CALL",
+            "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+            "value": "0x0",
+            "selector": "0x40c10f19"
+          }
+        ],
+        "traceAvailable": true
+      }
+    },
+    {
+      "id": "asset_simulation",
+      "status": "unknown",
+      "title": "Asset discovery has coverage limits",
+      "detail": "Before/after state was read for identified assets and assets found in Transfer events. Assets without events, nonstandard storage, future proxy changes, and cross-chain results may be missed.",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-22T21:42:21.860Z"
+    },
+    {
+      "id": "round_trip",
+      "status": "warning",
+      "title": "Buy/sell simulation from a fixed base block",
+      "detail": "The fork mines sequential buy, approval, and sell steps from a base block. Minimum sell output is zero for observation. Loss includes taxes, fees, and price impact; it is not a tax rate. One successful sell does not guarantee future safety.",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-22T21:42:22.048Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "5",
+        "blockHash": "0x58db0dde066804751956e14f1c05aaee333ec6912c5e5c8077b208162a75af4b",
+        "bought": "100",
+        "returned": "100",
+        "roundTripReturnPercent": 100
+      }
+    }
+  ],
+  "lowGasChecks": [
+    {
+      "id": "simulation_execution",
+      "status": "unknown",
+      "title": "Fork execution incomplete",
+      "detail": "The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-22T21:42:23.890Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "5"
+      }
+    }
+  ],
+  "staleNonceChecks": [
+    {
+      "id": "simulation_execution",
+      "status": "unknown",
+      "title": "Fork execution incomplete",
+      "detail": "The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-22T21:42:24.037Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "5"
+      }
+    }
+  ],
+  "blocked": [
+    {
+      "id": "simulation_execution",
+      "status": "pass",
+      "title": "Isolated fork execution completed",
+      "detail": "Execution occurred only on a temporary local fork; no transaction was sent upstream. Supplied gas, fees, and nonce were preserved; a fork cap was used if gas was absent. The fork mines from the stated base block, so this is not a guarantee of future execution.",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-22T21:42:24.258Z",
+      "data": {
+        "chainId": 31337,
+        "blockNumber": "6",
+        "blockHash": "0x37d88108a0bf8d7afa4a5ce583113aac437f67270ec448dab7b72a111b26ac02",
+        "executionBlockNumber": "7",
+        "gasLimit": "0xb71b00",
+        "gasLimitSource": "simulation_default",
+        "status": "success",
+        "native": {
+          "before": "9999995496435870000361",
+          "after": "9999995380811726007373",
+          "deltaIncludingGas": "-115624143992988",
+          "gasWei": "115624143992988",
+          "deltaExcludingGas": "0"
+        },
+        "assets": [
+          {
+            "kind": "erc20",
+            "contract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "before": "1000000000000000000000000",
+            "after": "999999999999999999999900",
+            "delta": "-100"
+          },
+          {
+            "kind": "erc20",
+            "contract": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "before": "1000000000000000000000000",
+            "after": "1000000000000000000000100",
+            "delta": "100"
+          }
+        ],
+        "calls": [
+          {
+            "type": "CALL",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "value": "0x0",
+            "selector": "0x38ed1739"
+          },
+          {
+            "type": "CALL",
+            "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "value": "0x0",
+            "selector": "0x23b872dd"
+          },
+          {
+            "type": "CALL",
+            "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+            "value": "0x0",
+            "selector": "0x40c10f19"
+          }
+        ],
+        "traceAvailable": true
+      }
+    },
+    {
+      "id": "asset_simulation",
+      "status": "unknown",
+      "title": "Asset discovery has coverage limits",
+      "detail": "Before/after state was read for identified assets and assets found in Transfer events. Assets without events, nonstandard storage, future proxy changes, and cross-chain results may be missed.",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-22T21:42:24.258Z"
+    },
+    {
+      "id": "round_trip",
+      "status": "warning",
+      "title": "Sell after buy failed",
+      "detail": "Token restrictions, routing, liquidity, or gas may explain the failure. Combine it with contract and intelligence evidence; this alone does not prove a honeypot.",
+      "source": "isolated-fork",
+      "observedAt": "2026-10-22T21:42:24.442Z",
+      "data": {
+        "bought": "100",
+        "buyGas": "0x1358e",
+        "blockNumber": "6"
+      }
+    }
+  ]
+}

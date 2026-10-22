@@ -1,0 +1,68 @@
+{
+  "policy": "muse-evidence-v1",
+  "localChainReady": true,
+  "recordId": "5e5e4bf2-b8b6-429c-97fa-6c6d57193196",
+  "version": "security/0.4.1-ai-evidence",
+  "score": null,
+  "scoreSource": "none",
+  "presetFloorPresent": false,
+  "aiStatus": "completed",
+  "message": "Muse Wonder 分析完成；分数为未校准风险指标，不是损失概率。",
+  "modelResult": {
+    "score": null,
+    "assessment": "unknown",
+    "summary": "证据不足以给出数值分数：请求表面为无限授权且潜在影响高，但属于固定演示样本，授权语义、真实资产、模拟结果及地址/代币信誉均未核实。",
+    "reasons": [
+      {
+        "text": "已解析请求为向 spender 0x3333333333333333333333333333333333333333 授予权限，额度字段显示为最大值且标记 unlimited，若为 ERC-20 则潜在资产暴露范围较大。",
+        "evidence_ids": [
+          "permission_scope",
+          "operation"
+        ]
+      },
+      {
+        "text": "代币标准仍为 ambiguous，相同 approve 编码下不能确定该最大值是 ERC-20 无限授权还是其他授权语义，不能据此确认实际权限范围。",
+        "evidence_ids": [
+          "approval_standard"
+        ]
+      },
+      {
+        "text": "本次为 chainId 31337 的固定合成演示样本，未连接真实节点，不证明地址存在真实资产、目标协议可信或 spender 可信。",
+        "evidence_ids": [
+          "chain_context",
+          "fraud_context"
+        ]
+      },
+      {
+        "text": "由于模拟、外部情报、地址信誉和费用信息均缺失，证据不足以支持有意义的数值风险分数；缺少信息不等于安全。",
+        "evidence_ids": [
+          "asset_simulation",
+          "token_security",
+          "address_reputation",
+          "fee_budget"
+        ]
+      }
+    ],
+    "missing_data": [
+      "授权语义待核实",
+      "请求费用未完整提供",
+      "平台与用户意图不能仅靠交易确定",
+      "完整模拟未运行",
+      "真实代币风险未知",
+      "真实地址信誉未知",
+      "授权语义待核实：无法区分 ERC-20 无限额度与 ERC-721 tokenId 授权",
+      "完整模拟未运行，无法确认实际资产与授权变化",
+      "真实代币风险与目标/ spender 地址信誉未查询",
+      "费用参数未完整提供，无法评估费用预算",
+      "平台与用户意图未核实"
+    ],
+    "suggested_action": "不要将此样本视为真实交易结论；真实授权前需核实代币标准、目标与 spender 身份、实际额度，并完成模拟与信誉查询。",
+    "honeypot": "unknown",
+    "model": "muse-wonder-1.0",
+    "generatedAt": "2026-10-22T19:25:20.813Z",
+    "usage": {
+      "input_tokens": 1786,
+      "output_tokens": 870
+    }
+  }
+}

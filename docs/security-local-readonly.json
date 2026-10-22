@@ -1,0 +1,172 @@
+{
+  "id": "c4e33cae-6ab2-4a7f-ad30-9f9f51211b4e",
+  "createdAt": "2026-10-21T04:32:25.869Z",
+  "source": "rpc",
+  "request": {
+    "chainId": 31337,
+    "origin": "http://127.0.0.1:5173",
+    "kind": "transaction",
+    "transaction": {
+      "from": "0x991a7266f01d6b67651d308225278824b36448eb",
+      "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "data": "0x095ea7b30000000000000000000000003333333333333333333333333333333333333333ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "value": "0x0"
+    }
+  },
+  "operation": {
+    "category": "approval",
+    "label": "ERC-20 代币授权",
+    "fields": {
+      "spender": "0x3333333333333333333333333333333333333333",
+      "amountOrTokenId": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+      "unlimited": true
+    },
+    "targets": [
+      "0x3333333333333333333333333333333333333333"
+    ],
+    "decoded": true,
+    "tokenStandard": "erc20",
+    "addsPermission": true,
+    "token": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+  },
+  "level": "high",
+  "title": "高风险",
+  "summary": "ERC-20 代币授权。存在需要优先核实的风险信号。仍有未完成检查，不能据此认定安全。",
+  "complete": false,
+  "checks": [
+    {
+      "id": "operation",
+      "status": "pass",
+      "title": "ERC-20 代币授权",
+      "detail": "已解析该请求的常用参数；函数外观不证明目标协议可信。",
+      "source": "rules/0.2.0",
+      "observedAt": "2026-10-21T04:32:25.869Z"
+    },
+    {
+      "id": "permission_scope",
+      "status": "risk",
+      "title": "请求授予资产使用权限",
+      "detail": "权限可能允许未来转走资产；有限额度或无 gas 签名也可能有风险。",
+      "source": "rules/0.2.0",
+      "observedAt": "2026-10-21T04:32:25.869Z"
+    },
+    {
+      "id": "over_balance",
+      "status": "warning",
+      "title": "授权额度超过当前余额",
+      "detail": "未来进入钱包的同一代币也可能处于额度范围内。",
+      "source": "rules/0.2.0",
+      "observedAt": "2026-10-21T04:32:25.869Z"
+    },
+    {
+      "id": "fraud_context",
+      "status": "unknown",
+      "title": "平台与用户意图不能仅靠交易确定",
+      "detail": "正常代币和成功转账也可能被用于杀猪盘；未分析网站真实性、承诺收益或私下沟通。",
+      "source": "rules/0.2.0",
+      "observedAt": "2026-10-21T04:32:25.869Z"
+    },
+    {
+      "id": "chain_context",
+      "status": "pass",
+      "title": "链上状态已读取",
+      "detail": "在区块 6 查询状态。",
+      "source": "rpc",
+      "observedAt": "2026-10-21T04:32:25.847Z",
+      "data": {
+        "chainId": 31337,
+        "claimedNetwork": false,
+        "blockNumber": "6",
+        "nativeBalanceWei": "9999763065421801924",
+        "target": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "targetHasCode": true
+      }
+    },
+    {
+      "id": "basic_call",
+      "status": "pass",
+      "title": "基础调用未回滚",
+      "detail": "仅 eth_call；没有完整资产变化、卖出测试或未来执行保证。",
+      "source": "rpc",
+      "observedAt": "2026-10-21T04:32:25.851Z",
+      "data": {
+        "blockNumber": "6"
+      }
+    },
+    {
+      "id": "token_identity",
+      "status": "pass",
+      "title": "代币信息已读取",
+      "detail": "读取到 ERC-20 风格接口；名称与接口返回值不是信誉证明。",
+      "source": "rpc",
+      "observedAt": "2026-10-21T04:32:25.862Z",
+      "data": {
+        "address": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "symbol": "TEST-USD",
+        "decimals": 6,
+        "standard": "erc20",
+        "balance": "5000000000",
+        "blockNumber": "6"
+      }
+    },
+    {
+      "id": "existing_allowance",
+      "status": "pass",
+      "title": "既有授权已读取",
+      "detail": "仅查询此代币对此地址的额度。",
+      "source": "rpc",
+      "observedAt": "2026-10-21T04:32:25.868Z",
+      "data": {
+        "amount": "0"
+      }
+    },
+    {
+      "id": "asset_simulation",
+      "status": "unknown",
+      "title": "完整资产模拟未完成",
+      "detail": "尚未接入交易 trace、状态差异和买入后卖出的连续模拟。",
+      "source": "coverage",
+      "observedAt": "2026-10-21T04:32:25.868Z"
+    },
+    {
+      "id": "address_reputation",
+      "status": "unknown",
+      "title": "地址风险情报未启用",
+      "detail": "不能确认目标地址、域名或投资平台是否涉及诈骗。",
+      "source": "configuration",
+      "observedAt": "2026-10-21T04:32:25.868Z"
+    },
+    {
+      "id": "website_reputation",
+      "status": "unknown",
+      "title": "网站风险情报未启用",
+      "detail": "未核实来源网站是否为已知钓鱼站点。",
+      "source": "configuration",
+      "observedAt": "2026-10-21T04:32:25.868Z"
+    },
+    {
+      "id": "token_security",
+      "status": "unknown",
+      "title": "代币风险情报未启用",
+      "detail": "尚未检查 honeypot、卖出税、黑名单及管理员权限。",
+      "source": "configuration",
+      "observedAt": "2026-10-21T04:32:25.868Z"
+    }
+  ],
+  "ruleScoreFloor": 75,
+  "score": 75,
+  "scoreSource": "rules",
+  "ai": {
+    "status": "not_configured",
+    "message": "未配置 OpenAI API Key；没有请求外部模型，未生成 AI 分数。"
+  },
+  "missingData": [
+    "平台与用户意图不能仅靠交易确定",
+    "完整资产模拟未完成",
+    "地址风险情报未启用",
+    "网站风险情报未启用",
+    "代币风险情报未启用"
+  ],
+  "fingerprint": "d5bc9b492d2da3e474a0ce1063740cc3924a86bcb795da532cd61831bf593370",
+  "version": "security/0.2.0"
+}

@@ -1,0 +1,12 @@
+import {RUNTIME} from '../runtime.generated.js';
+import {serviceConfig} from './service-config.js';
+import { fileURLToPath } from 'node:url';
+import { buildApp } from './app.js';
+import { createStore } from './store.js';
+const service=serviceConfig();
+if(service.mode==='hosted'&&(String(RUNTIME.mode)!=='hosted'||RUNTIME.appOrigin!==service.origin))throw Error('Hosted runtime and built companion settings differ. Run npm run build:hosted before start:hosted.');
+const store = createStore(fileURLToPath(new URL('../../.local/walletshield.sqlite', import.meta.url)));
+const app = await buildApp(store, { logger: process.env.LOG_REQUESTS === '1',service });
+await app.listen({ port: 8787, host: '127.0.0.1' });
+console.log('WalletShield API: http://127.0.0.1:8787');
+for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, async () => { await app.close(); store.close(); process.exit(0); });

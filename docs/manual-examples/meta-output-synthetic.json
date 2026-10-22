@@ -1,0 +1,25 @@
+{
+  "score": 85,
+  "assessment": "high",
+  "summary": "文档合成示例：极高额度增加资产权限暴露。此内容不是一次真实模型响应。",
+  "reasons": [
+    {
+      "text": "请求授予极高额度资产使用权限，且仍有证据缺口。",
+      "evidence_ids": [
+        "permission_scope"
+      ]
+    }
+  ],
+  "missing_data": [
+    "授权语义待核实",
+    "请求费用未完整提供",
+    "平台与用户意图不能仅靠交易确定",
+    "完整模拟未运行",
+    "真实代币风险未知",
+    "真实地址信誉未知"
+  ],
+  "suggested_action": "先核实授权对象与用途，并查看仍未完成的检查。",
+  "honeypot": "unknown",
+  "model": "muse-wonder-1.0",
+  "generatedAt": "2026-10-22T18:45:10.126Z"
+}

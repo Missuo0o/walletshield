@@ -1,0 +1,142 @@
+{
+  "kind": "isolated-contract-fixtures",
+  "upstreamUnchanged": true,
+  "vaultChecks": [
+    {
+      "id": "contract_controls",
+      "status": "pass",
+      "title": "Partial contract controls observed",
+      "detail": "Code and common proxy slots are observations. Empty slots do not prove immutability, and owner/paused interfaces can be customized. These observations do not establish safety.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.504Z",
+      "data": {
+        "target": "0xa513e6e4b8f2a923d98304ec87f64353c4d5c853",
+        "chainId": 31337,
+        "blockNumber": "9",
+        "blockHash": "0x17e69aaa01f795f67b586c28829554735ebd6b1391d0c0fbe92fed86301fcb85",
+        "blockTimestampSeconds": "1792705344",
+        "missing": [],
+        "codeHash": "0x57d8dc7e4273d601de866ab860e105a7662377ed3abf8d3b71e7c2a964d86b0d",
+        "identityVerified": false,
+        "implementation": null,
+        "admin": null,
+        "beacon": null,
+        "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "paused": false
+      }
+    },
+    {
+      "id": "vault_context",
+      "status": "pass",
+      "title": "Vault interfaces and previews observed",
+      "detail": "A preview is a current contract return value, not a guarantee of execution price, asset value, or future exit.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.507Z",
+      "data": {
+        "vault": "0xa513e6e4b8f2a923d98304ec87f64353c4d5c853",
+        "chainId": 31337,
+        "blockNumber": "9",
+        "blockHash": "0x17e69aaa01f795f67b586c28829554735ebd6b1391d0c0fbe92fed86301fcb85",
+        "blockTimestampSeconds": "1792705344",
+        "identityVerified": false,
+        "action": "deposit",
+        "amount": "100",
+        "limitAccount": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "asset": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "totalAssets": "1000",
+        "totalSupply": "900",
+        "previewDeposit": "90",
+        "maxDeposit": "100000",
+        "missing": []
+      }
+    },
+    {
+      "id": "vault_asset_context",
+      "status": "unknown",
+      "title": "Vault asset and share units observed",
+      "detail": "Underlying tokens and shares are read separately. Without decimals, values are raw units, not dollars or directly comparable quantities.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.509Z",
+      "data": {
+        "underlying": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "amountKind": "underlying_asset_raw",
+        "chainId": 31337,
+        "blockNumber": "9",
+        "blockHash": "0x17e69aaa01f795f67b586c28829554735ebd6b1391d0c0fbe92fed86301fcb85",
+        "blockTimestampSeconds": "1792705344",
+        "missing": [
+          "shareBalanceRaw",
+          "shareDecimals"
+        ],
+        "underlyingDecimals": "18",
+        "underlyingBalanceRaw": "1000000000000000000000000",
+        "existingUnderlyingAllowanceRaw": "0"
+      }
+    }
+  ],
+  "lendingChecks": [
+    {
+      "id": "contract_controls",
+      "status": "unknown",
+      "title": "Partial contract controls observed",
+      "detail": "Code and common proxy slots are observations. Empty slots do not prove immutability, and owner/paused interfaces can be customized. These observations do not establish safety.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.517Z",
+      "data": {
+        "target": "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6",
+        "chainId": 31337,
+        "blockNumber": "9",
+        "blockHash": "0x17e69aaa01f795f67b586c28829554735ebd6b1391d0c0fbe92fed86301fcb85",
+        "blockTimestampSeconds": "1792705344",
+        "missing": [
+          "owner",
+          "paused"
+        ],
+        "codeHash": "0x4b033a4c559d5f862963b314d2e934fa0e58af55ef9415d58bcc2e9e1bd75004",
+        "identityVerified": false,
+        "implementation": null,
+        "admin": null,
+        "beacon": null
+      }
+    },
+    {
+      "id": "lending_context",
+      "status": "pass",
+      "title": "Current lending account state observed",
+      "detail": "An Aave-style interface does not establish protocol identity. Health factor is a current observation and does not calculate post-operation liquidation risk, price changes, or oracle reliability.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.518Z",
+      "data": {
+        "pool": "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6",
+        "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "asset": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "chainId": 31337,
+        "blockNumber": "9",
+        "blockHash": "0x17e69aaa01f795f67b586c28829554735ebd6b1391d0c0fbe92fed86301fcb85",
+        "blockTimestampSeconds": "1792705344",
+        "identityVerified": false,
+        "totalCollateralBase": "2000",
+        "totalDebtBase": "1000",
+        "availableBorrowsBase": "100",
+        "currentLiquidationThreshold": "8000",
+        "ltv": "7500",
+        "healthFactor": "900000000000000000",
+        "reserveConfiguration": {
+          "data": "1"
+        }
+      }
+    },
+    {
+      "id": "liquidation_risk",
+      "status": "risk",
+      "title": "Account interface reports health factor below 1",
+      "detail": "Under this interface convention of 1e18 per unit, the reported factor indicates liquidation exposure. Protocol identity and price data still require verification.",
+      "source": "rpc",
+      "observedAt": "2026-10-22T21:42:24.519Z",
+      "data": {
+        "healthFactor": "900000000000000000"
+      }
+    }
+  ]
+}

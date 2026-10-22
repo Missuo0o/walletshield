@@ -1,0 +1,31 @@
+{
+  "checkedAt": "2026-10-22T20:14:44.282Z",
+  "scope": "read-only-network-and-latest-block-connectivity-no-transactions-no-AI",
+  "backendConfiguredChains": [
+    1,
+    31337,
+    11155111
+  ],
+  "results": [
+    {
+      "chainId": 1,
+      "configured": true,
+      "provider": "Infura",
+      "connected": true,
+      "chainIdMatched": true,
+      "latestBlock": "26250481",
+      "blockTime": "2026-10-22T20:14:35.000Z",
+      "latencyMs": 173
+    },
+    {
+      "chainId": 11155111,
+      "configured": true,
+      "provider": "Infura",
+      "connected": true,
+      "chainIdMatched": true,
+      "latestBlock": "11971852",
+      "blockTime": "2026-10-22T20:14:36.000Z",
+      "latencyMs": 159
+    }
+  ]
+}

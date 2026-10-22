@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-10-22T21:02:44.212Z",
+  "scope": "initial-live-validation-failures-after-Permit-evidence-upgrade-not-final-acceptance",
+  "accepted": 0,
+  "total": 2,
+  "results": [
+    {
+      "case": "permit",
+      "reportId": "be9a2868-c4ce-4452-91e7-8a65faf29c00",
+      "accepted": false,
+      "elapsedMs": 20092,
+      "status": "failed",
+      "message": "模型输出未通过校验：没有支持数字的已判断维度；未接受该分数。",
+      "score": null,
+      "scoreSource": "none"
+    },
+    {
+      "case": "permit2",
+      "reportId": "222e5bb4-ae7a-495e-bd91-862fee763e86",
+      "accepted": false,
+      "elapsedMs": 21335,
+      "status": "failed",
+      "message": "模型输出未通过校验：nonce 或 domain 核验结论缺少对应的链上证据；未接受该分数。",
+      "score": null,
+      "scoreSource": "none"
+    }
+  ]
+}

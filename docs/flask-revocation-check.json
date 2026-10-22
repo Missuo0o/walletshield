@@ -1,0 +1,20 @@
+{
+  "chainId": 31337,
+  "observedBlock": "4",
+  "spender": "0x3333333333333333333333333333333333333333",
+  "currentAllowance": "0",
+  "balanceTestUsd": "5000",
+  "revocationReceipt": {
+    "block": "4",
+    "status": "success",
+    "approvalValue": "0",
+    "hash": "0xfd6e9b500a8bf9532537ec539d2c4aa65f198215abe7373d6be3e71629a0fe8c"
+  },
+  "preSignCheck": {
+    "id": "bb62c317-8e93-48da-a4ca-a503273672e1",
+    "createdAt": "2026-10-21T03:35:43.339Z",
+    "requestedAmount": "0",
+    "level": "low"
+  },
+  "scope": "Read-only verification on local Anvil. Confirms this token/spender allowance only; does not revoke other approvals."
+}

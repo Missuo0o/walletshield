@@ -1,0 +1,364 @@
+{
+  "checkedAt": "2026-10-22T21:03:11.844Z",
+  "scope": "synthetic-fixed-samples-evidence-only",
+  "results": [
+    {
+      "case": "permit",
+      "reportId": "be9a2868-c4ce-4452-91e7-8a65faf29c00",
+      "operation": "permit_signature",
+      "complete": false,
+      "checks": [
+        {
+          "id": "operation",
+          "status": "pass",
+          "source": "rules/0.3.0",
+          "title": "代币 Permit 签名候选"
+        },
+        {
+          "id": "permission_scope",
+          "status": "warning",
+          "source": "rules/0.3.0",
+          "title": "请求授予资产使用权限"
+        },
+        {
+          "id": "signature_effects",
+          "status": "unknown",
+          "source": "rules/0.3.0",
+          "title": "签名后续用途尚未完全验证"
+        },
+        {
+          "id": "signature_chain",
+          "status": "unknown",
+          "source": "rules/0.3.0",
+          "title": "未取得当前钱包网络"
+        },
+        {
+          "id": "fraud_context",
+          "status": "unknown",
+          "source": "rules/0.3.0",
+          "title": "平台与用户意图不能仅靠交易确定"
+        },
+        {
+          "id": "tool_plan",
+          "status": "pass",
+          "source": "router/0.4.0",
+          "title": "已按操作选择取数工具"
+        },
+        {
+          "id": "typed_structure",
+          "status": "pass",
+          "source": "eip712",
+          "title": "结构化消息编码已验证"
+        },
+        {
+          "id": "chain_context",
+          "status": "pass",
+          "source": "rpc",
+          "title": "按消息声明网络查询"
+        },
+        {
+          "id": "asset_simulation",
+          "status": "unknown",
+          "source": "coverage",
+          "title": "签名未来消费未模拟"
+        },
+        {
+          "id": "address_reputation",
+          "status": "unknown",
+          "source": "configuration",
+          "title": "地址风险情报未启用"
+        },
+        {
+          "id": "website_reputation",
+          "status": "unknown",
+          "source": "configuration",
+          "title": "网站风险情报未启用"
+        },
+        {
+          "id": "token_security",
+          "status": "unknown",
+          "source": "configuration",
+          "title": "代币风险情报未启用"
+        },
+        {
+          "id": "signature_network_context",
+          "status": "unknown",
+          "source": "eip712",
+          "title": "签名网络与查询来源"
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "source": "coverage",
+          "title": "尚未验证有效签名或未来消费"
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "source": "eip712",
+          "title": "已识别签名承诺的权限范围"
+        },
+        {
+          "id": "signature_signer_account",
+          "status": "pass",
+          "source": "rpc",
+          "title": "签名账户代码状态已读取"
+        },
+        {
+          "id": "signature_verifier_code",
+          "status": "pass",
+          "source": "rpc",
+          "title": "验证合约代码状态"
+        },
+        {
+          "id": "signature_owner_binding",
+          "status": "pass",
+          "source": "eip712",
+          "title": "已比较声明 owner 与签名账户"
+        },
+        {
+          "id": "signature_deadline",
+          "status": "pass",
+          "source": "rpc",
+          "title": "已按区块时间核对签名提交期限"
+        },
+        {
+          "id": "signature_domain",
+          "status": "pass",
+          "source": "rpc",
+          "title": "Permit domain 分隔符核对"
+        },
+        {
+          "id": "signature_nonce",
+          "status": "pass",
+          "source": "rpc",
+          "title": "Permit nonce 已匹配"
+        },
+        {
+          "id": "contract_controls",
+          "status": "pass",
+          "source": "rpc",
+          "title": "已读取部分合约控制状态"
+        },
+        {
+          "id": "signature_spender_controls",
+          "status": "pass",
+          "source": "rpc",
+          "title": "签名对象当前无代码"
+        },
+        {
+          "id": "token_identity",
+          "status": "pass",
+          "source": "rpc",
+          "title": "代币单位与余额已读取"
+        },
+        {
+          "id": "existing_allowance",
+          "status": "pass",
+          "source": "rpc",
+          "title": "既有 ERC-20 额度已读取"
+        },
+        {
+          "id": "signature_exposure",
+          "status": "pass",
+          "source": "rpc",
+          "title": "签名额度与当前余额的条件上界"
+        }
+      ],
+      "missingData": [
+        "签名后续用途尚未完全验证",
+        "未取得当前钱包网络",
+        "平台与用户意图不能仅靠交易确定",
+        "签名未来消费未模拟",
+        "地址风险情报未启用",
+        "网站风险情报未启用",
+        "代币风险情报未启用",
+        "签名网络与查询来源",
+        "尚未验证有效签名或未来消费"
+      ]
+    },
+    {
+      "case": "permit2",
+      "reportId": "222e5bb4-ae7a-495e-bd91-862fee763e86",
+      "operation": "permit2_signature",
+      "complete": false,
+      "checks": [
+        {
+          "id": "operation",
+          "status": "pass",
+          "source": "rules/0.3.0",
+          "title": "Permit2 签名候选"
+        },
+        {
+          "id": "permission_scope",
+          "status": "risk",
+          "source": "rules/0.3.0",
+          "title": "请求授予资产使用权限"
+        },
+        {
+          "id": "signature_effects",
+          "status": "unknown",
+          "source": "rules/0.3.0",
+          "title": "签名后续用途尚未完全验证"
+        },
+        {
+          "id": "signature_chain",
+          "status": "unknown",
+          "source": "rules/0.3.0",
+          "title": "未取得当前钱包网络"
+        },
+        {
+          "id": "fraud_context",
+          "status": "unknown",
+          "source": "rules/0.3.0",
+          "title": "平台与用户意图不能仅靠交易确定"
+        },
+        {
+          "id": "tool_plan",
+          "status": "pass",
+          "source": "router/0.4.0",
+          "title": "已按操作选择取数工具"
+        },
+        {
+          "id": "typed_structure",
+          "status": "pass",
+          "source": "eip712",
+          "title": "结构化消息编码已验证"
+        },
+        {
+          "id": "chain_context",
+          "status": "pass",
+          "source": "rpc",
+          "title": "按消息声明网络查询"
+        },
+        {
+          "id": "asset_simulation",
+          "status": "unknown",
+          "source": "coverage",
+          "title": "签名未来消费未模拟"
+        },
+        {
+          "id": "address_reputation",
+          "status": "unknown",
+          "source": "configuration",
+          "title": "地址风险情报未启用"
+        },
+        {
+          "id": "website_reputation",
+          "status": "unknown",
+          "source": "configuration",
+          "title": "网站风险情报未启用"
+        },
+        {
+          "id": "token_security",
+          "status": "unknown",
+          "source": "configuration",
+          "title": "代币风险情报未启用"
+        },
+        {
+          "id": "signature_network_context",
+          "status": "unknown",
+          "source": "eip712",
+          "title": "签名网络与查询来源"
+        },
+        {
+          "id": "signature_validation",
+          "status": "unknown",
+          "source": "coverage",
+          "title": "尚未验证有效签名或未来消费"
+        },
+        {
+          "id": "signature_scope",
+          "status": "warning",
+          "source": "eip712",
+          "title": "已识别签名承诺的权限范围"
+        },
+        {
+          "id": "signature_signer_account",
+          "status": "pass",
+          "source": "rpc",
+          "title": "签名账户代码状态已读取"
+        },
+        {
+          "id": "signature_verifier_code",
+          "status": "pass",
+          "source": "rpc",
+          "title": "验证合约代码状态"
+        },
+        {
+          "id": "signature_protocol",
+          "status": "warning",
+          "source": "reference",
+          "title": "Permit2 公开地址与域声明比较"
+        },
+        {
+          "id": "signature_deadline",
+          "status": "pass",
+          "source": "rpc",
+          "title": "已按区块时间核对签名提交期限"
+        },
+        {
+          "id": "signature_domain",
+          "status": "unknown",
+          "source": "rpc",
+          "title": "Permit domain 分隔符未取得"
+        },
+        {
+          "id": "signature_nonce_0",
+          "status": "pass",
+          "source": "rpc",
+          "title": "Permit2 nonce 与既有权限核对"
+        },
+        {
+          "id": "contract_controls",
+          "status": "pass",
+          "source": "rpc",
+          "title": "已读取部分合约控制状态"
+        },
+        {
+          "id": "signature_spender_controls",
+          "status": "pass",
+          "source": "rpc",
+          "title": "签名对象当前无代码"
+        },
+        {
+          "id": "signature_token_controls_0",
+          "status": "unknown",
+          "source": "rpc",
+          "title": "签名 spender / 资产代码与控制观测"
+        },
+        {
+          "id": "token_identity",
+          "status": "pass",
+          "source": "rpc",
+          "title": "代币单位与余额已读取"
+        },
+        {
+          "id": "existing_allowance",
+          "status": "pass",
+          "source": "rpc",
+          "title": "既有 ERC-20 额度已读取"
+        },
+        {
+          "id": "signature_exposure",
+          "status": "pass",
+          "source": "rpc",
+          "title": "签名额度与当前余额的条件上界"
+        }
+      ],
+      "missingData": [
+        "签名后续用途尚未完全验证",
+        "未取得当前钱包网络",
+        "平台与用户意图不能仅靠交易确定",
+        "签名未来消费未模拟",
+        "地址风险情报未启用",
+        "网站风险情报未启用",
+        "代币风险情报未启用",
+        "签名网络与查询来源",
+        "尚未验证有效签名或未来消费",
+        "Permit domain 分隔符未取得",
+        "签名 spender / 资产代码与控制观测"
+      ]
+    }
+  ]
+}
