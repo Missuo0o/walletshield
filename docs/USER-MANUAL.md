@@ -1,5 +1,7 @@
 # WalletShield user manual
 
+[English](USER-MANUAL.md) · [简体中文](USER-MANUAL-zh.md)
+
 This manual explains the current English interface and the implemented local and hosted workflows. WalletShield gives advice about an unsigned EVM request before you decide in your wallet. It cannot guarantee safety, force rejection, sign for you, recover assets or continuously monitor a signed request.
 
 The [README](../README.md) is the configuration and developer reference. The [generated coverage guide](AI-COVERAGE-GUIDE.md) lists all 30 profiles, their exact extracted fields, tools, missing checks and possible extensions. The local lab has 54 representative cases: 43 transactions and 11 message requests, representing 25 profiles. These are examples, not a detection-accuracy benchmark.

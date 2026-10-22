@@ -1,1286 +1,871 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>WalletShield 使用说明 · 0.4.1 + Muse Wonder</title><style>
-:root{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#233540;background:#edf2f4;font-size:15px;line-height:1.85;scroll-behavior:smooth}*{box-sizing:border-box}body{margin:0}a{color:#08776a;text-decoration:none}a:hover{text-decoration:underline}a:focus-visible{outline:2px solid #058779;outline-offset:3px}.top{background:#0c282a;color:#d6f2e7;padding:22px max(25px,calc((100vw - 1460px)/2));display:flex;justify-content:space-between;gap:20px;align-items:center}.top strong{font-size:19px;letter-spacing:.3px}.top span{font-size:12px;color:#a1c6bd}.layout{max-width:1460px;margin:0 auto;display:grid;grid-template-columns:258px minmax(0,1fr);gap:30px;padding:32px 24px}nav{position:sticky;top:20px;align-self:start;max-height:calc(100vh - 40px);overflow:auto;padding-right:15px}nav>strong{font-size:12px;color:#5a777d;letter-spacing:2px}nav a{display:block;color:#46636d;font-size:12px;line-height:1.6;padding:8px 0;border-bottom:1px solid #dce5e8}main{min-width:0;background:#fff;padding:40px 46px 55px;border:1px solid #dce5e8;border-radius:12px;box-shadow:0 6px 28px #183e4610}h1{font-size:30px;line-height:1.5;color:#153d3b;margin:0 0 15px;letter-spacing:-.6px}h2{font-size:22px;line-height:1.6;color:#164c46;margin:50px 0 22px;padding:0 0 10px;border-bottom:2px solid #c9e5dd;scroll-margin-top:25px}h3{font-size:17px;color:#315c5e;margin:30px 0 14px;scroll-margin-top:25px}p{margin:13px 0}strong{font-weight:650}main>p:first-of-type{color:#658087;font-size:13px}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#eff5f4;border-radius:4px;padding:2px 5px;font-size:.87em;overflow-wrap:anywhere}pre{padding:19px 22px;background:#f1f6f6;border:1px solid #dce9e6;border-radius:8px;font-size:12px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}pre code{background:none;padding:0;font-size:inherit}blockquote{margin:20px 0;padding:10px 22px;background:#eef8f4;border-left:4px solid #6ab89f;color:#244e47;border-radius:0 7px 7px 0}ul,ol{padding-left:25px}li{padding-left:3px;margin:8px 0}.table-wrap{width:100%;overflow-x:auto;margin:20px 0 26px;border:1px solid #dce7e8;border-radius:7px}table{border-collapse:collapse;width:100%;font-size:12px;line-height:1.8;table-layout:fixed}th{text-align:left;background:#eaf3f1;color:#28584f;font-weight:650}td,th{padding:13px 14px;vertical-align:top;border-bottom:1px solid #dce7e8;overflow-wrap:anywhere}tr:last-child td{border-bottom:none}tbody tr:nth-child(even){background:#f8fbfb}td:first-child,th:first-child{width:20%}table code{font-size:.94em}img{max-width:100%;height:auto}footer{color:#70868b;font-size:12px;margin-top:40px;border-top:1px solid #dce5e8;padding-top:18px}.quick{border:1px solid #b7dccc;background:#eef8f2;padding:14px 18px;border-radius:8px;margin:0 0 28px;color:#315b4d;font-size:13px}.quick a{margin-right:16px;white-space:nowrap}@media(max-width:1050px){.layout{grid-template-columns:1fr;padding:20px}nav{position:static;max-height:none;padding:0 5px}nav a{display:inline-block;padding:7px 10px;border:0;font-size:11px}nav strong{display:block}main{padding:28px}}@media(max-width:600px){:root{font-size:14px}.layout{padding:12px;gap:18px}.top{padding:16px;align-items:start;flex-direction:column;gap:4px}.top span{font-size:10px}main{padding:22px 16px}h1{font-size:24px}h2{font-size:20px}h3{font-size:16px}table{min-width:660px}pre{padding:14px;font-size:11px}}@media print{body{background:#fff}.top{background:white;color:#173a36;padding:0 0 15px;border-bottom:1px solid #bccfc9}.top span{color:#57736c}.layout{display:block;max-width:none;margin:0;padding:20px 0}nav,.quick{display:none}main{padding:0;border:0;box-shadow:none}h2{break-after:avoid;margin-top:28px}h3{break-after:avoid}tr,pre,blockquote{break-inside:avoid}.table-wrap{overflow:visible}table{font-size:10px}td,th{padding:8px}a{color:#17473d;text-decoration:none}}
-</style></head><body><header class="top"><strong>WalletShield · 使用说明</strong><span>0.4.1 + Meta Muse Wonder / 本地文件，无外部脚本</span></header><div class="layout"><nav aria-label="说明目录"><strong>阅读目录</strong><a href="#section-2">1. 先理解 WalletShield 在做什么</a><a href="#section-3">2. 四个网页页面分别做什么</a><a href="#section-4">3. 从启动到第一次钱包测试</a><a href="#section-12">4. 一次综合请求内部经历了什么</a><a href="#section-13">5. 到底提取哪些“关键词”或数据</a><a href="#section-17">6. 已覆盖哪些操作行为</a><a href="#section-23">7. 取数工具怎样工作</a><a href="#section-24">8. 发给 Meta 的内容是什么</a><a href="#section-27">9. AI 怎样评分，哪些分数不是 AI 给的</a><a href="#section-31">10. Honeypot 与“杀猪盘”分别怎样处理</a><a href="#section-32">11. 整个项目的工具清单与职责</a><a href="#section-35">12. 记录怎么看，为什么有未知或多种结果</a><a href="#section-36">13. 常见故障与排查顺序</a><a href="#section-37">14. 给团队演示时怎样讲</a><a href="#section-38">15. 代码核对位置与维护</a></nav><main><div class="quick">建议先看第 2、3 节完成操作，再看第 4–9 节理解数据与评分。<br><a href="USER-MANUAL-zh.md">Markdown 原稿</a><a href="AI-COVERAGE-GUIDE.md">逐类能力边界</a><a href="../README.md">启动配置速查</a></div><h1 id="section-1">WalletShield 使用说明与完整工具流程</h1>
-<p><strong>适用版本：0.4.1 + Meta Muse Wonder · 编写日期：2026-10-22</strong></p>
-<p>本文根据当前项目代码说明实际行为，涵盖操作步骤、工具分工、取数方式、风险类别、模型输入和评分来源。它是一份当前实现说明，不代表所有钱包风险已经解决。模型与 Infura 是否已连接，以本机实时测试结果为准。</p>
-<h2 id="section-2">1. 先理解 WalletShield 在做什么</h2>
-<p>WalletShield 在用户准备提交交易或签署消息时，整理这次操作的资产与权限影响，查询可用证据，并让 Meta Muse Wonder 对证据给出风险意见。它把结果显示在网页或钱包确认流程中，由用户决定是否继续。</p>
-<pre><code class="language-text">用户准备转账、授权、兑换或签消息
-                  ↓
-MetaMask 把支持的请求交给 Snap，或用户在网页主动提交 JSON
-                  ↓
-后端校验输入 → 解析操作 → 按类别选择取数工具
-                  ↓
-节点状态 + 协议接口 + 签名检查 + 可选副本模拟 / 风险情报
-                  ↓
-规则标记风险和缺口 → 整理结构化证据 → Meta Muse Wonder
-                  ↓
-校验模型输出 → 保存检查记录 → 网页 / Snap 显示
-                  ↓
-用户在钱包里决定签名、拒绝或取消
-</code></pre>
-<p>这里的“风险监控”主要指<strong>签名前的单次风险检查</strong>。项目不持续盯住签名后的钱包活动，也不强制阻止用户签名。某次本地测试交易提交后核对回执，只是确认该次测试的处理状态，不是持续监控。</p>
-<p>三个边界尤其重要：</p>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN" xml:lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.12.1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>WalletShield 中文使用手册 · v0.4.1 · Muse Wonder</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
+      background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        color-scheme: light only;
+      }
+      html, body, pre, code {
+        background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
+        color: black;
+      }
+      pre, code {
+        padding: 0;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a, a:visited {
+      color: inherit;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
+      color: #606060;
+      color: light-dark(#606060, #b6b6b6);
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+    }
+    th {
+      border-top: 1px solid currentColor;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+  :root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.85;color:#213a40;background:#eef3f4;scroll-behavior:smooth}*{box-sizing:border-box}body{max-width:1120px;margin:34px auto;padding:42px 54px;background:#fff;border:1px solid #dbe5e5;border-radius:12px;box-shadow:0 5px 26px #163b4010}header{text-align:left;border-bottom:1px solid #dbe5e5;margin-bottom:24px;padding-bottom:16px}header h1{font-size:28px}h1,h2,h3,h4{color:#164b44;line-height:1.5;scroll-margin-top:24px}h1{font-size:30px}h2{font-size:23px;margin-top:44px;padding-bottom:10px;border-bottom:2px solid #dcece7}h3{font-size:19px;margin-top:30px}a{color:#086f61;text-decoration:none}a:hover{text-decoration:underline}a:focus-visible{outline:2px solid #087b6c;outline-offset:3px}nav#TOC{padding:22px 28px;background:#f1f7f5;border:1px solid #d9e7e2;border-radius:8px}nav#TOC ul{padding-left:22px}nav#TOC li{margin:5px 0}table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;font-size:14px;line-height:1.7;margin:22px 0}th,td{padding:12px 15px;vertical-align:top;border:1px solid #d9e5e5;min-width:125px;overflow-wrap:anywhere}th{background:#e9f3ef;color:#28594e;text-align:left}tbody tr:nth-child(even){background:#f8fbfa}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#eff5f3;padding:2px 5px;border-radius:4px;font-size:.88em;overflow-wrap:anywhere}pre{padding:18px 22px;background:#f1f6f5;border:1px solid #dce8e3;border-radius:7px;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}pre code{padding:0;background:none}blockquote{margin:20px 0;padding:10px 22px;background:#eef8f3;border-left:4px solid #76b59f}li{margin:7px 0}p{margin:15px 0}img{max-width:100%;height:auto}@media(max-width:760px){body{margin:0;border:0;border-radius:0;padding:24px 20px}h1{font-size:25px}h2{font-size:21px}nav#TOC{padding:16px 18px}}@media print{body{padding:0;border:0;box-shadow:none;max-width:none;background:white}nav#TOC{break-after:page}h2,h3,h4{break-after:avoid}table{display:table;font-size:10px}th,td{min-width:0;padding:7px}pre{break-inside:avoid}a{color:inherit}}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">WalletShield 中文使用手册 · v0.4.1 · Muse Wonder</h1>
+</header>
+<nav id="TOC" role="doc-toc">
 <ul>
-<li><strong>钱包要提供请求，Snap 才能分析。</strong> 当前自动入口是交易与部分消息签名，不是对所有网站、所有钱包 RPC 的全局拦截。</li>
-<li><strong>后端负责取数，模型负责评价证据。</strong> 模型没有在这次调用中获得独立浏览、访问节点或随意调用工具的能力。</li>
-<li><strong>进入检查流程不等于已经完整理解。</strong> 未识别协议、没有 RPC、模拟失败、情报不支持等情况会保留未知。</li>
+<li><a href="#walletshield-中文使用手册"
+id="toc-walletshield-中文使用手册">WalletShield 中文使用手册</a>
+<ul>
+<li><a href="#1-选择使用流程" id="toc-1-选择使用流程">1.
+选择使用流程</a></li>
+<li><a href="#2-本地安装与启动" id="toc-2-本地安装与启动">2.
+本地安装与启动</a></li>
+<li><a href="#3-配置数据与可选-ai" id="toc-3-配置数据与可选-ai">3.
+配置数据与可选 AI</a></li>
+<li><a href="#4-连接钱包并验证-snap" id="toc-4-连接钱包并验证-snap">4.
+连接钱包并验证 Snap</a></li>
+<li><a href="#5-运行本地钱包测试" id="toc-5-运行本地钱包测试">5.
+运行本地钱包测试</a></li>
+<li><a href="#6-使用公网和自己的账户" id="toc-6-使用公网和自己的账户">6.
+使用公网和自己的账户</a></li>
+<li><a href="#7-阅读证据和-ai-评估" id="toc-7-阅读证据和-ai-评估">7.
+阅读证据和 AI 评估</a></li>
+<li><a href="#8-了解准确字段提取与覆盖边界"
+id="toc-8-了解准确字段提取与覆盖边界">8.
+了解准确字段提取与覆盖边界</a></li>
+<li><a href="#9-托管身份与发布运行" id="toc-9-托管身份与发布运行">9.
+托管身份与发布运行</a></li>
+<li><a href="#10-隐私与故障排查" id="toc-10-隐私与故障排查">10.
+隐私与故障排查</a></li>
+</ul></li>
 </ul>
-<p>MetaMask 将交易与消息签名作为不同的 Snap 入口，见 <a href="https://docs.metamask.io/snaps/reference/entry-points/">MetaMask 官方入口说明</a>。</p>
-<h2 id="section-3">2. 四个网页页面分别做什么</h2>
-<div class="table-scroll"><table>
+</nav>
+<h1 id="walletshield-中文使用手册">WalletShield 中文使用手册</h1>
+<p><strong>适用版本：0.4.1 · Muse Wonder</strong></p>
+<p>本手册说明当前英文界面以及已经实现的本地和托管使用流程。WalletShield
+在你通过钱包作出决定之前，对尚未签名的 EVM
+请求提供建议。它不能保证安全、强制拒绝、代你签名、追回资产，也不会持续监控已签名请求。</p>
+<p><a href="../README.zh-CN.md">中文 README</a> 提供配置与开发参考；<a
+href="AI-COVERAGE-GUIDE-zh.md">中文能力覆盖指南</a> 列出全部 30
+个分析类别（profile）的准确提取字段、工具、缺失检查和可扩展方向。当前本地实验室有
+<strong>54 个代表性案例：43 个交易请求和 11 个消息签名请求，涉及 30
+个分析类别中的 25 个</strong>。这些案例不是检测准确率基准。本手册对应<a
+href="USER-MANUAL.md">英文使用手册</a>；当前界面及新生成的说明为英文，旧报告保留原记录语言。</p>
+<h2 id="1-选择使用流程">1. 选择使用流程</h2>
+<table>
 <thead>
 <tr>
-<th>页面</th>
-<th>用户主要操作</th>
-<th>实际工具与数据</th>
-<th>是否进入 Meta 评分</th>
+<th>目标</th>
+<th>页面或流程</th>
+<th>成功结果能够说明什么</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>钱包防护 → 演示样本</td>
-<td>选择操作场景，点击“开始检查”</td>
-<td>固定合成数据 + 解析器 + 规则引擎</td>
-<td><strong>不调用模型</strong>，分数如有则明确来自规则</td>
+<tbody>
+<tr>
+<td>了解请求在真实钱包中的呈现</td>
+<td>本地钱包实验室，链 31337，MetaMask Flask</td>
+<td>选中的测试请求到达钱包；还需匹配到 Snap 报告，才能单独确认观察到
+Snap 提交。</td>
 </tr>
 <tr>
-<td>钱包防护 → 检查请求</td>
-<td>提交未签名 JSON，可补充操作背景</td>
-<td>综合后端按请求读取节点、协议、模拟和已启用情报</td>
-<td>配置并开启 Muse 后尝试调用</td>
+<td>检查已配置的公网连接</td>
+<td><strong>Public networks</strong> → <strong>Check RPC and account
+state</strong></td>
+<td>后端连到了一个报告预期链 ID
+的端点，并观察到区块及可选账户状态；不生成风险分数。</td>
 </tr>
 <tr>
-<td>钱包防护 → 测试 AI 连接</td>
-<td>主动点击固定合成样本连接测试</td>
-<td>固定样本证据 + Meta API</td>
-<td><strong>会调用模型</strong>，可能产生 API 费用</td>
+<td>验证消息洞察实际送达</td>
+<td><strong>Public networks</strong> → <strong>Test the wallet signing
+insight</strong></td>
+<td>唯一的未签名测试消息匹配到使用已配对 Snap
+凭据提交的后端报告；这一步可能调用 Muse。</td>
 </tr>
 <tr>
-<td>授权测试</td>
-<td>演示或本地 TEST-USD 授权、撤销</td>
-<td>原有 ERC-20 规则路径、余额/allowance 和基础 eth_call；可发起钱包请求</td>
-<td>本页“开始安全检查”本身不直接调用 Muse；实际钱包请求若触发 Snap，会另走综合分析</td>
+<td>评估自己的转账、授权、Permit 或兑换</td>
+<td>在对应外部 dApp 发起请求，再阅读钱包洞察</td>
+<td>仅评估这个请求及成功收集到的证据；是否提供相应钩子由钱包决定。</td>
 </tr>
 <tr>
-<td>检查记录</td>
-<td>搜索、查看授权检查与钱包处理状态</td>
-<td>本地 SQLite、记录关联和必要的回执核对</td>
-<td>查看记录不会重新评分</td>
+<td>读取托管私有历史，或配对托管 Snap</td>
+<td>验证当前钱包身份，再安装和配对</td>
+<td>EOA 登录签名证明你控制该地址以访问服务，不授予资产操作权。</td>
 </tr>
 <tr>
-<td>钱包接入</td>
-<td>连接测试钱包，安装/重新加载 Snap，确认本地链</td>
-<td>MetaMask Flask、钱包 RPC、Snap 配对、本地状态查询</td>
-<td>连接和安装本身不调用 Muse</td>
+<td>检查没有钩子的权限、会话、UserOperation 或其他 RPC</td>
+<td>显式提交未签名的开发者 API 请求</td>
+<td>后端分析有边界的摘要，不执行请求中所描述的钱包 RPC。</td>
 </tr>
-</tbody></table></div>
-<p><strong>最容易混淆的区别：网页上的授权预检、钱包实际签名请求、Meta 模型评分，是三个不同的步骤。</strong> 看见预检成功，不能据此认为模型调用成功；看见风险提示，也不能据此认为交易已经执行。</p>
-<h2 id="section-4">3. 从启动到第一次钱包测试</h2>
-<h3 id="section-5">3.1 启动项目</h3>
-<p>使用 Node.js 24。在 Finder 双击项目根目录的 <code>启动WalletShield.command</code>，或在项目目录执行：</p>
-<pre><code class="language-sh">npm run demo
-</code></pre>
-<p>新电脑首次使用，需要先安装项目依赖：<code>npm ci</code>。一键启动会构建网页与 Snap、启动本地 Anvil、部署 TEST-USD，然后启动后端、网页与 Snap 文件服务。</p>
-<div class="table-scroll"><table>
+</tbody>
+</table>
+<p>同一个账户地址可以用于不同网络，但余额和合约属于各自的链。本地
+TEST-USD、LAB 代币和测试 NFT
+没有真实价值，切换到公网不会把它们变成公网资产。</p>
+<h2 id="2-本地安装与启动">2. 本地安装与启动</h2>
+<p>使用 Node.js 24.x、npm，以及安装了 MetaMask Flask
+的桌面浏览器。使用专门的开发账户。应用内嵌浏览器可能没有钱包扩展。</p>
+<p>在项目目录执行：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> <span class="at">--version</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> ci</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run demo</span></code></pre></div>
+<p>该命令构建网页和 Snap，启动全新的 Anvil
+链，部署本地测试合约，并启动以下回环服务：</p>
+<table>
 <thead>
 <tr>
 <th>服务</th>
-<th>本机地址</th>
-<th>作用</th>
+<th>地址</th>
+<th>需要保持运行的用途</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>网页</td>
-<td><a href="http://127.0.0.1:5173/">http://127.0.0.1:5173/</a></td>
-<td>操作与结果界面</td>
+<td><a href="http://127.0.0.1:5173">http://127.0.0.1:5173</a></td>
+<td>工作台和浏览器 API 代理</td>
 </tr>
 <tr>
-<td>后端 API</td>
-<td><a href="http://127.0.0.1:8787/">http://127.0.0.1:8787/</a></td>
-<td>校验、取证、评分和记录</td>
+<td>后端</td>
+<td><a href="http://127.0.0.1:8787">http://127.0.0.1:8787</a></td>
+<td>分析、取证、配对、认证及 SQLite 历史</td>
 </tr>
 <tr>
-<td>Snap 文件服务</td>
-<td><a href="http://127.0.0.1:8080/">http://127.0.0.1:8080/</a></td>
-<td>提供 Snap 清单、脚本和图标供 Flask 加载</td>
+<td>开发 Snap 文件服务</td>
+<td><a href="http://127.0.0.1:8080">http://127.0.0.1:8080</a></td>
+<td>安装或重新加载本地 Snap</td>
 </tr>
 <tr>
-<td>本地测试链</td>
-<td><a href="http://127.0.0.1:8545/">http://127.0.0.1:8545/</a></td>
-<td>Anvil，链 ID 为 31337；测试交易与测试资金</td>
+<td>Anvil，链 31337</td>
+<td><a href="http://127.0.0.1:8545">http://127.0.0.1:8545</a></td>
+<td>本地余额、测试合约交易和实验室测试</td>
 </tr>
-</tbody></table></div>
-<p>Vite 会把网页的 API 请求转交给后端；部分工作流/综合检查路由在 Vite 内复用同一套后端代码。网页地址、API 地址、Snap 文件地址、链节点地址用途不同，不能互换。</p>
-<p>终端按 <strong>Ctrl+C</strong> 关闭本次启动的服务。已经运行时不要重复启动；重启一键演示会重建本地链状态，SQLite 历史记录会保留。</p>
-<h3 id="section-6">3.2 连接自己的测试钱包</h3>
-<p>在装有 <strong>MetaMask Flask</strong> 的桌面浏览器中打开网页，进入“钱包接入”，点击“连接测试钱包”。在钱包中选择并允许连接测试账户。</p>
-<p>这一步使用 <code>eth_requestAccounts</code> 获取你批准连接的公开地址。它不意味着你已经授权使用代币，也不会把私钥交给网页。网页运行在没有钱包扩展的浏览器中时，无法完成这一步。</p>
-<h3 id="section-7">3.3 安装或重新加载 Snap</h3>
-<p>在“钱包接入”点击“安装本地 Snap”或“重新加载 Snap”。Snap ID：</p>
-<pre><code class="language-text">local:http://127.0.0.1:8080
-</code></pre>
-<p>网页先调用 <code>wallet_requestSnaps</code>，再通过 <code>wallet_invokeSnap</code> 的 <code>walletshield_configure</code> 方法完成本机配对。安装结果由钱包返回，不能只凭点击按钮判断成功。</p>
-<div class="table-scroll"><table>
+</tbody>
+</table>
+<p>在装有 Flask 的浏览器中打开 <a
+href="http://127.0.0.1:5173。网页把">http://127.0.0.1:5173。网页把</a>
+<code>/api</code> 代理到 8787 端口；<strong>Snap 直接访问
+<code>http://127.0.0.1:8787/api</code></strong>，其带认证、来自不透明来源（opaque
+origin）的预检请求必须能够到达后端。5173 不是当前 Snap 的 API 端点。</p>
+<p>保持启动命令所在终端打开；在该终端按 Ctrl+C
+可停止本次启动器拥有的服务。第二次启动发现端口被占用时会拒绝启动，先停止之前的
+WalletShield 会话。释放端口前确认进程归属，不要随意结束其他程序。</p>
+<p>每次重新运行 demo
+都会重置内存中的本地链，之前的本地授权、余额、头寸和回执会消失；SQLite
+报告继续保留。重启后重新准备资产。旧报告是历史观察，不描述新链的当前状态。</p>
+<p>开发时，<code>npm run dev</code> 只启动后端、网页和 Snap
+文件服务，不创建链，API 进程也不会监听代码变化并自动重启。按照 README
+的多终端顺序，依次使用
+<code>npm run chain</code>、<code>npm run deploy:local</code>、<code>npm run build</code>
+和 <code>npm run dev</code>。修改 Snap
+后须重新构建，再重新加载和配对。</p>
+<h2 id="3-配置数据与可选-ai">3. 配置数据与可选 AI</h2>
+<p>没有模型密钥也能运行本地钱包请求。Muse
+未启用、未配置或未成功完成有效分析时，报告只显示证据和缺口，不显示数值分数。</p>
+<p>按需创建 <code>.local/</code>，以 <a
+href="../.env.example"><code>.env.example</code></a>
+为配置参考，并保留已有设置。项目根目录下任意命名的 <code>.env</code>
+文件不会自动加载。</p>
+<table>
 <thead>
 <tr>
-<th>Snap 权限/入口</th>
-<th>在项目中的用途</th>
+<th>配置</th>
+<th>本地文件</th>
+<th>用途</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>transaction-insight / onTransaction</td>
-<td>取得钱包交出的未签名交易及允许提供的来源</td>
+<tbody>
+<tr>
+<td><code>MODEL_API_KEY</code></td>
+<td><code>.local/meta.env</code></td>
+<td>Meta Model API 凭据，仅供后端使用</td>
 </tr>
 <tr>
-<td>signature-insight / onSignature</td>
-<td>取得钱包交出的未签名消息及允许提供的来源</td>
+<td><code>ENABLE_META_AI=1</code></td>
+<td><code>.local/meta.env</code></td>
+<td>允许模型调用；设为 <code>0</code> 则禁用</td>
 </tr>
 <tr>
-<td>network-access</td>
-<td>调用本机综合检查 API</td>
+<td><code>AI_DAILY_LIMIT=100</code></td>
+<td><code>.local/meta.env</code></td>
+<td>整个后端每个 UTC 日的模型尝试上限，可设为 1–1000</td>
 </tr>
 <tr>
-<td>page-home / onHomePage</td>
-<td>在钱包中展示 WalletShield 首页与能力说明</td>
+<td><code>INFURA_API_KEY</code></td>
+<td><code>.local/rpc.env</code></td>
+<td>为后端生成 Ethereum 主网和 Sepolia RPC 端点；与 Meta 密钥不同</td>
 </tr>
 <tr>
-<td>snap_manageState</td>
-<td>保存本机后端配对令牌</td>
+<td><code>RPC_&lt;CHAIN_ID&gt;_URL</code></td>
+<td><code>.local/rpc.env</code></td>
+<td>该链明确配置的可信端点，优先于生成的端点</td>
 </tr>
 <tr>
-<td>rpc.dapps / onRpcRequest</td>
-<td>接受本地工作台明确发起的配置请求，不是任意 RPC 拦截器</td>
-</tr>
-</tbody></table></div>
-<p>本机配对令牌用于验证 Snap 与后端通信，<strong>不是钱包私钥，也不是 Meta API Key</strong>。本次构建没有索取用户私钥、助记词或代替用户签署资产交易的权限。</p>
-<p>交易提示出现在钱包的交易确认流程。消息签名的关键提示可能在点击 Sign 后才展示，具体由 MetaMask 的当前确认界面决定；不是一连接钱包就对所有操作自动弹窗。参见 <a href="https://docs.metamask.io/snaps/reference/entry-points/#onsignature">官方消息签名入口说明</a>。</p>
-<h3 id="section-8">3.4 准备本地测试资金</h3>
-<p>进入“授权测试”，使用本地链检查模式。连接账户后点击“准备本地测试资金”，按钱包提示添加或切换到 <strong>WalletShield Local，31337</strong>。</p>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>此步骤</th>
-<th>使用的工具</th>
-<th>实际行为</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>切换网络</td>
-<td>wallet_switchEthereumChain；必要时 wallet_addEthereumChain</td>
-<td>把测试钱包切到本地链，不是把主网资产搬过来</td>
+<td><code>ENABLE_FORK_SIMULATION=1</code></td>
+<td><code>.local/rpc.env</code></td>
+<td>RPC 和历史状态支持时，选择启用临时本地分叉执行</td>
 </tr>
 <tr>
-<td>核对本地环境</td>
-<td>固定本机 RPC、链 ID、Anvil 标识、部署地址与代码哈希</td>
-<td>拒绝把资金准备请求指向其他网络</td>
+<td><code>ENABLE_EXTERNAL_LOOKUPS=1</code>，以及可选的
+<code>GOPLUS_TOKEN</code></td>
+<td><code>.local/rpc.env</code></td>
+<td>选择启用 GoPlus 信誉和代币观察</td>
 </tr>
-<tr>
-<td>准备测试 ETH</td>
-<td>anvil_setBalance</td>
-<td>余额不足时补至 10 测试 ETH，供本地 gas 使用</td>
-</tr>
-<tr>
-<td>准备 TEST-USD</td>
-<td>测试合约 faucet</td>
-<td>余额不足时补至 5,000 TEST-USD，较高余额不减少</td>
-</tr>
-<tr>
-<td>显示代币</td>
-<td>wallet_watchAsset</td>
-<td>添加代币显示条目，不是生成余额</td>
-</tr>
-</tbody></table></div>
-<p>TEST-USD 不是 USDT，没有实际美元价值。测试 ETH 也不是主网 ETH。即使钱包对本地 ETH 套用了市场价格，仍不代表这些测试币可以兑现。</p>
-<h3 id="section-9">3.5 先做授权预检，再发起钱包测试</h3>
-<p>建议依次测试：极高额度授权、有限额度授权、撤销授权。</p>
-<ol>
-<li>选择操作和被授权地址，点击“开始安全检查”。这里使用原有本地规则与基础链查询，不会直接请求 Muse。</li>
-<li>点击“在钱包中发起测试授权”，实际请求进入 MetaMask。</li>
-<li>如果 Snap 安装、配对及自动入口正常，钱包会把该请求交给 Snap；Snap 调用综合后端，显示风险依据和可用评分。</li>
-<li>查看授权对象、额度、未知项、分数来源，再由你在钱包中决定确认或取消。</li>
-<li>到“检查记录”查看钱包报告与回执状态；综合报告还可在“钱包防护”的“最近的综合检查”中查看。</li>
+</tbody>
+</table>
+<p>不要将凭据放入浏览器输入框、Snap 配置、源码或请求
+JSON。<code>.local/</code> 与凭据 <code>.env</code> 文件被 Git
+忽略；示例文件只含占位符。显式进程环境变量优先。服务会逐请求重新读取配置文件；若修改的是进程环境变量，则需要重启。链
+31337 始终固定到本项目拥有的本地节点。公网 RPC URL 必须使用 HTTPS，回环
+HTTP 除外；含内嵌用户名或密码的 URL 会被拒绝。</p>
+<p>Muse 固定使用 <code>https://api.meta.ai/v1/responses</code> 上的
+<code>muse-wonder-1.0</code>，不使用 OpenAI
+凭据，也没有切换其他供应商的回退路径。“已配置”只表示配置存在，不证明实时连通；只有某次已完成且通过验证的响应，才能证明该次调用成功。</p>
+<p>每次初始调用预留一次尝试额度，失败也计数。允许的输出校验修复调用会再预留一次。后端默认每天最多
+100 次；托管模式还默认限制每个已验证地址每天 20 次，该地址的网页和 Snap
+会话共用。托管额度以原子方式同时检查两个上限：任意一个拒绝时，两个计数都不扣减，也不发起模型调用。这些是尝试次数上限，不是金额预算；RPC、Infura
+和 GoPlus 的限额与计费独立。</p>
+<p>README 中本地合成 AI 连通性测试命令会主动调用
+Meta，可能产生费用。安装、离线测试或无评分取证不需要运行该命令。托管模式没有此测试路由。无论
+<code>ENABLE_MONITOR</code> 如何设置，定时签名后监控都保持禁用。</p>
+<h2 id="4-连接钱包并验证-snap">4. 连接钱包并验证 Snap</h2>
+<ol type="1">
+<li>在 <strong>Choose wallet</strong>
+中选择目标钱包扩展。支持时，EIP-6963
+发现机制可区分多个钱包提供者。选择普通 MetaMask 不会使其具备安装本地开发
+Snap 的能力；该流程使用 Flask。</li>
+<li>打开 <strong>Wallet setup</strong>，点击 <strong>Connect
+wallet</strong>。核对网页和钱包显示的账户。WalletShield
+不索取助记词或私钥。</li>
+<li>点击 <strong>Install and pair
+Snap</strong>，在钱包中批准明确列出的权限。本地 Snap ID 为
+<code>local:http://127.0.0.1:8080</code>。</li>
+<li>等待安装、获取配对凭据、连接后端和健康验证各阶段完成。Snap
+在保存凭据前先检查后端是否接受，随后网页发起新的带认证健康检查。仅安装
+Snap 不代表配对成功。</li>
+<li>重新构建或修复过期安装后，刷新网页并使用 <strong>Reload and pair
+Snap</strong>。再次核对提供者和账户。</li>
 </ol>
-<p><strong>确认 approve 只建立权限，通常不会立刻转走代币。</strong> 撤销某项 ERC-20 授权一般是将该 spender 的额度设为 0；不代表撤销所有合约的全部权限。</p>
-<p>本版真实钱包测试按钮主要构造本地 TEST-USD 的 approve。更多风险场景可以做固定演示、主动 JSON 检查，或在兼容请求进入钱包时由 Snap 分析；不是每个演示选项都有对应的一键真实交易。</p>
-<h3 id="section-10">3.6 使用综合检查页</h3>
-<p>“钱包防护”有两种方式：</p>
-<ul>
-<li><strong>演示样本：</strong> 选场景后直接检查。完全使用固定证据，不请求真实节点、外部情报或 AI。</li>
-<li><strong>检查请求：</strong> 选择场景可带出 JSON 模板，再替换为实际待检查的未签名请求。该页只检查，不替你签名、广播或执行其中的 RPC。</li>
-</ul>
-<p>可选的“补充操作背景”提供提现前付款、保证收益、由谁引导等信息。这些是<strong>用户陈述</strong>，不是程序自动读取聊天后发现的事实。</p>
-<h3 id="section-11">3.7 配置 Muse 与 Infura，再测试真实连接</h3>
-<p>两种密钥用途不同，均在本机后端文件中保存，不发送到聊天。</p>
-<p><code>.local/meta.env</code>：</p>
-<pre><code class="language-dotenv">MODEL_API_KEY=在本机填写Meta密钥
-ENABLE_META_AI=1
-</code></pre>
-<p>模型固定为 <code>muse-wonder-1.0</code>，接口固定为 <code>https://api.meta.ai/v1/responses</code>，与 <a href="https://dev.meta.ai/docs/overview">Meta 官方说明</a>一致。旧 OpenAI Key 不再用于新请求。模型运行在 Meta 云端，不是下载到电脑上的离线模型。</p>
-<p><code>.local/rpc.env</code>：</p>
-<pre><code class="language-dotenv">INFURA_API_KEY=在本机填写Infura密钥
-ENABLE_EXTERNAL_LOOKUPS=0
-ENABLE_FORK_SIMULATION=1
-ENABLE_MONITOR=0
-</code></pre>
-<p>后端会生成 Ethereum 主网（1）和 Sepolia（11155111）的 Infura RPC。其他网络可明确配置 <code>RPC_网络ID_URL</code>。本地 31337 无需 Infura，始终使用本机节点。Infura 提供节点访问，不等于提供诈骗黑名单或保证全部 trace/历史状态方法可用，参见 <a href="https://docs.infura.io/get-started/infura/">Infura 入门</a>。</p>
-<p>保存配置后，点击“刷新状态”。配置按请求重新读取，但“已保存”“已配置网络”只说明读到了配置，<strong>不是远端鉴权或连接已成功的证明</strong>。</p>
-<p>在“钱包防护”展开“如何启用 AI 与真实数据”，主动点击“测试 AI 连接（固定合成样本）”。这个特定按钮会调用模型；普通“演示样本”不会。看到有效的 AI 完成报告后，才能确认这次模型调用成功。它也不验证真实链 RPC。</p>
-<p>如需地址、网站和代币风险情报，再将 <code>ENABLE_EXTERNAL_LOOKUPS=1</code>，可选填写 <code>GOPLUS_TOKEN</code>。Infura Key、Meta Key 和 GoPlus Token 是不同服务的凭据。</p>
-<h2 id="section-12">4. 一次综合请求内部经历了什么</h2>
-<div class="table-scroll"><table>
+<p>以 <strong>Snap installation incomplete</strong>
+开头的错误属于安装阶段。<strong>Snap installed; pairing credentials
+unavailable</strong>、<strong>Snap installed; backend connection
+incomplete</strong>、<strong>Snap installed; pairing verification
+failed</strong>
+分别指向后续的凭据、后端连接和配对验证阶段。用户取消仍然是取消，不代表扩展不兼容。本地构建时确认扩展可访问
+8080 和 8787 端口；旧 bundle 可能仍指向 Vite 的 5173
+端口，需要重新构建和加载。</p>
+<p>Snap 权限允许交易和消息洞察、网络访问、主页显示、状态存储、配套网站
+RPC，以及只读的钱包提供者观察。它们不会形成覆盖所有钱包权限、会话、智能账户请求或网络变更的统一拦截入口。</p>
+<h2 id="5-运行本地钱包测试">5. 运行本地钱包测试</h2>
+<ol type="1">
+<li>在 <strong>Wallet setup</strong> 点击 <strong>Switch to local chain
+and prepare assets</strong>。在钱包中批准添加或切换至 WalletShield
+Local，链
+31337（<code>0x7a69</code>）。准备流程在写入测试状态前，会验证本项目拥有的
+Anvil 节点和测试合约代码。</li>
+<li>打开 <strong>Local wallet lab</strong>
+查看链上资产。准备流程补足测试
+ETH、TEST-USD、LAB-USD、LAB-Q、LAB-BLOCK，并准备测试 ERC-721/1155
+资产；不会自动授权路由器，也不会自动建立金库、借贷或质押头寸。</li>
+<li>选择 <strong>Operation category</strong> 和案例，阅读
+<strong>Prerequisites</strong>（前提条件）与 <strong>Test
+limitations</strong>（测试局限）。每一项必要授权或存入操作都要在钱包中单独完成。包装或解包案例所需的包装资产，通过本地包装操作取得。</li>
+<li>可选的 <strong>Add context</strong>
+用于记录目的和你所报告的诱导情境。这些是未经验证的陈述，不是自动收集的聊天历史；只用于本次实验室会话，不会悄悄附到其他网站的请求中。不要输入秘密或私人对话。</li>
+<li>点击 <strong>Request a test transaction</strong> 或 <strong>Request
+a test
+signature</strong>。在钱包中检查账户、链、接收方、金额、权限和消息，阅读
+WalletShield 洞察及未完成检查。MetaMask
+决定何时展示消息洞察，有时需要先进入 Sign 步骤。</li>
+<li>在钱包中确认或取消。建议从 <strong>Unlimited approval</strong>
+开始，阅读洞察后取消，再比较有限授权和撤销。请求即使被取消，也可能已经生成完整的签名前报告。</li>
+<li>查看 <strong>Wallet test history</strong>。<strong>Wallet
+outcome</strong>（钱包结果）和 <strong>Snap delivery</strong>（Snap
+送达）是两个独立记录。<strong>Not observed</strong> 表示未记录到匹配的
+Snap 提交；返回签名、仅 API
+生成的报告或成功的节点测试都不能替代该观察。</li>
+<li>打开 <strong>Check history</strong>
+查看报告与完整证据，必要时刷新列表。已有报告可能来自此前的链状态或实现版本。</li>
+</ol>
+<p>可选的 ERC-20 导入只改变钱包显示的资产；网页直接读取链上余额。NFT
+和头寸可能需要对应操作才能取得或补充。已有余额高于补足目标时，准备流程会保留较高余额。本地路由价格、金库份额、借贷行为、跨链记录和控制测试合约均为简化模型，不是官方协议部署或真实金融模型。LAB-BLOCK
+刻意限制卖出，用于测试相关证据路径。</p>
+<p>实验室生成的签名在浏览器中完成格式检查后即丢弃，不上传、不持久化，也不提交用于资产操作。未签名消息仍会到达后端，其受长度限制的预览可能发送给
+Muse。</p>
+<h2 id="6-使用公网和自己的账户">6. 使用公网和自己的账户</h2>
+<p><strong>Public networks</strong> 用于查询公网数据并检查实际 Snap
+送达。先使用 Sepolia 和专用测试账户。主网可能持有真实资产，本地 Flask
+开发钱包不应存放这些资产。</p>
+<ol type="1">
+<li>配置可信的后端 RPC。有效 Infura 密钥提供
+Sepolia（<code>11155111</code>）和 Ethereum
+主网（<code>1</code>）端点；其他列出的链需要显式配置可信端点。</li>
+<li>连接目标提供者和账户。本地模式的连通性检查可以不提供账户；托管模式必须先验证身份。</li>
+<li>在 <strong>Choose the backend query network</strong>
+选择后端查询网络，再点击 <strong>Check RPC and account
+state</strong>。后端验证返回的链
+ID，读取区块和时间，以及可选的原生币余额与代码；它会区分可识别的委托指示代码和普通无代码账户。结果可复用
+15 秒。</li>
+<li>对比所选后端查询网络与 <strong>Current wallet
+network</strong>。选择查询网络不会切换钱包。确实需要切换时才点击
+<strong>Switch wallet to this
+network</strong>。该网络必须已添加到钱包；否则通过可信官方资料添加后重试。后端密钥和
+RPC URL 不会提供给钱包用于网络配置。</li>
+<li>安装和配对所配置的 Snap，验证健康状态，再点击 <strong>Test the
+wallet signing insight</strong>。它生成唯一的普通
+<code>personal_sign</code>
+消息，含网站、账户、所选网络、nonce、时间戳和用途，不消耗
+gas，也不授予资产操作权。</li>
+<li>阅读完整消息和洞察后决定签名或取消。网页用完全一致的消息匹配后端
+<code>paired-snap</code>
+报告；只有签名响应不能通过送达检查。生成的测试签名留在浏览器，未签名消息和报告保存在后端。启用的
+Muse 分析会消耗相应尝试额度。</li>
+<li>真实资产请求从对应外部 dApp
+发起。逐项阅读洞察并在钱包中决定。公网页面不构造转账、授权或充值交易。</li>
+</ol>
+<p>RPC 探测、中性消息洞察测试和托管登录是三个不同操作。RPC
+连通不等于评估了账户或接收方；中性消息不会登录服务；托管登录也没有测试所有资产分析路径。配对健康只证明带认证的后端可达，不保证安全或未来每个请求都能送达。</p>
+<p><strong>钱包连接、后端 RPC 和协议适配也有不同职责。</strong>
+MetaMask/Flask 连接网页与用户账户、展示请求并由用户决定签名；Infura
+或显式 RPC 给后端提供相应链的状态；协议适配器负责对特定
+ABI、版本和方法进行有边界的解析与检查。连接钱包不会自动配置后端 RPC；RPC
+可用也不会自动认证协议身份或补齐所有协议语义。</p>
+<h2 id="7-阅读证据和-ai-评估">7. 阅读证据和 AI 评估</h2>
+<p>参考分数前，先阅读请求和未完成检查。新分数只能来自通过验证的 Muse
+输出：<strong>0–100 的整数，或
+<code>null</code>（不评分）</strong>。这是<strong>未经校准的风险指示值</strong>，不是损失概率、诈骗百分比、身份信任分或安全保证。没有数值阈值、规则加分、权重、最低分或兜底分。定性规则信号独立保留，可能在模型评估之外继续提示警告。旧规则分数标记为历史记录。</p>
+<table>
 <thead>
 <tr>
-<th>顺序</th>
-<th>实际组件</th>
-<th>做什么</th>
-<th>产物</th>
+<th>必须包含的维度</th>
+<th>参考证据</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>1</td>
-<td>网页或 Snap</td>
-<td>交出未签名交易/消息；Snap 不带用户已生成签名</td>
-<td>请求类型、公开地址、数据、网络及可用来源</td>
+<tbody>
+<tr>
+<td>Authority（权限）</td>
+<td>spender/operator、资产、数量、期限、撤销及后续使用范围</td>
 </tr>
 <tr>
-<td>2</td>
-<td>Fastify + Zod</td>
-<td>校验 JSON 结构、地址、十六进制、大小和允许字段；校验本地来源或 Snap 配对</td>
-<td>合法请求，或格式/权限错误</td>
+<td>Exposure（敞口）</td>
+<td>同种资产的余额比较、费用，以及证据支持的潜在影响</td>
 </tr>
 <tr>
-<td>3</td>
-<td>ABI / EIP-712 解析器</td>
-<td>解码常见方法和参数；不认识的保留未知</td>
-<td>operation：类别、参数、目标、复杂性</td>
+<td>Execution（执行）</td>
+<td>调用或分叉实际支持的调用与资产变化</td>
 </tr>
 <tr>
-<td>4</td>
-<td>工具路由器</td>
-<td>按操作决定需要哪些数据</td>
-<td>tool_plan：工具选择与可用性</td>
+<td>Identity（身份）</td>
+<td>账户、网络、来源和目标的一致性，以及取得的信誉观察</td>
 </tr>
 <tr>
-<td>5</td>
-<td>证据采集器</td>
-<td>并行尝试基础节点、协议、签名链上校验与副本模拟；基础采集器内按配置查询 GoPlus</td>
-<td>带来源、时间、状态和检查 ID 的 checks</td>
+<td>Protocol（协议）</td>
+<td>有证据支持的滑点、退出、清算或合约控制机制</td>
 </tr>
 <tr>
-<td>6</td>
-<td>本地规则</td>
-<td>结合参数与已取到事实，标记风险、警告和缺失</td>
-<td>文字风险信号、综合提示、missingData；不生成数字</td>
+<td>Deception（诱导）</td>
+<td>盲签与用户报告的诱导，包括“先付款才能提现”</td>
 </tr>
-<tr>
-<td>7</td>
-<td>evidencePacket</td>
-<td>把允许的字段组成模型证据包</td>
-<td>精简请求摘要、操作、检查、缺口；不提供规则数字</td>
-</tr>
-<tr>
-<td>8</td>
-<td>Meta Responses API</td>
-<td>根据这些证据输出 JSON 风险意见</td>
-<td>分数/未知、理由、建议、缺失项</td>
-</tr>
-<tr>
-<td>9</td>
-<td>Zod + 业务校验</td>
-<td>检查分数范围、引用及 honeypot 结论是否有依据；不设分数下限</td>
-<td>有效模型结果，或明确失败</td>
-</tr>
-<tr>
-<td>10</td>
-<td>SQLite + 网页/Snap</td>
-<td>先保存基础报告，再用同一 ID 更新模型结果</td>
-<td>可查看、导出的综合检查报告</td>
-</tr>
-</tbody></table></div>
-<p>工具计划只代表“选了什么”，不代表这些工具已经成功。不同工具在各自固定区块取数，目前不是所有工具共用一个完全原子的链状态快照。</p>
-<h2 id="section-13">5. 到底提取哪些“关键词”或数据</h2>
-<h3 id="section-14">5.1 主要是结构化字段，不是按词搜索判诈骗</h3>
-<p>交易里的 <code>data</code> 是编码数据。解析器先读取函数选择器，再按已知 ABI 解码参数，并通过重新编码核对来避免忽略多余字节或错误结构。</p>
-<div class="table-scroll"><table>
+</tbody>
+</table>
+<p>各维度均为定性评估并引用证据
+ID，不是数值子分数，也不取平均。证据置信度描述所提供证据包的支持程度，不是校准后的概率。缺少信誉数据不能证明身份恶意；有限授权不自动等于无害；未来执行未知也不会抹去已被证实的权限授予。</p>
+<p>后端会拒绝虚构引用、维度缺失或重复、无依据的 nonce/domain
+断言、无依据的确定性表述、不一致的弃评，以及缺乏依据的蜜罐断言。每个
+low/review/high 维度，必须引用至少一条工具计划之外、状态并非 unknown
+的观察。未解决检查、过旧/缺失/未来时间戳，或同链同高度的区块哈希冲突，都会阻止整体
+low 评估或强置信度。有效弃评保持无分数。</p>
+<p>一种被识别的输出校验失败可以触发一次修复，但必须单独预留额度。修复使用相同证据和受控反馈；两次调用共用
+50 秒，修复最多 25 秒，剩余不足 5
+秒时不启动。HTTP、认证、429、传输失败、拒绝回答、不完整响应封装及有效弃评都不重试。无效输出不会被本地分数替代。</p>
+<p><strong>Evidence
+quality</strong>（证据质量）清单列出各状态数量、按来源统计的已观察/未知数量、可用网络/区块/哈希/时间出处、同链上游区块混用、同链同高度哈希冲突，以及捕获方式和凭据归属。它会标记早于报告生成时间
+5 分钟以上的观察、缺失或无效时间戳，以及超过未来 30
+秒的时间戳。这些是诊断信息，不是风险分、覆盖率或置信概率。采集器记录时间不证明上游数据的实际年龄。读取按区块号固定，并非按区块哈希原子读取；已记录哈希不能排除重组或提供者返回不一致。哈希冲突需要重新独立检查。分叉区块与上游快照分别记录。</p>
+<p>证据行中的 <code>pass</code>
+表示该项观察成功；<code>warning</code>/<code>risk</code>
+描述该项信号；<code>unknown</code>
+表示不可取得、不支持或未完成。工具计划不等于已完成观察。代码、代币名称、接口和熟悉的
+selector
+都可能具有欺骗性。成功调用或卖出只描述当时状态，不能保证未来行为。</p>
+<p>Snap 优先展示最多 24 条证据、6 行主要参数和 6
+条缺失检查摘要。使用报告 ID 在 <strong>Check history</strong>
+查阅完整报告。显示截断不意味着被省略检查已经通过。旧的非英文历史报告保留原文，不凭空翻译或重新评估。</p>
+<h2 id="8-了解准确字段提取与覆盖边界">8. 了解准确字段提取与覆盖边界</h2>
+<p>解码器提取受支持的 ABI
+字段和被签名类型实际包含的消息字段，<strong>不会仅凭操作关键词猜测风险</strong>。<a
+href="../README.md#evidence-collected-for-each-operation">README
+操作表</a>和<a
+href="AI-COVERAGE-GUIDE-zh.md">中文覆盖指南</a>列出全部类别。典型示例如下：</p>
+<table>
 <thead>
 <tr>
-<th>识别线索</th>
-<th>提取字段</th>
-<th>含义</th>
+<th>请求</th>
+<th>发送给 Muse 前提取的字段与检查</th>
+<th>剩余边界</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>approve；常见选择器 0x095ea7b3</td>
-<td>spender、amountOrTokenId、unlimited</td>
-<td>给谁什么额度/哪个 NFT 编号的权限；ERC-20 与 ERC-721 的编码可能相同，需核对标准</td>
+<tbody>
+<tr>
+<td>ERC-20 授权</td>
+<td>合约、spender、<code>amountOrTokenId</code>；标准/余额/allowance
+读取及可选分叉与情报</td>
+<td>与 NFT 共用 selector、欺骗性标准、spender 身份及未来使用</td>
 </tr>
 <tr>
-<td>setApprovalForAll；0xa22cb465</td>
-<td>operator、approved</td>
-<td>是否开启集合级 NFT 权限</td>
+<td>V2 兑换</td>
+<td>路径、输入、最小输出、接收方/截止时间；选定分叉上的买入→授权取得的代币→反向卖出，以及
+gas/变化量</td>
+<td>路由有限；损耗包含价格影响和费用；卖出失败可能有多种原因</td>
 </tr>
 <tr>
-<td>transfer；0xa9059cbb</td>
-<td>recipient、amount、token</td>
-<td>谁会收到多少代币</td>
+<td>金库/借贷</td>
+<td>动作、数量/接收方/owner，或资产/利率模式；preview/max/totals，或当前债务/抵押/LTV/健康因子</td>
+<td>接口身份、未来偿付、价格及完整操作后清算</td>
 </tr>
 <tr>
-<td>transferFrom / safeTransferFrom</td>
-<td>owner、recipient、tokenId 或 amount</td>
-<td>从谁的账户转出、转给谁、哪项资产</td>
+<td>标准 Permit</td>
+<td>签入的 owner/spender/value，或 NFT token
+ID/nonce/deadline；digest/domainHash；nonce/domain/interface/owner
+状态</td>
+<td>不恢复或消费所生成的签名；自定义变体和协议身份仍有缺口</td>
 </tr>
 <tr>
-<td>V2 swap 方法</td>
-<td>path、amountIn、amountOutMin、recipient、deadline</td>
-<td>兑换路径、投入、最低接收、收款人、期限</td>
+<td>Permit2</td>
+<td>签名 type/domain、token/amount/expiration/spender；从实际签名者取得
+owner；allowance 三元组或 nonce bitmap</td>
+<td>最多 16 项；witness/自定义变体和代码认证不完整</td>
 </tr>
 <tr>
-<td>V3 exactInput / exactOutput 等</td>
-<td>tokens/路径、fee、价格/金额限制</td>
-<td>常见 V3 候选，不能仅凭方法名证明路由可信</td>
+<td>会话/UserOperation/RPC</td>
+<td>method、白名单地址/限额/到期，或 sender/entry
+point/paymaster/factory/nonce，以及受限 calldata 摘要</td>
+<td>需要显式提交；没有通用钩子，不授予权限，也不执行 bundler 请求</td>
 </tr>
-<tr>
-<td>Permit / PermitSingle 等 EIP-712 类型</td>
-<td>domain、verifyingContract、owner/spender、value/amount、nonce、deadline/expiration</td>
-<td>签名可能授予的未来资产权限</td>
-</tr>
-<tr>
-<td>owner / paused / 代理槽</td>
-<td>控制者、暂停状态、implementation/admin/beacon</td>
-<td>当前可见的部分合约控制能力</td>
-</tr>
-<tr>
-<td>普通消息 / SIWE 外观</td>
-<td>method、messagePreview、domain、owner、chainId、expiration</td>
-<td>消息内容摘要和声明的登录范围，不是完整会话验证</td>
-</tr>
-<tr>
-<td>钱包 RPC / 会话参数</td>
-<td>method、scope、limit、validUntil、paymaster、entryPoint 等</td>
-<td>只提取白名单字段，不执行原 RPC</td>
-</tr>
-</tbody></table></div>
-<p>函数名、类型名、代币名称都可以被模仿。发现“Permit”这个名称，不等于已经证明它是标准 Permit；结构编码与链上接口校验分别提供不同证据。</p>
-<h3 id="section-15">5.2 每类数据从哪里来</h3>
-<div class="table-scroll"><table>
+</tbody>
+</table>
+<p>EIP-712 风险字段必须能沿声明的签名类型图到达。额外但未被签入的 JSON
+字段，不能证明已签权限、金融金额或 owner 不匹配。Permit2
+从实际签名者取得 owner。标准 Permit2 的 <code>expiration=0</code>
+表示提交区块的时间戳，不是签名前已到期，也不是自动撤销。非零但已过去的
+expiration 被消费时仍可能引起状态变化。引用地址或匹配的 domain
+不等于代码认证。</p>
+<p>SIWE 风格文本按照受限的 EIP-4361 格式检查：账户/头部、必填
+URI/version 1/chain/nonce/issued-at 字段及其顺序、nonce
+格式和长度、到期/not-before/本地时钟，以及最多 16
+个规范化资源来源。source/domain/URI 差异继续展示。远程登录 nonce
+存储始终未验证；此检查不能证明 nonce
+由谁签发或是否一次性使用、受众/会话是否接受、生成的签名是否有效，或网站是否诚实。托管的完整消息认证独立验证其自身挑战存储。</p>
+<p>签名钩子没有与请求绑定的链信息，因此请求保留
+<code>chainId: 0</code>。短时 <code>eth_chainId</code>
+钱包提供者快照单独记为带时间戳的
+<code>signature.providerContext</code>；它不绑定发起 dApp
+或签名时刻，也不会悄悄替代签名 domain
+来进行合约读取。匹配不能证明请求网络，不匹配则作为上下文证据。</p>
+<p>独立、固定区块的 RPC/header/balance/code
+读取，在其他读取失败时保留成功观察。已确认 nonce 和提供费用/当前 base
+fee 的比较属于可观察检查，不保证待处理交易替换或未来打包。可识别的
+EIP-7702
+委托指示代码可产生一跳委托代码/哈希读取；递归委托、authorization list
+校验、代码审计和 ERC-1271 行为仍不支持。一般有效类型消息即使 nonce
+语义不支持，也可进行 DOMAIN_SEPARATOR 比较。</p>
+<p>基础调用和分叉执行保留请求提供的 gas、费用与 nonce。缺少 gas limit
+时使用并记录模拟默认值。不支持的
+EIP-7702/blob/access-list/type，或格式错误的执行字段会明确记录为缺口，不把简化替代过程当作等价执行。分叉写入只作用于临时本地进程，不写入上游公网。不同采集器可能使用不同的已验证区块；执行会在记录的分叉基点之后挖出子区块。</p>
+<p>显式资产读取最多 8 种资产，每种资产最多 16 个 NFT ID。一般 RPC
+摘要限制嵌套、数组、字段和地址；分叉发现限制日志、资产以及调用深度/数量。隐藏资产、非标准日志、动态代码和不支持的嵌套调用仍可能无法观察。原始数量不等于美元损失；资产精度、NFT
+ID、份额、费用及底层资产需要各自的单位。</p>
+<p>5 个类别没有代表性的可执行实验室案例：原始
+<code>eth_sign</code>、权限/会话请求、UserOperation、网络配置和只读
+RPC。其他类别仍有各方法特有的缺口。对于非 EVM
+链、其他钱包、恶意软件、密钥泄露、交易所内部、任意链下投资宣传、目标链到账和未来管理操作，目前也没有完整集成。</p>
+<h3 id="剩余缺口可以怎样改进">剩余缺口可以怎样改进？</h3>
+<table>
 <thead>
 <tr>
-<th>数据来源</th>
-<th>代表字段/信号</th>
-<th>当前如何使用</th>
+<th>所需输入</th>
+<th>可行的后续工作</th>
+<th>仍然不能声称什么</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>待签请求</td>
-<td>from、to、value、gas、nonce、方法、参数</td>
-<td>保留精确整数，识别资产、权限和费用范围</td>
+<tbody>
+<tr>
+<td>已配置 RPC 加特定且经测试的适配器</td>
+<td>更多权限/头寸读取、已知批量调用解析、操作后借贷情景、更多兑换路由和源/目标链桥状态检查</td>
+<td>单凭 RPC 不能认证协议、理解任意代码，也不能保证到账或偿付能力。</td>
 </tr>
 <tr>
-<td>节点 RPC</td>
-<td>chainId、blockNumber、余额、代码、decimals、allowance</td>
-<td>确认查询网络和当前状态；失败不补造事实</td>
+<td>可信报价/价格/市场服务</td>
+<td>更可靠的预期输出、资产/LP/份额估值、流动性和清算情景</td>
+<td>未来价格、排序和执行仍不确定。</td>
 </tr>
 <tr>
-<td>合约接口</td>
-<td>DOMAIN_SEPARATOR、nonces、owner、healthFactor、previewDeposit</td>
-<td>做对应协议的局部校验；接口可模仿，不直接认证身份</td>
+<td>经验证的源码/部署及信誉数据</td>
+<td>字节码/构建身份、管理员关系图、真实代币/集合/协议引用，以及更广的钓鱼/地址检查</td>
+<td>情报缺失和熟悉名称都不证明安全。</td>
 </tr>
 <tr>
-<td>独立副本</td>
-<td>执行状态、gas、资产前后余额/权属、内部调用摘要</td>
-<td>找额外扣款、资产转出与部分买卖限制；不是未来保证</td>
+<td>钱包/dApp 或依赖方配合，以及用户上下文</td>
+<td>暴露原本不可见的权限/UserOperation
+入口、原始哈希输入、nonce/会话状态，以及预期接收方/用途</td>
+<td>提示词不能发现不可取得的请求；用户陈述需要佐证。</td>
 </tr>
 <tr>
-<td>GoPlus</td>
-<td>phishing_site、stealing_attack、is_honeypot、sell_tax 等</td>
-<td>保留供应商实际返回的有限字段与来源</td>
+<td>链下服务或调查</td>
+<td>商业身份、私有交易所记录、诈骗对话及设备/密钥泄露证据</td>
+<td>一次链上快照不能证明所有链下事实；新增采集需要专门集成和隐私控制。</td>
 </tr>
 <tr>
-<td>用户主动补充</td>
-<td>withdrawalFee、guaranteedProfit、requestedBy</td>
-<td>提现前付款、保证收益、陌生人引导等待核实背景</td>
+<td>一次签名前快照无法证明的事项</td>
+<td>探索未来价格/流动性、排序、升级、黑名单、转发和隐藏影响情景</td>
+<td>情景不能保证尚未发生的事件或普遍安全。</td>
 </tr>
-</tbody></table></div>
-<p>程序不会自动读取聊天、社交媒体私信或浏览器全部页面；“保证收益”“先交钱才能提现”目前来自用户勾选或主动提交的上下文，不是自动关键词爬取结果。</p>
-<h3 id="section-16">5.3 GoPlus 的具体字段</h3>
-<p>网站查询目前关注 <code>phishing_site</code>。地址字段包括 <code>cybercrime</code>、<code>money_laundering</code>、<code>phishing_activities</code>、<code>stealing_attack</code>、<code>honeypot_related_address</code>、<code>blackmail_activities</code>、<code>sanctioned</code>。</p>
-<p>代币只保留这些有界字符串字段：<code>is_honeypot</code>、<code>cannot_sell_all</code>、<code>buy_tax</code>、<code>sell_tax</code>、<code>is_open_source</code>、<code>is_proxy</code>、<code>transfer_pausable</code>、<code>is_blacklisted</code>、<code>slippage_modifiable</code>、<code>owner_change_balance</code>、<code>hidden_owner</code>、<code>can_take_back_ownership</code>、<code>is_mintable</code>。</p>
-<p>当前明确升级为代币风险的例子包括 <code>is_honeypot=1</code>、<code>cannot_sell_all=1</code>、<code>owner_change_balance=1</code>，或可解析的 <code>sell_tax≥0.5</code>。其他返回字段也会留给模型，但不等于每一个都已实现完整因果分析。没有命中、字段为空或查询失败均不是安全证明。</p>
-<p>资源限制：地址情报最多查询 3 个已解析目标，代币情报当前只有一个主要代币候选，并非路径中每个代币都查询。</p>
-<h2 id="section-17">6. 已覆盖哪些操作行为</h2>
-<p>下面列的是<strong>有处理路径的类别</strong>，不是全部风险已经检测完成。项目有 25 个演示选项、30 个共享能力说明类别；数量不同来自样本与分类的组织方式，不是覆盖率指标。</p>
-<p>入口标记：</p>
-<ul>
-<li><strong>交易入口：</strong> 需要 MetaMask 实际把该笔 EVM 交易交给已安装 Snap。</li>
-<li><strong>消息入口：</strong> 需要钱包实际提供受支持的消息签名请求。</li>
-<li><strong>手动：</strong> 当前要由网页/dApp 主动提交，Snap 不会全局自动看到。</li>
-<li><strong>混合：</strong> 按实际请求入口处理，无法解析时保留未知。</li>
-</ul>
-<h3 id="section-18">6.A 交易入口：钱包提供交易时按候选类型处理</h3>
-<div class="table-scroll"><table>
+</tbody>
+</table>
+<p>这些是扩展方向，不是当前能力。30
+个分析类别都保留文档所述的不完整之处。语义引用校验约束部分断言，不能证明每一句英文解释都正确。检测质量需要独立、带标签的评估，不能由本地测试合约推出。</p>
+<h2 id="9-托管身份与发布运行">9. 托管身份与发布运行</h2>
+<p>托管用户先连接账户，点击 <strong>Verify current wallet
+identity</strong> 或 <strong>Sign to verify this
+wallet</strong>。核对完整 domain、URI、地址、chain、nonce 和
+expiry。后端针对已保存的一次性消息验证 EOA
+签名；不支持合约钱包或未经检查的 ERC-1271 认证。挑战 5
+分钟后过期。成功登录创建有效 8 小时、仅保存在内存中的网页 bearer
+凭据。刷新、更换提供者/账户或断开连接会清除浏览器身份；再次访问私有记录需要重新验证。</p>
+<p>配对创建另一个绑定地址、有效 30 天的 Snap bearer，不会把网页 bearer
+传给 Snap。后端 SQLite 保存 bearer
+哈希、有效期、撤销状态和报告归属。历史、报告 ID
+和证据按已验证地址隔离；Origin
+从不作为认证。托管交易/消息发送者必须匹配该地址。网页用户可显式提交受支持的手动摘要；Snap
+凭据只接受交易和消息扫描。</p>
+<p><strong>Sign out and revoke Snap pairing</strong> 撤销该地址的 Snap
+凭据和当前网页会话。其他网页会话可以继续有效至退出或到期。仅切换账户不会撤销之前的服务端凭据。Snap
+凭据过期或被撤销后，须重新登录和配对。</p>
+<p>运营者必须在 <code>.local/service.env</code> 配置真实 HTTPS
+域名、自有 npm 包名和公开仓库，参考<a
+href="../deploy/service.env.example">部署配置示例</a>。密钥保留在仅后端使用的模型/RPC
+文件中。在项目目录执行：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build:hosted</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run package:hosted</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run start:hosted</span></code></pre></div>
+<p>构建将同一个 HTTPS origin/npm ID 编译到前端和
+Snap。打包会检查成功构建的指纹，并创建隔离的、仅包含允许文件的
+<code>dist/release-snap</code> npm 产物；打包不会发布。在该产物目录运行
+<code>npm pack --dry-run --ignore-scripts</code>
+可检查内容。托管服务在配置的 HTTPS 反向代理后，通过回环 8787
+端口提供前端/API；参考 <a href="../deploy/nginx.conf.example">Nginx
+示例</a>，保留准确的 Host/origin。它不启动 Anvil 或本地 Snap
+文件服务。在其终端按 Ctrl+C 停止。更换域名、包名或模式后，前端与 Snap
+都必须重新构建。</p>
+<p>托管模式不注册本地实验室/资金准备、legacy/demo/workflow、监控、示例、下载或合成
+AI
+测试路由；它实施钱包与全局额度、每地址一个活动扫描、可配置总扫描并发上限和速率限制。打包不代表已经部署、发布
+npm、获得注册资格、完成独立安全审查或被浏览器钱包接受。邀请公众前须另行完成这些工作。默认构建仍是本地
+Flask 集成。</p>
+<h2 id="10-隐私与故障排查">10. 隐私与故障排查</h2>
+<p>未签名请求、证据和输出发送到所配置后端并保存在
+SQLite。本地模式存储在本机，托管模式存储在运营者服务器。应用没有数据库加密，也没有自动保留期限或删除策略。RPC
+提供者会看到查询状态和分叉所需的地址/调用参数；启用的 GoPlus
+接收受限的所选地址、代币及规范化公开来源；启用的 Meta
+接收受限证据包，包括消息预览和提供的上下文，不包含完整
+calldata/历史或密钥。修复会重新发送该证据及受限的被拒输出。<code>store:false</code>
+只是请求选项，不是对供应商日志行为的全面保证。</p>
+<p>实验室和中性测试生成的签名留在浏览器。托管登录签名会按设计发送以完成认证，但不会持久化。不要把秘密放入未签名数据，过滤不是通用秘密检测器。捕获渠道记录的是凭据来源，不是钱包/Snap
+代码实际执行的密码学证明。</p>
+<table>
 <thead>
 <tr>
-<th>操作类别</th>
-<th>尝试提取的数据</th>
-<th>已实现程度与边界</th>
+<th>问题</th>
+<th>恢复办法</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>原生币转账 / 合约收款</td>
-<td>发送人、目标、value、网络、来源域名与费用参数<br>节点区块、余额、目标代码；可选副本净余额、gas 与调用摘要<br>已启用且可获得的地址 / 网站风险情报</td>
-<td>常用交易检查，收款方身份未认证。<br><strong>未确定：</strong>对方真实身份、付款目的、跨网络误转、未来欺诈与最终成交费用不能由一次转账证明。</td>
-</tr>
-<tr>
-<td>ERC-20 代币转账</td>
-<td>代币合约、接收方、原始数量<br>可读 symbol、decimals、余额、代码与固定区块<br>可选实际余额差异、额外扣款线索和代币风险情报</td>
-<td>标准 transfer 候选与部分资产变化。<br><strong>未确定：</strong>名称可伪造；非标准扣费、重基准、无事件资产和资产价值未完整覆盖。</td>
-</tr>
-<tr>
-<td>NFT / 委托转移 / 批量 NFT</td>
-<td>owner、recipient、tokenId 或 ids / amounts<br>ERC-165 声明或 ERC-20 风格接口；token 合约地址<br>可选副本权属 / 余额变化和内部调用摘要</td>
-<td>常用 ERC-721 / ERC-1155 方法；相同 selector 仍需核对标准。<br><strong>未确定：</strong>合约可伪报标准；NFT 真伪、价格、全部回调与非标准资产语义未证实。</td>
-</tr>
-<tr>
-<td>ERC-20 / NFT 单项授权、撤销、链上 Permit</td>
-<td>spender、金额或 NFT 编号、是否极高额度；部分 owner / deadline<br>代币接口标准；ERC-20 approve 可读既有 allowance<br>当前余额、目标控制信息、情报及副本额外支出线索</td>
-<td>常用权限参数检查，不完整认证授权方。<br><strong>未确定：</strong>ERC-20 与 NFT approve 编码相同；有限额度也可能恶意；未验证所有链上 Permit 变体及未来权限消费。</td>
-</tr>
-<tr>
-<td>NFT 全量 operator 授权 / 撤销</td>
-<td>集合合约、operator 与 approved 布尔值<br>当前请求是否增加全量权限<br>可读控制信息、地址情报和副本行为</td>
-<td>识别集合级操作权限。<br><strong>未确定：</strong>没有全面枚举当前 / 未来 NFT 暴露，operator 的身份与以后是否滥用未知。</td>
-</tr>
-<tr>
-<td>Permit2 链上额度</td>
-<td>token、spender、uint160 amount、expiration<br>是否极高额度、当前代币信息和可得情报<br>本次调用的节点 / 副本事实</td>
-<td>常见四参数 approve 候选。<br><strong>未确定：</strong>函数外观不能证明目标是可信 Permit2；既有三元 allowance / domain 不在此交易路径完整核对。</td>
-</tr>
-<tr>
-<td>常见 V2 兑换 / Honeypot 线索</td>
-<td>path、输入金额、最低输出、接收方与 deadline<br>可选副本买入获得量、卖出成败、返回量、gas 和资产差异<br>可用的 honeypot、卖出税、黑名单及管理员风险情报</td>
-<td>常见路由参数；满足条件时做副本买卖往返。<br><strong>未确定：</strong>卖出失败也可能由余额、路由或流动性造成；往返损耗不是纯税率；成功一次不保证未来能卖出。</td>
-</tr>
-<tr>
-<td>常见 V3 兑换</td>
-<td>tokenIn / tokenOut 或路径、fee、接收方<br>输入 / 输出、最低输出 / 最高输入、价格限制与部分 deadline<br>当前交易副本差异、控制信息及可得代币情报</td>
-<td>解析单池 / 路径候选；尚无 V3 专属连续买卖验证。<br><strong>未确定：</strong>未核对所有池子、报价与 tick 流动性；未完成 V3 卖出往返、MEV 和全部聚合器语义。</td>
-</tr>
-<tr>
-<td>ERC-4626 风格金库存取 / 份额</td>
-<td>deposit / mint / withdraw / redeem、金额、receiver / owner<br>asset、totalAssets、totalSupply<br>对应 preview 与 max 返回值、缺失接口、代码及常见控制状态</td>
-<td>候选解析与当前接口查询。<br><strong>未确定：</strong>同名函数不证明 ERC-4626 或协议身份；返回值不证明资产估值、真实偿付、后续价格或未来可提现。</td>
-</tr>
-<tr>
-<td>借贷 / 抵押</td>
-<td>asset、amount、onBehalfOf、利率模式或抵押开关<br>当前抵押、债务、可借额度、LTV、清算阈值、healthFactor<br>储备配置原值、固定区块、代码与本次副本行为</td>
-<td>Aave 风格当前账户接口，尚非完整清算模型。<br><strong>未确定：</strong>未计算操作后的全量头寸、价格冲击和清算结果；没有证明预言机或其他借贷协议可信。</td>
-</tr>
-<tr>
-<td>质押 / 解质押 / 奖励提现</td>
-<td>stake / unstake / withdraw / getReward 等候选方法<br>可解析金额与 receiver<br>目标控制信息、固定区块、副本可识别资产与调用摘要</td>
-<td>部分常见函数识别与通用副本检查。<br><strong>未确定：</strong>尚未自动读取锁定期、罚没、奖励公式和收益来源；withdraw 也可能属于其他协议。</td>
-</tr>
-<tr>
-<td>增减流动性</td>
-<td>tokenA / tokenB、各金额 / 最小值或 LP 数量<br>recipient、deadline、目标及副本可识别资产差异<br>可获得的控制信息和主要目标代币情报</td>
-<td>部分 V2 风格路由参数。<br><strong>未确定：</strong>当前没有完整池身份 / 储备 / LP 估值或无常损失模型；不保证退出，非全部代币都已查情报。</td>
-</tr>
-<tr>
-<td>部分跨链桥存入</td>
-<td>localToken / remoteToken、amount 或原生币 value<br>recipient、桥候选 action、目标控制状态<br>本链副本资产差异；目标链未验证标记</td>
-<td>部分 OP 风格桥方法和本链行为。<br><strong>未确定：</strong>未核实目标 chainId、目标链到账、消息证明、验证者 / 托管风险；extraData 未作为完整业务语义分析。</td>
-</tr>
-<tr>
-<td>空投 / 奖励领取</td>
-<td>index、account / recipient、amount 和 proof 项数<br>目标合约 / 代码 / 常见控制信息<br>可选本次副本资产差异、调用与可用地址 / 网站情报</td>
-<td>一种常见 Merkle claim 外观。<br><strong>未确定：</strong>未证明 Merkle 根、项目身份、领取权益；原 proof 与网站内容没有交给 AI 做完整验证。</td>
-</tr>
-<tr>
-<td>包装原生币 / 无参存入候选</td>
-<td>value、接收合约及无参方法<br>代码、常见控制状态与副本资产变化</td>
-<td>deposit() 外观与原生币 value。<br><strong>未确定：</strong>deposit() 不一定是可信包装币；withdraw(uint256) 目前落入质押候选；未校验恒定兑付关系。</td>
-</tr>
-<tr>
-<td>铸造 / 销毁</td>
-<td>mint / burn、recipient、amountOrId<br>合约 / 代币信息、value 和副本资产差异</td>
-<td>少量常见方法，不完整区分金额与 NFT 编号。<br><strong>未确定：</strong>未证明发行权益、总量政策、真实价格及全部销毁后果。</td>
-</tr>
-<tr>
-<td>控制权 / 角色 / 升级变更</td>
-<td>transferOwnership / renounceOwnership / grantRole / revokeRole / upgradeToAndCall<br>新控制者、角色、账户或实现地址<br>旧目标代码哈希、ERC-1967 槽及可读 owner / paused、副本行为</td>
-<td>常见管理员操作候选。<br><strong>未确定：</strong>未完成新实现代码审计、存储兼容、动态 delegatecall 或所有隐藏管理员检查。</td>
-</tr>
-<tr>
-<td>合约部署</td>
-<td>发送人、value、初始化字节码 selector / 长度与费用摘要<br>副本可识别资金变化及调用摘要</td>
-<td>部署请求和副本执行；未做完整源码审计。<br><strong>未确定：</strong>完整初始化字节码没有发给 AI；新合约权限、源码 / 编译对应、初始化逻辑和 CREATE2 身份未全面分析。</td>
-</tr>
-<tr>
-<td>批量 / 聚合器 / 复杂调用</td>
-<td>method；deadline 包装可提供 callCount 与有限 selectors<br>父交易副本的有界资产差异与调用树<br>目标、代码与可用情报</td>
-<td>父交易执行与部分包装参数，子调用语义不完整。<br><strong>未确定：</strong>普通 multicall(bytes[]) / execute 的子调用未全面解码；隐藏资产、跨协议与动态委托可能遗漏。</td>
-</tr>
-</tbody></table></div>
-<h3 id="section-19">6.B 消息入口：以钱包实际提供的签名方法为准</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>操作类别</th>
-<th>尝试提取的数据</th>
-<th>已实现程度与边界</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>钱包登录消息候选</td>
-<td>method、最多 1600 字符 messagePreview<br>声明 domain、owner、chainId 与 expiration<br>来源域名匹配、账户匹配、过期和缺少当前网络等检查</td>
-<td>部分 SIWE 外观 / 域名与账户检查。<br><strong>未确定：</strong>不是完整 SIWE 语法与 nonce / URI / audience 验证；未核验站点的登录会话和服务器用途。</td>
-</tr>
-<tr>
-<td>普通消息签名</td>
-<td>签名账户、方法、来源域名和最多 1600 字符消息预览<br>用户填写的用途与诈骗背景；可用网站 / 地址情报</td>
-<td>文本预览与证据不足提示。<br><strong>未确定：</strong>文本可能被链上合约或网站赋予额外权限；摘要可能截断；没有当前链 ID 时不能猜测网络。</td>
-</tr>
-<tr>
-<td>Permit / NFT Permit 消息</td>
-<td>domain、verifyingContract、owner / spender、value 或 tokenId、nonce、deadline<br>EIP-712 编码 digest / domainHash；标准 EIP-2612 nonce 与 DOMAIN_SEPARATOR 匹配<br>代币信息、控制信息、情报与网络 / 账户不匹配检查</td>
-<td>标准 EIP-2612 校验与部分 NFT 候选；变体不完整。<br><strong>未确定：</strong>NFT / DAI / 自定义 Permit 的链上校验不全面；声明网络不等于钱包当前网络；未来执行和协议身份未证明。</td>
-</tr>
-<tr>
-<td>Permit2 消息</td>
-<td>primaryType、domain、spender、token / amount / expiration、deadline 与部分财务摘要<br>EIP-712 编码；逐 token nonce 或 nonce 位图使用状态<br>当前链上查询区块、代币信息、情报与证据缺口</td>
-<td>常见类型识别与部分链上 nonce 校验。<br><strong>未确定：</strong>尚未完整核对所有 batch / witness / 自定义变体、身份与既有三元额度；单次 nonce 可用不代表用途安全。</td>
-</tr>
-<tr>
-<td>订单 / 挂单 / 其他 EIP-712 消息</td>
-<td>primaryType、domain、verifyingContract 与编码 digest<br>可识别的 offerer、recipient、amount、起止量 / 时间等有限财务摘要<br>可读目标控制信息、可用 nonce 结果或未覆盖标记</td>
-<td>结构编码和白名单财务参数，协议语义兜底。<br><strong>未确定：</strong>Seaport 等订单的全部 offer / consideration、履约条件、对价、取消状态和自定义权限未完整解释。</td>
-</tr>
-</tbody></table></div>
-<h3 id="section-20">6.C 手动提交与入口受限类别</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>操作类别</th>
-<th>尝试提取的数据</th>
-<th>已实现程度与边界</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>原始 eth_sign</td>
-<td>签名方法、账户、声明网络 / 来源与原始签名风险标记<br>可用上下文和情报；不向 AI 发送原始 digest 全文</td>
-<td>识别盲签风险，不理解摘要原文。<br><strong>未确定：</strong>哈希摘要无法还原出唯一原文，不能确定权限、交易或重放范围。<br><strong>入口提醒：现有 SDK 的消息入口不保证提供 eth_sign；可在网页主动检查该类型。</strong></td>
-</tr>
-<tr>
-<td>钱包连接 / 权限 / 会话密钥</td>
-<td>method、账户 / 地址、scope、limit、有效期等白名单字段<br>有限嵌套参数摘要、请求来源与可用地址 / 网站情报</td>
-<td>有界参数摘要；无通用 Snap 自动截获。<br><strong>未确定：</strong>未证明钱包实际授予何种权限、会话验证器是否执行限制；不会读取私钥或会话密钥，也不执行授权。</td>
-</tr>
-<tr>
-<td>UserOperation / 智能账户</td>
-<td>method、sender、entryPoint、paymaster、factory、nonce 等可识别字段<br>callData selector / 长度、目标 / 金额与会话限制摘要（若存在）</td>
-<td>sender / paymaster 等摘要；未执行 bundler 仿真。<br><strong>未确定：</strong>账户模块、签名策略、paymaster 代扣、bundler 校验和全部批量子操作未知；某些字节格式地址未解码。</td>
-</tr>
-<tr>
-<td>添加 / 切换网络、资产显示配置</td>
-<td>method、chainId、可读 chainName 和其他白名单字段<br>rpcUrls / blockExplorerUrls 仅保留域名来源；不含路径 / 凭据</td>
-<td>请求摘要，不连接客户端提供的 RPC。<br><strong>未确定：</strong>未验证新 RPC、浏览器或网络名真假；wallet_watchAsset 的自定义嵌套资产元数据未完整解码。</td>
-</tr>
-<tr>
-<td>只读钱包 RPC</td>
-<td>method、有限账户 / 地址 / 网络等字段<br>可得来源与情报；不执行原 RPC、不返回账户列表</td>
-<td>只读请求摘要；无通用自动截获。<br><strong>未确定：</strong>只读不等于无隐私风险；未完整解释查询权限 / 返回数据的泄露范围。</td>
-</tr>
-</tbody></table></div>
-<h3 id="section-21">6.D 混合入口与未知兜底</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>操作类别</th>
-<th>尝试提取的数据</th>
-<th>已实现程度与边界</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>未识别合约 / 钱包 RPC</td>
-<td>合约请求的 selector / 字节数、目标、value 或 RPC method<br>有限白名单参数；通用节点 / 副本 / 可用情报与缺失项</td>
-<td>未知兜底，不能宣称已理解。<br><strong>未确定：</strong>没有协议语义就无法可靠判断全部资金 / 权限影响；不支持的链与未被钱包提交的请求不会自动出现。</td>
-</tr>
-</tbody></table></div>
-<h3 id="section-22">6.1 四类高危权限操作的准确现状</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>关注点</th>
-<th>当前已做</th>
-<th>当前不能宣称</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>无限代币授权</td>
-<td>approve 解析、额度与标准辨别、既有 allowance、风险情报和可选副本</td>
-<td>所有无限授权都恶意，或未来权限消费已经全面验证</td>
-</tr>
-<tr>
-<td>NFT 全量授权</td>
-<td>operator、approved 和集合级权限提示；撤销与开启区分</td>
-<td>已列出所有当前/未来 NFT 暴露，或已认证 operator 可信</td>
-</tr>
-<tr>
-<td>Permit / Permit2</td>
-<td>结构、域、金额/期限、部分 nonce/位图的检查</td>
-<td>覆盖全部变体、所有 witness/batch 语义及未来消费</td>
-</tr>
-<tr>
-<td>EIP-7702</td>
-<td>可对读取到的目标代码委托前缀给警告；部分通用 RPC 摘要能保留 delegate 等字段</td>
-<td><strong>没有完整的 7702 授权解析、签名验证、自动签名入口或委托实现安全审计</strong></td>
-</tr>
-</tbody></table></div>
-<p>不能把“某账户已有 7702 代码委托的提示”写成“恶意 7702 授权已全面防护”。当前版本的交易转发也没有完整传递/验证 authorizationList。</p>
-<h2 id="section-23">7. 取数工具怎样工作</h2>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>风险工具</th>
-<th>触发场景</th>
-<th>读取/执行内容</th>
-<th>主要限制</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>rpc_context</td>
-<td>综合请求共用</td>
-<td>核对 chainId，取区块、原生币余额、目标代码、代币接口、部分 allowance</td>
-<td>消息的声明网络不等于钱包当前网络</td>
-</tr>
-<tr>
-<td>contract_controls</td>
-<td>交易目标或签名验证合约可确定时</td>
-<td>代码哈希、ERC-1967 implementation/admin/beacon、owner、paused</td>
-<td>空槽不证明不可升级，接口外观不证明身份</td>
-</tr>
-<tr>
-<td>isolated_simulation</td>
-<td>交易且副本功能已启用</td>
-<td>创建本地临时链副本、执行请求、比较资产与 gas、尝试调用树</td>
-<td>只在副本写状态；不覆盖无事件资产和全部自定义存储</td>
-</tr>
-<tr>
-<td>round_trip</td>
-<td>支持的 V2 兑换</td>
-<td>副本买入 → 授权已得代币 → 同路反向卖出 → 观察返回量</td>
-<td>只支持部分方法/路径和同一收款账户；不支持全部 V3/聚合器</td>
-</tr>
-<tr>
-<td>signature_verification</td>
-<td>结构化消息</td>
-<td>EIP-712 编码、digest/domainHash，标准 Permit nonce/domain，部分 Permit2 nonce/位图</td>
-<td>未签署消息的未来消费无法直接等同某笔交易</td>
-</tr>
-<tr>
-<td>vault_preview</td>
-<td>金库候选</td>
-<td>asset、totalAssets、totalSupply、对应 preview/max</td>
-<td>当前接口返回不是未来可提现承诺</td>
-</tr>
-<tr>
-<td>lending_account</td>
-<td>借贷候选</td>
-<td>抵押、债务、可借额度、LTV、清算阈值、healthFactor</td>
-<td>没有完整操作后健康因子/预言机压力模型</td>
-</tr>
-<tr>
-<td>protocol_limits</td>
-<td>跨链、质押、LP、领取、升级、复杂批量等</td>
-<td>保留已解析字段和明确的协议未知项</td>
-<td>这是承认边界，不是专属风险检查已实现</td>
-</tr>
-<tr>
-<td>wallet_rpc_summary</td>
-<td>权限/会话、智能账户、未知 RPC</td>
-<td>5 层内、数组最多 16 项、约 40 项白名单字段与有界地址/selector 摘要</td>
-<td>不执行原 RPC，不保证理解全部嵌套语义</td>
-</tr>
-<tr>
-<td>external_intelligence</td>
-<td>开启外部情报后</td>
-<td>GoPlus 支持链、地址、网站与主要代币查询</td>
-<td>第三方覆盖、额度、限流和时效限制</td>
-</tr>
-<tr>
-<td>ai_assessment</td>
-<td>综合请求；模型已配置并开启时可调用</td>
-<td>接收已取得证据与未知项，产生风险意见</td>
-<td>模型自己不去查链，输出仍需校验与人工判断</td>
-</tr>
-</tbody></table></div>
-<p>副本模拟使用 Anvil 的临时账户冒充机制在<strong>独立本地副本</strong>执行，不需要用户私钥。模拟交易发送到临时本机节点，不发送给源链；不会为了让模拟成功而任意改高用户资产余额或伪造代币授权。</p>
-<p>资产发现当前限制约 32 项资产、256 条相关日志和 128 项调用摘要；这些是资源边界，不代表扫描了全部钱包资产。副本内买卖测试将最低卖出量设为 0 只是为了观察返回，不能复制为用户真实交易的滑点建议。</p>
-<h2 id="section-24">8. 发给 Meta 的内容是什么</h2>
-<h3 id="section-25">8.1 证据包的实际字段</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>字段</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>version、chainId</td>
-<td>分析内部版本与请求网络；产品 0.4.1 中部分内部规则标签仍为 0.4.0/0.3.0</td>
-</tr>
-<tr>
-<td>origin</td>
-<td>来源 URL 的 origin：去掉账号密码、路径、查询与片段</td>
-</tr>
-<tr>
-<td>requestSummary</td>
-<td>交易的 from/target/valueWei/selector/字节长度，或消息 from/method，或 RPC method</td>
-</tr>
-<tr>
-<td>feeParameters</td>
-<td>已提供的 gas、gasPrice、maxFeePerGas、maxPriorityFeePerGas、nonce；转为精确十进制字符串</td>
-</tr>
-<tr>
-<td>intent、userReportedContext</td>
-<td>用户用途与主动报告的背景，标注为待核实信息</td>
-</tr>
-<tr>
-<td>operation</td>
-<td>类别、名称、已解析财务字段、目标、代币候选、复杂/原始签名等标记</td>
-</tr>
-<tr>
-<td>checks</td>
-<td>检查 ID、状态、文字解释、来源、观察时间和实际取得的数据</td>
-</tr>
-<tr>
-<td>missing_checks</td>
-<td>明确缺失、未支持、失败或未知的检查</td>
-</tr>
-<tr>
-<td>score_meaning</td>
-<td>Muse 独立按证据评分，无规则数字、最低分或固定权重；不是概率，资料不足可为 null</td>
-</tr>
-<tr>
-<td>score_meaning</td>
-<td>说明分数是风险指标，资料不足可为 null</td>
-</tr>
-</tbody></table></div>
-<p>不把 API Key、RPC 密钥、Snap 配对令牌、整份交易历史或完整 calldata 直接放入该模型证据包。完整 calldata 仍会交给本机解析器和模拟器使用。来源域名会发送给模型，不等于完全匿名。</p>
-<p>普通消息预览、用户填写的用途和其他自由文本仍可能含私人信息；当前没有全量自动脱敏保证。不主动索取私钥/助记词，不等于能够识别用户误粘贴的所有秘密。</p>
-<h3 id="section-26">8.2 输入与输出示例</h3>
-<p>以下均为<strong>文档合成示例，不是一次真实 Meta 调用</strong>。输入从当前代码的组包函数生成；展示节选省略部分检查，实际字段以完整 JSON 为准。</p>
-<p><a href="manual-examples/meta-input-synthetic.json">查看完整合成输入</a> · <a href="manual-examples/meta-output-synthetic.json">查看合成输出示例</a></p>
-<p>完整输出文件还包含后端补充的模型名、生成时间和合并后的缺失项；下面展示的是模型核心返回字段。</p>
-<p>输入节选：</p>
-<pre><code class="language-json">{
-  &quot;chainId&quot;: 31337,
-  &quot;intent&quot;: &quot;仅用于使用说明的合成样本；未查真实链，未调用模型。&quot;,
-  &quot;requestSummary&quot;: {
-    &quot;from&quot;: &quot;0x2222222222222222222222222222222222222222&quot;,
-    &quot;target&quot;: &quot;0x1111111111111111111111111111111111111111&quot;,
-    &quot;valueWei&quot;: &quot;0&quot;,
-    &quot;selector&quot;: &quot;0x095ea7b3&quot;,
-    &quot;calldataBytes&quot;: 68
-  },
-  &quot;operation&quot;: {
-    &quot;category&quot;: &quot;approval&quot;,
-    &quot;label&quot;: &quot;代币 / NFT 单项授权&quot;,
-    &quot;fields&quot;: {
-      &quot;spender&quot;: &quot;0x3333333333333333333333333333333333333333&quot;,
-      &quot;amountOrTokenId&quot;: &quot;115792089237316195423570985008687907853269984665640564039457584007913129639935&quot;,
-      &quot;unlimited&quot;: true
-    },
-    &quot;targets&quot;: [
-      &quot;0x3333333333333333333333333333333333333333&quot;
-    ],
-    &quot;decoded&quot;: true,
-    &quot;tokenStandard&quot;: &quot;ambiguous&quot;,
-    &quot;addsPermission&quot;: true,
-    &quot;token&quot;: &quot;0x1111111111111111111111111111111111111111&quot;
-  },
-  &quot;checks&quot;: [
-    {
-      &quot;id&quot;: &quot;permission_scope&quot;,
-      &quot;status&quot;: &quot;risk&quot;,
-      &quot;title&quot;: &quot;请求授予资产使用权限&quot;,
-      &quot;detail&quot;: &quot;权限可能允许未来转走资产；有限额度或无 gas 签名也可能有风险。&quot;,
-      &quot;source&quot;: &quot;rules/0.3.0&quot;,
-      &quot;observedAt&quot;: &quot;2026-10-22T18:45:10.124Z&quot;
-    },
-    {
-      &quot;id&quot;: &quot;fraud_context&quot;,
-      &quot;status&quot;: &quot;unknown&quot;,
-      &quot;title&quot;: &quot;平台与用户意图不能仅靠交易确定&quot;,
-      &quot;detail&quot;: &quot;正常代币和成功转账也可能被用于杀猪盘；用户提供的背景只是待核实陈述，不证明平台身份或业务真实性。&quot;,
-      &quot;source&quot;: &quot;rules/0.3.0&quot;,
-      &quot;observedAt&quot;: &quot;2026-10-22T18:45:10.124Z&quot;
-    }
-  ],
-  &quot;score_meaning&quot;: &quot;0-100 风险指标，不是损失概率；信息不足时 score 可以为 null。&quot;
-}
-</code></pre>
-<p>输出示意（85 仅为文档举例）：</p>
-<pre><code class="language-json">{
-  &quot;score&quot;: 85,
-  &quot;assessment&quot;: &quot;high&quot;,
-  &quot;summary&quot;: &quot;文档合成示例：极高额度增加资产权限暴露。此内容不是一次真实模型响应。&quot;,
-  &quot;reasons&quot;: [
-    {
-      &quot;text&quot;: &quot;请求授予极高额度资产使用权限，且仍有证据缺口。&quot;,
-      &quot;evidence_ids&quot;: [
-        &quot;permission_scope&quot;
-      ]
-    }
-  ],
-  &quot;missing_data&quot;: [],
-  &quot;suggested_action&quot;: &quot;先核实授权对象与用途，并查看仍未完成的检查。&quot;,
-  &quot;honeypot&quot;: &quot;unknown&quot;
-}
-</code></pre>
-<p>模型请求固定使用 Bearer <code>MODEL_API_KEY</code>、<code>muse-wonder-1.0</code>、<code>store:false</code> 和严格 JSON Schema。这里没有给模型配置浏览器、RPC 或函数调用工具。后端先取证，再把证据交给模型，不是把所有工具交给 AI 自由控制。</p>
-<p>请求设置 <code>store:false</code> 不应解释为供应商对所有日志的绝对零留存保证。实际服务条款与数据政策应在 Meta 平台核对。</p>
-<h2 id="section-27">9. AI 怎样评分，哪些分数不是 AI 给的</h2>
-<h3 id="section-28">9.1 Muse 独立给分，规则仅提供信号</h3>
-<p>新请求不再计算规则数字、不发送 rule_score_floor，也没有固定加分表、权重、最低分或按操作名称套用的档位。后端取得证据后，由 Muse 独立返回 0–100 整数或 null；后端直接保存该值，不抬高、不压低、不四舍五入成档位。</p>
-<p>模型会考虑权限对象 / 范围 / 额度 / 期限、相对资产暴露、地址与签名的一致性、资产模拟与费用变化、外部情报可靠性及用户背景；只分析实际取得的证据。潜在损失影响、恶意迹象和证据完整性分别考虑：无限授权不自动等于诈骗，缺失信息不机械变成高分；不足以给出有意义的数字时返回 null。</p>
-<p>规则仍标记 risk / warning / unknown，保留可解释信号。综合提示的优先顺序是：有 risk → 高风险；否则有 unknown → 无法判断；否则有 warning → 需要注意；否则 → 未发现明显风险。模型报告高风险时也会提升综合提示；它不按数字阈值换算。网页和 Snap 另列“模型判断”，避免把综合提示误当作模型原文。</p>
-<p>当前综合分析固定保留“平台与用户意图不能仅靠交易确定”这一未知项，不能用数字消除这个缺口；有缺失项的模型回答也不得直接宣称 low。</p>
-<p>历史记录不重新打分；旧规则数字标为“历史规则分数”，不是新算法或模型重新评估的结果。</p>
-<h3 id="section-29">9.2 Meta 返回的字段</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>返回字段</th>
-<th>用户应怎样理解</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>score</td>
-<td>0–100 整数或 null；未校准风险指标，不是损失概率</td>
-</tr>
-<tr>
-<td>assessment</td>
-<td>low / review / high / unknown；不是系统按统一数值区间自动推导的等级</td>
-</tr>
-<tr>
-<td>summary</td>
-<td>模型对当前证据的解释</td>
-</tr>
-<tr>
-<td>reasons</td>
-<td>每项理由必须引用已有 evidence_ids</td>
-</tr>
-<tr>
-<td>missing_data</td>
-<td>模型认为仍缺的数据；后端还会补回原有缺失项</td>
-</tr>
-<tr>
-<td>suggested_action</td>
-<td>核实对象、检查用途或谨慎处理等建议，不自动执行</td>
-</tr>
-<tr>
-<td>honeypot</td>
-<td>unknown / risk_indicator / no_known_indicator；只有具备指定证据才可使用后两种结论</td>
-</tr>
-</tbody></table></div>
-<h3 id="section-30">9.3 后端如何检查模型输出</h3>
-<p>后端用 Zod 和业务规则验证：分数类型与范围；必需字段；理由数量及长度；引用的检查 ID 是否真实存在；关键证据缺失时是否错误给 low；honeypot 判断是否具备对应情报或副本风险证据。</p>
-<p>不通过校验就标记模型失败，不把任意文本当评分。有效 AI 数字会显示“AI 风险指标”；缺少或失败时显示“无 AI 评分”。<strong>格式与引用校验不能证明模型每句话的推理都正确，也不保证分数与等级已经统计校准。</strong></p>
-<p>当模型返回 score=null 时，表示本次无法可靠评分；不会补上规则数字。模型超时、额度不足、关闭或未配置时同样无数字，风险信号与缺失项仍可查看。</p>
-<p>模型调用预算目前约 15 秒、最多 4000 输出 token；综合取证等待预算约 24 秒；每日最多 30 次模型尝试，失败也计数。扫描接口每个服务实例还有短时间调用与并发限制，超限会返回未完成状态。慢请求、额度、节点套餐都会影响可用性。</p>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>情况</th>
-<th>正确理解</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Key 未配置 / 模型关闭</td>
-<td>没有模型评分，保留本地规则和缺失项</td>
-</tr>
-<tr>
-<td>401/403/404、429、超时、拒答或输出无效</td>
-<td>本次模型未成功，不能拿规则数字冒充 AI 数字</td>
-</tr>
-<tr>
-<td>AI 分析已完成但数字为空</td>
-<td>模型允许无法评分，不等于零风险</td>
-</tr>
-<tr>
-<td>规则或 AI 显示高风险</td>
-<td>有需要优先核实的信号，不等于已证明对方诈骗</td>
-</tr>
-<tr>
-<td>未发现明显风险</td>
-<td>只适用于已检查范围，不是安全担保</td>
-</tr>
-</tbody></table></div>
-<h2 id="section-31">10. Honeypot 与“杀猪盘”分别怎样处理</h2>
-<p><strong>Honeypot</strong> 在这里主要指某类代币可能买入后难以卖出、被限制或遭受极端损耗。当前证据来自 GoPlus 的代币标志及部分 V2 路由的副本往返测试。</p>
-<p>程序会观察是否获得目标代币、能否反向卖出、返回数量，以及扣款和 gas。卖出失败也可能来自路由、流动性、余额、授权或 gas，所以单次失败目前可能只形成 warning；损耗比例也不等于纯卖出税。某次成功卖出不能证明未来不会被拉黑。</p>
-<p><strong>杀猪盘/投资诈骗</strong> 可能使用完全正常的代币和普通转账。链上交易执行成功，无法证明投资承诺、客服身份、提现规则或收益真实。</p>
-<p>目前用户可提供 <code>withdrawalFee</code>、<code>guaranteedProfit</code>、<code>requestedBy</code> 等背景，网站/地址情报可作为外部线索，再交模型综合解释。没有读取私聊、核验线下身份、调查全部项目经营状况，因此不能宣称全面识别杀猪盘。</p>
-<h2 id="section-32">11. 整个项目的工具清单与职责</h2>
-<h3 id="section-33">11.1 用户、服务与风险工具</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>工具/组件</th>
-<th>是什么</th>
-<th>在本项目具体做什么</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>MetaMask Flask</td>
-<td>MetaMask 的开发测试钱包环境</td>
-<td>连接账户，批准 Snap 安装，展示交易/消息确认界面，由用户签名或拒绝</td>
-</tr>
-<tr>
-<td>WalletShield Snap</td>
-<td>安装在钱包内的扩展代码</td>
-<td>从钱包取得支持的请求，调用本机分析，展示主要事实、来源、分数与缺失项</td>
-</tr>
-<tr>
-<td>MetaMask Snaps SDK</td>
-<td>Snap 开发接口与 UI 组件库</td>
-<td>声明 onTransaction/onSignature/onHomePage/onRpcRequest；构造钱包内提示</td>
-</tr>
-<tr>
-<td>Snaps CLI（mm-snap）</td>
-<td>Snap 构建工具</td>
-<td>打包、沙箱评估、更新安装清单及文件校验和；不负责风险评分</td>
-</tr>
-<tr>
-<td>本机 Snap 文件服务</td>
-<td>Node HTTP 服务，8080</td>
-<td>向 Flask 提供 manifest、bundle 和图标；不是链节点</td>
-</tr>
-<tr>
-<td>Infura</td>
-<td>外部节点访问服务</td>
-<td>给后端读取相应真实网络的链状态；不自动提供用户钱包私钥或诈骗黑名单</td>
-</tr>
-<tr>
-<td>Anvil 主测试链</td>
-<td>本机 EVM 开发节点</td>
-<td>创建链 31337、测试 ETH、TEST-USD 和本地授权测试环境</td>
-</tr>
-<tr>
-<td>Anvil 临时副本</td>
-<td>为某次交易临时创建的链副本</td>
-<td>基于指定区块模拟交易和部分买卖往返；不修改源链状态</td>
-</tr>
-<tr>
-<td>TEST-USD 测试合约</td>
-<td>Solidity 本地代币</td>
-<td>发放本地测试余额，支持 approve/transferFrom 和撤销测试；不是 USDT</td>
-</tr>
-<tr>
-<td>SimulationFixtures</td>
-<td>独立测试合约集合</td>
-<td>自动验证买卖、Permit、金库和借贷工具；不是提供给用户的真实 DeFi 产品</td>
-</tr>
-<tr>
-<td>GoPlus API</td>
-<td>可选安全情报源</td>
-<td>地址、网站、代币及部分 honeypot/税率/管理员风险查询</td>
-</tr>
-<tr>
-<td>Meta Model API</td>
-<td>外部模型推理服务</td>
-<td>对后端组好的证据调用 Muse Wonder，返回结构化风险意见</td>
-</tr>
-<tr>
-<td>本地规则引擎</td>
-<td>确定性的业务规则</td>
-<td>形成 permission_scope 等文字信号与未知项，不产生分数或限制模型数字</td>
-</tr>
-<tr>
-<td>工具路由器</td>
-<td>后端操作分类分流</td>
-<td>决定哪些数据工具被选中，记录计划与可用性</td>
-</tr>
-<tr>
-<td>SQLite</td>
-<td>本地数据库</td>
-<td>保存原始未签名请求、检查依据、综合报告、部分钱包处理状态和调用次数</td>
-</tr>
-<tr>
-<td>Snap 配对令牌</td>
-<td>本机通信凭据</td>
-<td>限制外部来源直接冒用 Snap 检查接口；与模型/钱包密钥不同</td>
-</tr>
-</tbody></table></div>
-<h3 id="section-34">11.2 网页、后端、语言与开发工具</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>工具</th>
-<th>职责</th>
-<th>不应误解为</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Node.js 24</td>
-<td>运行后端、启动脚本、文件服务和构建工具</td>
-<td>AI 模型或区块链</td>
-</tr>
-<tr>
-<td>npm</td>
-<td>安装依赖、组织启动/构建/测试命令</td>
-<td>风险情报平台</td>
-</tr>
-<tr>
-<td>TypeScript</td>
-<td>为请求、报告和代码提供类型约束</td>
-<td>证明代码安全的形式化验证</td>
-</tr>
-<tr>
-<td>tsx</td>
-<td>在开发/测试时执行 TypeScript</td>
-<td>一种风险评分算法</td>
-</tr>
-<tr>
-<td>React + ReactDOM</td>
-<td>渲染四个页面、表单、状态与结果</td>
-<td>钱包本身</td>
-</tr>
-<tr>
-<td>Vite + React 插件</td>
-<td>网页开发服务、热更新与生产打包；代理/复用本机 API</td>
-<td>真实链 RPC</td>
-</tr>
-<tr>
-<td>Fastify</td>
-<td>接收 API 请求，路由到规则、取数、模型和记录逻辑</td>
-<td>自动安全审计器</td>
-</tr>
-<tr>
-<td>@fastify/cors</td>
-<td>设置允许的浏览器跨域来源和请求头</td>
-<td>全部身份认证；Snap 仍需配对令牌验证</td>
-</tr>
-<tr>
-<td>viem</td>
-<td>ABI 编解码、EIP-712 哈希、JSON-RPC 交互与单位处理</td>
-<td>外部风险数据库</td>
-</tr>
-<tr>
-<td>Zod</td>
-<td>校验请求与模型 JSON 的格式、字段和范围</td>
-<td>保证模型解释一定正确</td>
-</tr>
-<tr>
-<td>solc</td>
-<td>编译本地 Solidity 测试合约</td>
-<td>自动审计所有合约漏洞</td>
-</tr>
-<tr>
-<td>Node crypto</td>
-<td>生成随机令牌、记录指纹和哈希</td>
-<td>给用户生成钱包私钥或代签资产交易</td>
-</tr>
-<tr>
-<td>node:sqlite</td>
-<td>SQLite 的运行时接口</td>
-<td>外部云数据库</td>
-</tr>
-<tr>
-<td>Lucide React</td>
-<td>图标与界面可读性</td>
-<td>风险识别模块</td>
-</tr>
-<tr>
-<td>Node 测试运行器</td>
-<td>执行离线与接口测试</td>
-<td>真实攻击检出率证明</td>
-</tr>
-<tr>
-<td>tsc / @types</td>
-<td>检查 TypeScript 类型与库声明</td>
-<td>业务正确性的全部证明</td>
-</tr>
-<tr>
-<td>@fastify/static</td>
-<td>项目声明的静态服务依赖</td>
-<td>当前核心取证工具；实际一键开发页面由 Vite 提供，Snap 文件由专门 HTTP 服务提供</td>
-</tr>
-</tbody></table></div>
-<p>不需要把这些开发工具理解成“都在调用外网”。实际可能离开本机的路径主要是已配置 RPC、已启用 GoPlus 和 Meta 模型请求；其余大量处理在本机完成。</p>
-<h2 id="section-35">12. 记录怎么看，为什么有未知或多种结果</h2>
-<p>项目存在两个记录域：</p>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>记录域</th>
-<th>主要入口</th>
-<th>记录重点</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>本地授权/工作流记录</td>
-<td>左侧“检查记录”</td>
-<td>授权预检、工作台钱包请求、钱包回报和本地链回执</td>
-</tr>
-<tr>
-<td>综合安全报告</td>
-<td>“钱包防护”下的“最近的综合检查”</td>
-<td>操作分类、工具计划、风险依据、Meta 状态/结果和未知项</td>
-</tr>
-</tbody></table></div>
-<p>同一次综合分析在模型返回前后更新同一个报告 ID，不额外生成一条 AI 完成记录。但你主动重复检查、先做网页预检再发钱包请求，或两个不同业务路径分别记录，仍可能产生不同记录。当前没有把所有综合报告和钱包工作流统一成一个全局交易时间线。</p>
-<p>风险结果与钱包处理状态是两件事：</p>
-<ul>
-<li>高风险 / 无法判断：描述检查结论。</li>
-<li>已取消（钱包报告）：工作台收到该次钱包拒绝返回，不是链上回执。</li>
-<li>已提交：拿到哈希但尚未核实最终执行。</li>
-<li>链上执行成功 / 失败：核对了匹配交易和后续规范区块回执。</li>
-<li>结果未知：没有关联最终回报，不能推断允许或取消。</li>
-</ul>
-<p>综合 Snap 报告通常只保存签前分析；不能凭其风险等级判断用户最后点了哪个按钮。底层 approve 方法名也不等于用户已经“批准”。</p>
-<h2 id="section-36">13. 常见故障与排查顺序</h2>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>现象</th>
-<th>先检查什么</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>网页打不开</td>
-<td>一键启动终端是否仍运行；5173 是否被旧实例占用</td>
-</tr>
-<tr>
-<td>页面找不到钱包</td>
-<td>使用安装 Flask 的桌面浏览器；普通内置浏览器可能没有该扩展</td>
-</tr>
-<tr>
-<td>Snap 安装失败</td>
-<td>8080 文件服务是否运行、是否完成钱包权限确认、是否选中正确钱包环境</td>
-</tr>
-<tr>
-<td>提示 Snap 未配对/403</td>
-<td>在“钱包接入”重新加载并配对，不只连接账户</td>
-</tr>
-<tr>
-<td>本地没有余额</td>
-<td>当前链是否为 31337、账户是否与网页一致、是否重新准备测试资金</td>
-</tr>
-<tr>
-<td>本地 ETH 出现美元估值</td>
-<td>本地测试币仍无实际价值，不能据钱包价格显示推断可兑现</td>
-</tr>
-<tr>
-<td>所有样本都没有 AI 分数</td>
-<td>是否仍在“演示样本”模式；是否配置 MODEL_API_KEY 和开启 ENABLE_META_AI</td>
-</tr>
-<tr>
-<td>Key 已保存但 AI 失败</td>
-<td>看该次 HTTP/超时/校验错误；检查 Meta 额度、模型访问权限和网络</td>
-</tr>
-<tr>
-<td>输入真实网络仍显示未知</td>
-<td>该链 RPC 是否配置并能返回匹配 chainId；节点是否支持所需历史状态/方法</td>
-</tr>
-<tr>
-<td>Honeypot 无法判断</td>
-<td>可能无有效代币情报、路由不支持、卖出失败原因不唯一或模拟未完成</td>
-</tr>
-<tr>
-<td>钱包没有弹出某类提示</td>
-<td>该请求是否真进入已配对 Snap 支持的入口；手动类别不会自动出现；签名提示的展示阶段也由钱包控制</td>
-</tr>
-<tr>
-<td>页面同时有数字和未知项</td>
-<td>查看模型理由与缺失项；AI 数字不代表全部检查完成，综合提示不按分数阈值换算</td>
-</tr>
-<tr>
-<td>重启后旧交易哈希查不到</td>
-<td>本地链已重置，旧 SQLite 记录对应以前的链快照</td>
-</tr>
-</tbody></table></div>
-<h2 id="section-37">14. 给团队演示时怎样讲</h2>
-<p>建议先在无模型调用的固定样本中展示权限范围（没有数字），再用自己的测试钱包完成一次本地授权与取消/确认；配置 Meta 后，再单独展示一次真实模型连接测试和证据引用。新请求只有 AI 会给数字，旧规则数字明确标为历史；模型也可因证据不足返回 null。</p>
-<p>可以这样介绍：</p>
-<blockquote>
-<p>WalletShield 是面向 EVM 钱包请求的签前风险提示原型。它通过 Snap 或网页接收未签名请求，按操作选择节点、协议、签名、模拟和情报工具，将实际取得的证据与未知项交给 Meta Muse Wonder 评价，再把可解释的风险意见显示给用户。当前没有全钱包、全协议的完整安全保证，也不提供强制阻止或签后持续监控。</p>
-</blockquote>
-<p>不要将“25 个演示场景”“30 个说明类别”“自动测试通过”“已配置模型 Key”解释成真实攻击覆盖率或资金保护保证。</p>
-<h2 id="section-38">15. 代码核对位置与维护</h2>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>内容</th>
-<th>主要代码</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>网页主流程、连接钱包、安装 Snap、授权测试</td>
-<td>web/src/main.tsx、web/src/wallet.ts</td>
-</tr>
-<tr>
-<td>综合检查、模型状态与记录界面</td>
-<td>web/src/SecurityDesk.tsx</td>
-</tr>
-<tr>
-<td>Snap 入口与提示</td>
-<td>snap/src/index.ts、snap/snap.manifest.json</td>
-</tr>
-<tr>
-<td>请求校验与综合 API</td>
-<td>src/security/types.ts、src/security/api.ts</td>
-</tr>
-<tr>
-<td>常见方法/签名/RPC 参数解析</td>
-<td>src/security/decode.ts、src/security/operations.ts</td>
-</tr>
-<tr>
-<td>工具计划</td>
-<td>src/security/routing.ts</td>
-</tr>
-<tr>
-<td>基础节点与 GoPlus</td>
-<td>src/security/providers.ts</td>
-</tr>
-<tr>
-<td>结构签名/nonce/domain</td>
-<td>src/security/signatures.ts</td>
-</tr>
+<tbody>
 <tr>
-<td>合约控制、金库与借贷</td>
-<td>src/security/protocols.ts</td>
+<td>钱包不可用或扩展选错</td>
+<td>在桌面浏览器打开本地 URL，选择目标提供者并授予账户访问。</td>
 </tr>
 <tr>
-<td>副本资产变化与 V2 往返</td>
-<td>src/security/simulation.ts</td>
+<td>Snap 已安装但配对失败</td>
+<td>阅读失败阶段，检查
+8080/8787，重新构建、刷新、加载和配对，再核对当前账户。</td>
 </tr>
 <tr>
-<td>综合规则信号</td>
-<td>src/security/rules.ts</td>
+<td>没有洞察或报告</td>
+<td>钱包可能在触发钩子前就拒绝请求。检查入口是否支持、Snap
+健康状态和后端可用性；不能把 API 报告算作钱包送达。</td>
 </tr>
 <tr>
-<td>Meta 组包、请求与结果校验</td>
-<td>src/security/ai.ts</td>
+<td>本地案例回滚</td>
+<td>确认链 31337、最新部署、余额和案例前提；链重启后重新准备资产。</td>
 </tr>
 <tr>
-<td>模型/RPC 配置读取</td>
-<td>src/security/config.ts</td>
+<td>RPC 已配置但没有数据</td>
+<td>检查真实端点可达性、链 ID、服务额度和历史状态支持。</td>
 </tr>
 <tr>
-<td>旧授权规则与历史归整</td>
-<td>src/core/、src/server/workflow.ts</td>
+<td>没有 AI 数字</td>
+<td>查看 <code>ai.status</code>
+和消息：模型禁用/未配置、额度、失败、拒答、无效输出和诚实弃评都可以合理地保留无分数。</td>
 </tr>
 <tr>
-<td>本地链资金与存储</td>
-<td>src/server/chain.ts、funding.ts、store.ts</td>
+<td>无法访问托管记录</td>
+<td>重新验证正确的
+EOA；刷新会清除仅内存中的会话。配对令牌和网页令牌职责不同。</td>
 </tr>
 <tr>
-<td>共享能力说明与生成文档</td>
-<td>src/security/coverage.ts、scripts/coverage-guide.ts</td>
+<td>旧报告似乎不一致</td>
+<td>对比时间、版本、来源与链重置情况；历史文字和结果会保留。</td>
 </tr>
-</tbody></table></div>
-<p>评分更新已移除规则数字与下限，保留文字证据与未知项；历史数据不自动改写。固定合成样本已验证 Meta 联通，但分数稳定性、误报和漏报仍需独立的真实案例评测；本地测试不能替代该评测。</p>
-<p>项目更新后，应同步本说明、共享覆盖说明和实际代码。更多逐类扩展条件见 <a href="AI-COVERAGE-GUIDE.md">AI 取数与边界说明</a>；启动与配置速查见 <a href="../README.md">项目 README</a>。</p>
-<footer>根据本项目实际代码整理。本文件不调用模型、钱包或节点；示例为合成数据。可使用浏览器“打印 → 另存为 PDF”。</footer></main></div></body></html>
+</tbody>
+</table>
+<p>运行 <code>npm test</code>、<code>npm run typecheck</code> 和
+<code>npm run build</code>
+进行离线/静态回归检查。<code>npm run test:security</code>
+会启动自己的隔离测试节点。<code>test:chain</code> 和
+<code>test:lab</code>
+需要运行中的本地部署，并对其快照/恢复；运行时让浏览器保持空闲。这些测试使用节点账户，不验证浏览器
+Snap 送达。完整验收需要手动发起钱包请求、匹配到 Snap
+报告、看到证据，并单独记录钱包结果。任何自动化测试数量都不证明普遍检测能力或已经适合公开生产使用。</p>
+</body>
+</html>

@@ -1,5 +1,7 @@
 # WalletShield Local · v0.4.1 · Muse Wonder
 
+[English](README.md) · [简体中文](README.zh-CN.md) · [中文使用手册](docs/USER-MANUAL-zh.md) · [中文取数与能力边界](docs/AI-COVERAGE-GUIDE-zh.md)
+
 WalletShield is an EVM wallet security prototype with a local wallet lab and an optional authenticated hosted mode. A paired MetaMask Snap sends an unsigned transaction or message request to the configured backend. By default, that backend runs on your computer. The backend decodes the request, selects evidence collectors, reads the configured network, optionally simulates the transaction in an isolated Anvil fork, and asks **Meta Muse Wonder `muse-wonder-1.0`** to assess the collected evidence. The webpage and Snap show the result before you decide whether to confirm or cancel in the wallet.
 
 It provides **pre-sign advice**. It does not force a block, sign for you, recover funds, or continuously monitor activity after signing. Automatic analysis covers only the EVM transaction and message requests that MetaMask actually delivers to the Snap. Installing the Snap does not intercept every wallet operation.
