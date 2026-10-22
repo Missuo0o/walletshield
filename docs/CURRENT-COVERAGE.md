@@ -6,6 +6,9 @@ This describes the current v0.4.1 implementation after the correctness, validati
 
 WalletShield provides **pre-sign risk advice** for one unsigned EVM request. It does not force blocking or continuously monitor after signing, as defined by the current product scope. **30 analysis profiles and 66 representative local cases (51 transactions, 15 messages, 25 profiles represented) are not a percentage of risks covered.** Other methods, deployments, states and adversarial inputs can behave differently.
 
+Current checks use the wallet-supplied unsigned request, source origin/network metadata and successfully collected RPC, intelligence and simulation evidence. Muse assesses observable request signals, including supported source/message/request inconsistencies. Chain/provider/execution context means technical observations. Historical reports and acceptance artifacts retain their original recorded data.
+
+
 ## Entry points matter
 
 | Entry | Implemented behavior | Boundary |
@@ -22,7 +25,7 @@ WalletShield provides **pre-sign risk advice** for one unsigned EVM request. It 
 
 | Operation | Extracted evidence available on supported paths | Still incomplete |
 | --- | --- | --- |
-| Native transfer / contract recipient | Sender/recipient/value, chain/source, supplied fees/nonce, current balance/code, one-hop delegate code, optional fork deltas/calls | Recipient identity/purpose, arbitrary fallback behavior, future state and final fees |
+| Native transfer / contract recipient | Sender/recipient/value, chain/source, supplied fees/nonce, current balance/code, one-hop delegate code, optional fork deltas/calls | Recipient identity, arbitrary fallback behavior, future state and final fees |
 | ERC-20 transfer and delegated transferFrom | Token/owner/caller/recipient/quantity distinguished; units/balances/allowance where readable; optional deltas | Rebasing/taxes/hidden assets, deceptive interfaces and prices |
 | ERC-721/1155 single/batch transfers | Owner/recipient/token IDs/amounts, declared interfaces, selected ownership/approval/operator reads | Complete holdings/callbacks, collection authenticity and value; at most 16 IDs/asset |
 | ERC-20/NFT approve and revoke; NFT setApprovalForAll | Spender/operator, exact amount or NFT identifier, permission scope, current state and revocation semantics | Full future exposure, malicious later use, all Permit variants and recipient identity |
@@ -60,7 +63,7 @@ The same 30 profile groups now additionally route DAI-style Permit, ERC-3009 tra
 
 Only `muse-wonder-1.0` supplies new numeric scores: integer 0–100 or honest `null`. No local weights, score floors, fixed numeric bands or failure fallback are added. Six qualitative dimensions cite evidence: authority, exposure, execution, identity, protocol and deception. Missing reputation is not malicious identity; a familiar name is not verified identity.
 
-The server now states an **observable-request scope**. Only its own unknown `fraud_context` observation and exact corresponding gap are contextual: absence of private/off-chain intent no longer makes an observed-request low assessment impossible by construction. **Every other unknown check or explicit gap, newly identified model gaps, observation-time defect and conflicting same-height hash remains critical and prohibits overall low/strong confidence.** The full `complete` flag and missing-check list remain unchanged. The packet key is `assessment_scope`; reports store `assessmentScope` with policy `observable-request-v1`. An exact repeat of the canonical contextual caveat remains contextual; paraphrased or newly identified gaps remain critical. Model judgment is not forced to be low, strong or numeric when those gates permit it.
+The assessment scope records unresolved checks and missing evidence from this request. Any unresolved check/gap, model-identified missing data, stale/missing/future observation timestamp or conflicting same-height block hash prohibits overall low or strong evidence confidence. The full completeness flag and missing-check lists remain visible. The packet key is assessment_scope; reports store assessmentScope with policy observable-request-v1. Model judgment is not forced to be low, strong or numeric when these gates permit it.
 
 A scoped low assessment means no obvious concern was identified in the evidenced request under the stated limits. It does not prove recipient legitimacy, off-chain honesty, complete evidence, future safety or a probability of loss. Known dangerous authority can still support a conditional numeric assessment when other dimensions remain unknown. If all dimensions lack actual support, no number is accepted. Output rejection/repair never manufactures a score.
 
@@ -70,8 +73,8 @@ A scoped low assessment means no obvious concern was identified in the evidenced
 - **RPC:** configured Infura/other trusted nodes supply chain facts, not user-wallet connection or universal protocol understanding. More specific protocol reads require tested ABI/version adapters. Unsupported chains, missing archive state, provider quotas, false replies and reorgs remain possible.
 - **Simulation:** isolated fork effects are observations at a recorded base state with bounded logs/assets/calls. One successful sale is not future sellability; a failed sale can have causes other than fraud. Some transaction fields/types are unsupported and explicitly remain gaps.
 - **Additional trusted services needed:** reliable price/quote/liquidity data, verified official deployments/source/build identities, administrator graphs and broader reputation registries. These are not produced from model memory or an Infura key.
-- **Wallet/dApp cooperation needed:** invisible permission/session/UserOperation entries, original raw-hash messages, relying-party nonce/session stores, and user-intended recipient/purpose. A prompt cannot recover data never received.
-- **Not established by this product:** non-EVM support, device malware/key compromise, exchange internals, private scam conversations, arbitrary-code completeness, future prices/upgrades/blacklists/ordering/bridge arrival, or fund recovery. Forced blocking and post-sign monitoring are intentionally outside this advisory scope.
+- **Wallet/dApp cooperation needed:** invisible permission/session/UserOperation entries, original raw-hash messages and relying-party nonce/session stores. A prompt cannot recover data never received.
+- **Not established by this product:** non-EVM support, device malware/key compromise, exchange internals, arbitrary-code completeness, future prices/upgrades/blacklists/ordering/bridge arrival, or fund recovery. Forced blocking and post-sign monitoring are intentionally outside this advisory scope.
 - **Reliability still unmeasured:** no independent held-out labeled benchmark of false positives/negatives, score calibration, repeatability or complete adversarial coverage. Automated/local acceptance counts do not substitute for it.
 - **Public rollout still requires:** real HTTPS deployment, intended Snap publication/distribution, browser-wallet acceptance, secure backups/restore, retention/deletion policies, load/failure testing and operational review. Infura connectivity does not deploy the product.
 

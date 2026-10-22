@@ -5,7 +5,7 @@ const address = z.string().regex(/^0x[\da-fA-F]{40}$/);
 const hex = z.string().max(30000).regex(/^0x(?:[\da-fA-F]{2})*$/);
 const quantity=z.string().regex(/^0x[\da-fA-F]{1,64}$/);
 const chain = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
-const common = { chainId: chain, origin: z.string().max(512).optional(), intent: z.string().max(1000).optional(), context:z.object({guaranteedProfit:z.boolean().optional(),withdrawalFee:z.boolean().optional(),requestedBy:z.enum(['stranger','support','friend','unknown']).optional()}).strict().optional() };
+const common = { chainId: chain, origin: z.string().max(512).optional() };
 export const requestSchema = z.discriminatedUnion('kind', [
   z.object({ ...common, kind: z.literal('transaction'), transaction: z.object({ from: address, to: address.nullable().optional(), data: hex, value: quantity.optional(),gas:quantity.optional(),gasPrice:quantity.optional(),maxFeePerGas:quantity.optional(),maxPriorityFeePerGas:quantity.optional(),nonce:quantity.optional(),unsupportedFields:z.array(z.enum(UNSUPPORTED_TRANSACTION_FIELDS)).max(UNSUPPORTED_TRANSACTION_FIELDS.length).optional() }).strict() }).strict(),
   z.object({ ...common, kind: z.literal('signature'), chainId: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER), signature: z.object({ from: address, method: z.enum(['personal_sign', 'eth_sign', 'eth_signTypedData', 'eth_signTypedData_v3', 'eth_signTypedData_v4']), providerContext:z.object({chainId:chain,observedAt:z.iso.datetime(),source:z.literal('snap-provider')}).strict().optional(), data: z.union([z.string().max(16000), z.record(z.string(), z.unknown()), z.array(z.record(z.string(), z.unknown())).max(64)]) }).strict() }).strict(),
@@ -32,7 +32,7 @@ export type SecurityReport = {
   ruleScoreFloor?: number | null; score: number | null; scoreSource: 'ai' | 'rules' | 'none';
   ai: AIState; missingData: string[]; fingerprint: string; version: 'security/0.2.0' | 'security/0.3.0' | 'security/0.4.0' | 'security/0.4.1-ai-evidence';
 };
-export type AssessmentScope={policy:'observable-request-v1';label:string;criticalUnknownCheckIds:string[];contextualUnknownCheckIds:string[];criticalMissingData:string[];contextualMissingData:string[];boundary:string};
+export type AssessmentScope={policy:'observable-request-v1';label:string;criticalUnknownCheckIds:string[];criticalMissingData:string[];boundary:string};
 export const COVERAGE = [
   ['Native transfer', 'Read state; optional isolated execution, gas and native deltas'],
   ['ERC-20 / NFT transfers', 'Decode common transfers; shared selectors require token-standard observations'],

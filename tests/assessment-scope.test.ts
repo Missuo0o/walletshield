@@ -8,16 +8,16 @@ import {modelDimensions} from './fixtures/model.js';
 import type {SecurityReport} from '../src/security/types.js';
 
 const at=Date.parse('2026-10-22T20:00:00Z');
-const contextualTitle='Off-chain purpose is unverified';
+const legacyTitle='Off-chain purpose is unverified';
 function report():SecurityReport {
  const value=assess({kind:'transaction',chainId:1,transaction:{from:'0x'+'1'.repeat(40),to:'0x'+'2'.repeat(40),data:'0x'}},[]);
  value.createdAt=new Date(at).toISOString();
- value.checks=value.checks.filter(c=>['operation','fraud_context'].includes(c.id));
+ value.checks=value.checks.filter(c=>c.id==='operation');
  value.checks.forEach(c=>{c.observedAt=new Date(at).toISOString();});
- value.complete=false;value.missingData=[contextualTitle];
+ value.complete=true;value.missingData=[];
  return value;
 }
-function output(){return {...modelDimensions('operation'),score:11,assessment:'low',evidence_confidence:'strong',summary:'Only the supplied observable request is assessed; this does not establish safety.',reasons:[{text:'The supplied request has a decoded operation.',evidence_ids:['operation']}],missing_data:[] as string[],suggested_action:'Independently verify the recipient and purpose.',honeypot:'unknown'};}
+function output(){return {...modelDimensions('operation'),score:11,assessment:'low',evidence_confidence:'strong',summary:'Only the supplied observable request is assessed; this does not establish safety.',reasons:[{text:'The supplied request has a decoded operation.',evidence_ids:['operation']}],missing_data:[] as string[],suggested_action:'Independently verify the recipient and request parameters.',honeypot:'unknown'};}
 function critical(value:SecurityReport,missing:string[]=[]){
  const proposed={...output(),missing_data:missing};
  assert.throws(()=>validateAI(proposed,value,'test'),/Unresolved evidence cannot have strong confidence/);
@@ -25,18 +25,18 @@ function critical(value:SecurityReport,missing:string[]=[]){
  assert.equal(validateAI({...proposed,evidence_confidence:'limited',assessment:'review'},value,'test').score,11,'Uncertainty does not replace or impose a model number.');
 }
 
-test('only the canonical purpose caveat is contextual; low and strong remain scoped and retain the full gap inventory',()=>{
+test('gap-free observable evidence permits scoped low and strong without an automatic off-chain-purpose gap',()=>{
  const value=report(),scope=assessmentScope(value),accepted=validateAI(output(),value,'test');
  assert.equal(scope.policy,'observable-request-v1');
- assert.deepEqual(scope.contextualUnknownCheckIds,['fraud_context']);
- assert.deepEqual(scope.contextualMissingData,[contextualTitle]);
+ assert.equal(Object.hasOwn(scope,'contextualUnknownCheckIds'),false);
+ assert.equal(Object.hasOwn(scope,'contextualMissingData'),false);
  assert.deepEqual(scope.criticalUnknownCheckIds,[]);assert.deepEqual(scope.criticalMissingData,[]);
  assert.match(scope.boundary,/not a guarantee/);
  assert.equal(accepted.score,11);assert.equal(accepted.assessment,'low');assert.equal(accepted.evidence_confidence,'strong');
- assert.deepEqual(accepted.missing_data,[contextualTitle]);
- assert.equal(value.complete,false);assert.deepEqual(value.missingData,[contextualTitle]);
- const packet=evidencePacket(value);assert.equal(packet.evidenceComplete,false);
- assert.deepEqual(packet.missing_checks,[contextualTitle]);assert.deepEqual(packet.assessment_scope,scope);
+ assert.deepEqual(accepted.missing_data,[]);
+ assert.equal(value.complete,true);assert.deepEqual(value.missingData,[]);
+ const packet=evidencePacket(value);assert.equal(packet.evidenceComplete,true);
+ assert.deepEqual(packet.missing_checks,[]);assert.deepEqual(packet.assessment_scope,scope);
 });
 
 test('critical unknowns stay critical even when a stale complete flag or missing list omits them',()=>{
@@ -46,53 +46,52 @@ test('critical unknowns stay critical even when a stale complete flag or missing
  assert.deepEqual(scope.criticalUnknownCheckIds,['signature_replay_state']);
  assert.deepEqual(scope.criticalMissingData,['Replay state not observed']);
  critical(value);
+ const accepted=validateAI({...output(),assessment:'review',evidence_confidence:'limited'},value,'test');
+ assert.deepEqual(accepted.missing_data,['Replay state not observed']);
+ assert.equal(evidencePacket(value).evidenceComplete,false);
+ assert.deepEqual(evidencePacket(value).missing_checks,['Replay state not observed']);
 });
 
-test('model-discovered gaps are critical while only an exact existing contextual title is contextual',()=>{
+test('every model-discovered gap stays critical, including the former contextual title',()=>{
  const value=report();
- assert.deepEqual(assessmentScope(value,[contextualTitle]).criticalMissingData,[]);
- assert.deepEqual(validateAI({...output(),missing_data:[contextualTitle]},value,'test').missing_data,[contextualTitle]);
- for(const text of ['Unknown spender identity','Off-chain purpose is unverified ','off-chain purpose is unverified']) {
+ for(const text of ['Unknown spender identity',legacyTitle,'Off-chain purpose is unverified ','off-chain purpose is unverified']) {
   assert.ok(assessmentScope(value,[text]).criticalMissingData.includes(text));
   critical(value,[text]);
  }
- const withoutCaveat=report();withoutCaveat.checks=withoutCaveat.checks.filter(c=>c.id!=='fraud_context');withoutCaveat.complete=true;withoutCaveat.missingData=[];
- assert.ok(assessmentScope(withoutCaveat,[contextualTitle]).criticalMissingData.includes(contextualTitle));
- critical(withoutCaveat,[contextualTitle]);
 });
 
-test('a fraud-context identifier from another source cannot create the canonical exception',()=>{
- for(const source of ['goplus','rpc','user_reported','rules']) {
-  const value=report();value.checks.find(c=>c.id==='fraud_context')!.source=source;
+test('a legacy or forged fraud-context identifier has no exception regardless of source',()=>{
+ for(const source of ['rules/0.3.0','goplus','rpc','user_reported','rules']) {
+  const value=report();value.checks.push({...evidence('fraud_context','unknown',legacyTitle,'A supplied unresolved observation, not an automatic product check.',source),observedAt:new Date(at).toISOString()});
   const scope=assessmentScope(value);
-  assert.deepEqual(scope.contextualUnknownCheckIds,[],source);
+  assert.equal(Object.hasOwn(scope,'contextualUnknownCheckIds'),false,source);
   assert.deepEqual(scope.criticalUnknownCheckIds,['fraud_context'],source);
-  assert.ok(scope.criticalMissingData.includes(contextualTitle),source);
+  assert.ok(scope.criticalMissingData.includes(legacyTitle),source);
   critical(value);
  }
 });
 
-test('an unrelated unknown cannot be hidden behind the contextual check’s identical display title',()=>{
- const value=report();value.checks.push({...evidence('unobserved_protocol','unknown',contextualTitle,'A different unfinished check with a colliding title','rpc'),observedAt:new Date(at).toISOString()});
+test('unknowns with colliding titles remain individually identified and cannot be exempted',()=>{
+ const value=report();for(const id of ['unobserved_protocol','second_unobserved_protocol'])value.checks.push({...evidence(id,'unknown',legacyTitle,'An unfinished check with a colliding title','rpc'),observedAt:new Date(at).toISOString()});
  const scope=assessmentScope(value);
- assert.deepEqual(scope.contextualUnknownCheckIds,['fraud_context']);
- assert.deepEqual(scope.criticalUnknownCheckIds,['unobserved_protocol']);
- assert.ok(scope.criticalMissingData.includes(contextualTitle));
+ assert.deepEqual(scope.criticalUnknownCheckIds,['unobserved_protocol','second_unobserved_protocol']);
+ assert.deepEqual(scope.criticalMissingData,[legacyTitle]);
  critical(value);
 });
 
 test('explicit missing data and an unexplained incomplete report remain critical',()=>{
  const value=report();value.missingData.push('Collector deadline exceeded');
  assert.ok(assessmentScope(value).criticalMissingData.includes('Collector deadline exceeded'));critical(value);
- const empty=report();empty.checks=empty.checks.filter(c=>c.status!=='unknown');empty.missingData=[];
+ const empty=report();empty.complete=false;
  const scope=assessmentScope(empty);
- assert.deepEqual(scope.contextualUnknownCheckIds,[]);
+ assert.deepEqual(scope.criticalUnknownCheckIds,[]);
  assert.deepEqual(scope.criticalMissingData,['Evidence collection is incomplete; specific missing observations were not supplied.']);
  critical(empty);
 });
 
-test('stale, future and invalid timestamps remain critical even on the contextual caveat',()=>{
- for(const [observedAt,marker] of [[new Date(at-300001).toISOString(),'Stale observation'],[new Date(at+30001).toISOString(),'Future-dated observation'],['invalid','Missing observation timestamp']] as const)for(const id of ['operation','fraud_context']) {
+test('stale, future and invalid timestamps remain critical on actual observed checks',()=>{
+ for(const [observedAt,marker] of [[new Date(at-300001).toISOString(),'Stale observation'],[new Date(at+30001).toISOString(),'Future-dated observation'],['invalid','Missing observation timestamp']] as const) {
+  const id='operation';
   const value=report();value.checks.find(c=>c.id===id)!.observedAt=observedAt;
   assert.ok(assessmentScope(value).criticalMissingData.includes(`${marker}: ${id}`),`${marker} ${id}`);
   critical(value);

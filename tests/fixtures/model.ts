@@ -30,6 +30,6 @@ export function finitePermitOutput(score:number|null){
    {dimension:'execution',assessment:'unknown',reason:'未模拟未来的具体签名消费交易。',evidence_ids:['asset_simulation','signature_effects']},
    {dimension:'identity',assessment:'unknown',reason:'未验证 spender 与来源的真实身份。',evidence_ids:['address_reputation','website_reputation']},
    {dimension:'protocol',assessment:'unknown',reason:'未取得代币安全与升级机制的完整证据。',evidence_ids:['token_security']},
-   {dimension:'deception',assessment:'unknown',reason:'用户与平台的真实用途仍待独立核实。',evidence_ids:['fraud_context']}
+   {dimension:'deception',assessment:'unknown',reason:'来源信誉未取得，现有可观察消息不能确认存在欺骗性来源不一致。',evidence_ids:['website_reputation']}
   ],reasons:[{text:'有限额度约为同币可见余额的 2%，不等于美元损失概率。',evidence_ids:['operation','token_identity']},{text:'nonce 与 domain 已核对匹配，不证明对方可信或未来用途安全。',evidence_ids:['signature_nonce','signature_domain']}],missing_data:[],suggested_action:'核对 spender 与用途；按需限定额度并检查签名后的授权。',honeypot:'unknown'};
 }

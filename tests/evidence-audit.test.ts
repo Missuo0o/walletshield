@@ -74,7 +74,7 @@ test('unknown checks, incomplete collection and model-discovered gaps cannot be 
 test('unperformed plans and unknown-only citations cannot support a number; duplicate evidence IDs remain ambiguous',()=>{
  const report=assess(example('approve'),demoEvidence());
  const valid={...modelDimensions(),score:23,assessment:'review',summary:'Evidence-bound test',reasons:[{text:'scope',evidence_ids:['permission_scope']}],missing_data:[],suggested_action:'verify',honeypot:'unknown'};
- for(const id of ['fraud_context','tool_plan']){
+ for(const id of ['asset_simulation','tool_plan']){
   const unsupported={...valid,dimensions:valid.dimensions.map(d=>({...d,evidence_ids:[id]}))};
   assert.throws(()=>validateAI(unsupported,report,'test'),/No supported dimension/);
   assert.equal(validateAI({...unsupported,score:null,assessment:'unknown',dimensions:unsupported.dimensions.map(d=>({...d,assessment:'unknown'}))},report,'test').score,null);
@@ -97,7 +97,7 @@ test('identity high requires relevant observed identity evidence rather than an 
 test('each assessed dimension needs an observation even when another dimension supports the number',()=>{
  const report=finitePermitReport();
  for(const score of [23,null]){
-  const unsupported=finitePermitOutput(score);unsupported.dimensions.find(d=>d.dimension==='exposure')!.evidence_ids=['fraud_context','tool_plan'];
+  const unsupported=finitePermitOutput(score);unsupported.dimensions.find(d=>d.dimension==='exposure')!.evidence_ids=['asset_simulation','tool_plan'];
   assert.throws(()=>validateAI(unsupported,report,'test'),/Assessed dimension lacks observation/);
   const unknown=structuredClone(unsupported);unknown.dimensions.find(d=>d.dimension==='exposure')!.assessment='unknown';
   assert.equal(validateAI(unknown,report,'test').score,score);
@@ -152,13 +152,17 @@ test('an opaque request with no observed permission or exposure basis may abstai
 test('personal-sign session matching normalizes text/hex representation without changing message bytes',()=>{
  const req=example('message') as Extract<SecurityRequest,{kind:'signature'}>;req.signature.data='hello';const encoded=structuredClone(req);encoded.signature.data=stringToHex('hello');assert.equal(comparableRequest(req),comparableRequest(encoded));encoded.signature.data=stringToHex('Hello');assert.notEqual(comparableRequest(req),comparableRequest(encoded));
 });
-test('user background reaches only the exact authenticated Snap session and is labeled as user reported',async()=>{
+test('legacy lab purpose/context never reenter clean Snap input, while exact session/report correlation and stored history remain intact',async()=>{
  const store=createStore(':memory:');const captured:SecurityRequest[]=[];
  const app=await buildApp(store,{security:{config:async()=>config,collect:async(req)=>{captured.push(req);return demoEvidence();}}});
  try{
-  const req=example('approve');req.context={withdrawalFee:true};req.intent='test user claim';const {session}=newLabSession('approve-unlimited',req);store.labSave(session);const stripped=structuredClone(req);delete stripped.context;delete stripped.intent;
-  await app.inject({method:'POST',url:'/api/security/scan',headers:{origin:'http://127.0.0.1:5173','X-WalletShield-Test-Session':session.id},payload:stripped});assert.equal(captured[0].context,undefined);
-  const response=await app.inject({method:'POST',url:'/api/security/scan',headers:{origin:'null',authorization:`Bearer ${config.snapToken}`,'X-WalletShield-Test-Session':session.id},payload:stripped});assert.equal(response.statusCode,200);assert.equal(captured[1].context?.withdrawalFee,true);assert.ok(response.json().checks.some((c:any)=>c.id==='withdrawal_fee'));assert.equal(evidencePacket(response.json()).userReportedContext?.withdrawalFee,true);
+  const req=example('approve'),legacy=Object.assign(structuredClone(req),{intent:'LEGACY_PURPOSE_MUST_NOT_REENTER_MODEL',context:{withdrawalFee:true,guaranteedProfit:true,requestedBy:'stranger'}});const {session}=newLabSession('approve-unlimited',legacy);store.labSave(session);
+  const webpage=await app.inject({method:'POST',url:'/api/security/scan',headers:{origin:'http://127.0.0.1:5173','X-WalletShield-Test-Session':session.id},payload:req});assert.equal(webpage.statusCode,200);assert.equal(Object.hasOwn(captured[0],'intent'),false);assert.equal(Object.hasOwn(captured[0],'context'),false);assert.equal(store.labGet(session.id)?.reportId,undefined,'a website request cannot claim Snap delivery');
+  const response=await app.inject({method:'POST',url:'/api/security/scan',headers:{origin:'null',authorization:`Bearer ${config.snapToken}`,'X-WalletShield-Test-Session':session.id},payload:req});assert.equal(response.statusCode,200);assert.equal(captured.length,2);assert.equal(Object.hasOwn(captured[1],'intent'),false);assert.equal(Object.hasOwn(captured[1],'context'),false);assert.equal(response.json().capture.channel,'paired-snap');assert.equal(store.labGet(session.id)?.reportId,response.json().id,'removing context must preserve exact Snap session/report matching');assert.ok(!response.json().checks.some((c:any)=>['fraud_context','withdrawal_fee','guaranteed_profit','stranger_request'].includes(c.id)));assert.ok(response.json().checks.some((c:any)=>c.status==='unknown'),'genuine unfinished checks are still retained');
+  const saved=store.labGet(session.id)!;assert.equal((saved.request as typeof legacy).intent,legacy.intent);assert.equal((saved.request as typeof legacy).context.withdrawalFee,true,'historical records must not be rewritten');
+  const oldReport=assess(structuredClone(req),demoEvidence());Object.assign(oldReport.request,{intent:legacy.intent,context:legacy.context});const before=JSON.stringify(oldReport),packet=evidencePacket(oldReport);assert.equal(Object.hasOwn(packet,'intent'),false);assert.equal(Object.hasOwn(packet,'userReportedContext'),false);assert.equal(Object.hasOwn(packet,'context'),false);assert.equal(JSON.stringify(packet).includes(legacy.intent),false);assert.equal(JSON.stringify(oldReport),before,'packet construction must not rewrite the persisted report');
+  for(const extra of [{intent:'New manual purpose'},{context:{withdrawalFee:true}}]){const denied=await app.inject({method:'POST',url:'/api/security/scan',headers:{origin:'null',authorization:`Bearer ${config.snapToken}`},payload:{...req,...extra}});assert.equal(denied.statusCode,400);}
+  assert.equal(captured.length,2,'rejected manual fields must not reach evidence collection');
  }finally{await app.close();store.close();}
 });
 test('on-chain deadline comparison uses the observed block timestamp instead of silently assuming the workstation clock',()=>{

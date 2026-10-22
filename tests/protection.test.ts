@@ -5,7 +5,7 @@ import {signatureStructure} from '../src/security/signatures.js';
 import {decodeRequest} from '../src/security/decode.js';import {assess} from '../src/security/rules.js';
 import {checkWatch,newWatch,eventAlert} from '../src/security/monitor.js';
 import {buildApp} from '../src/server/app.js';import {createStore} from '../src/server/store.js';
-import type {SecurityRequest} from '../src/security/types.js';import type {SecurityConfig} from '../src/security/config.js';
+import {requestSchema,type SecurityRequest} from '../src/security/types.js';import type {SecurityConfig} from '../src/security/config.js';
 const owner='0x2222222222222222222222222222222222222222',other='0x3333333333333333333333333333333333333333',token='0x1111111111111111111111111111111111111111';
 const config:SecurityConfig={apiKey:'',model:'test',aiEnabled:false,lookups:false,goPlusToken:'',rpc:{},forkEnabled:true};
 const native:SecurityRequest={kind:'transaction',chainId:31337,transaction:{from:owner,to:other,data:'0x',value:'0x1'}};
@@ -25,8 +25,13 @@ test('EIP712 structure validation rejects missing types, invalid amounts and mis
  const req:SecurityRequest={kind:'signature',chainId:31337,signature:{from:owner,method:'eth_signTypedData_v4',data:{domain:{name:'test',version:'1',chainId:31337,verifyingContract:token},types:{Permit:[{name:'owner',type:'address'},{name:'spender',type:'address'},{name:'value',type:'uint256'},{name:'nonce',type:'uint256'},{name:'deadline',type:'uint256'}]},primaryType:'Permit',message:{owner,spender:other,value:'100',nonce:'0',deadline:'2000000000'}}}};
  assert.equal(signatureStructure(req)[0].status,'pass');const body=req.signature.data as any;body.types={};assert.equal(signatureStructure(req)[0].status,'unknown');body.types={Permit:[{name:'value',type:'uint8'}]};body.message.value='256';assert.equal(signatureStructure(req)[0].status,'unknown');
 });
-test('user-reported withdrawal fee and guaranteed return are risk signals, not verified platform identity',()=>{
- const facts=assess({...native,context:{withdrawalFee:true,guaranteedProfit:true,requestedBy:'stranger'}},[]);assert.equal(facts.level,'high');assert.ok(facts.checks.some(e=>e.id==='withdrawal_fee'));assert.ok(facts.missingData.includes('Off-chain purpose is unverified'));
+test('new request entries reject manual purpose/context without adding a private-purpose check',()=>{
+ const bases:SecurityRequest[]=[native,{kind:'signature',chainId:0,signature:{from:owner,method:'personal_sign',data:'Inspect this message'}},{kind:'permission',chainId:31337,method:'wallet_grantPermissions',params:{}},{kind:'user_operation',chainId:31337,method:'eth_sendUserOperation',params:{}},{kind:'wallet_rpc',chainId:31337,method:'wallet_custom',params:{}}];
+ for(const base of bases){assert.equal(requestSchema.safeParse(base).success,true);for(const extra of [{intent:'Expected purpose'},{context:{withdrawalFee:true,guaranteedProfit:true,requestedBy:'stranger'}},{context:{}},{intent:'',context:{}}])assert.equal(requestSchema.safeParse({...base,...extra}).success,false,`${base.kind}: manual fields must not be accepted`);}
+ const facts=assess(native,[]);assert.ok(!facts.checks.some(e=>['fraud_context','withdrawal_fee','guaranteed_profit','stranger_request'].includes(e.id)));assert.ok(!facts.missingData.includes('Off-chain purpose is unverified'));assert.equal(facts.checks.find(e=>e.id==='fee_budget')?.status,'unknown','actual missing execution evidence must remain visible');
+ // An older object can exist in persisted history without becoming a new
+ // source of fraud facts when passed through current qualitative assessment.
+ const legacy=Object.assign(structuredClone(native),{intent:'Legacy purpose',context:{withdrawalFee:true,guaranteedProfit:true,requestedBy:'stranger'}});const old=assess(legacy,[]);assert.ok(!old.checks.some(e=>['fraud_context','withdrawal_fee','guaranteed_profit','stranger_request'].includes(e.id)));assert.equal(old.checks.find(e=>e.id==='fee_budget')?.status,'unknown');
 });
 test('monitor establishes baseline, preserves cursor on RPC failure and detects outgoing events without claiming theft',async()=>{
  const watch=newWatch({chainId:31337,address:owner,tokens:[]});let block=6n;

@@ -16,7 +16,7 @@ import { z } from 'zod';
 import { timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import {matchLabReport,comparableRequest} from '../testing/sessions.js';
+import {matchLabReport} from '../testing/sessions.js';
 export type SecurityOptions={access?:{service:ServiceConfig;auth:WalletAuth};config?:()=>Promise<SecurityConfig>;collect?:Collector;score?:(report:SecurityReport,config:SecurityConfig)=>Promise<AIState>};
 export function registerSecurity(app:FastifyInstance,store:Store,options:SecurityOptions={}) {
   const hosted=options.access?.service.mode==='hosted',auth=options.access?.auth;
@@ -80,7 +80,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     if(!local(req.headers.origin))return reply.code(403).send({error:'Test model connectivity from the local workbench.'});
     const config=await getConfig();if(!config.apiKey||!config.aiEnabled)return reply.code(409).send({error:'Configure MODEL_API_KEY and ENABLE_META_AI=1 in backend .local/meta.env to enable Muse Wonder.'});
     if(busy.size)return reply.code(429).send({error:'Another check is in progress.'});busy.add('local');
-    try{const sample=securityExamples.find(e=>e.id==='approve')!;const report=assess({...sample.request,intent:'A fixed synthetic request for model connectivity, not a real transaction.'},demoEvidence(),'demo');report.operation.label='AI connection check - fixed approval sample';store.securitySave(report);return await modelStage(report,config);}finally{busy.delete('local');}
+    try{const sample=securityExamples.find(e=>e.id==='approve')!;const report=assess(sample.request,demoEvidence(),'demo');report.operation.label='AI connection check - fixed approval sample';store.securitySave(report);return await modelStage(report,config);}finally{busy.delete('local');}
   });
   }
   app.get('/api/security/status',async()=>{
@@ -120,15 +120,6 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     busy.add(key);times.push(now);recent.set(key,times);
     try {
       const config=await getConfig();
-      // Only bind unverified user context to the exact, authenticated Snap
-      // session. Never borrow context from a merely similar wallet operation.
-      if(fromSnap&&!hosted){
-        const id=req.headers['x-walletshield-test-session'];const session=typeof id==='string'?store.labGet(id):null;
-        const age=session?Date.now()-Date.parse(session.createdAt):-1;
-        if(session&&!session.reportId&&age>=0&&age<600000&&comparableRequest(session.request)===comparableRequest(parsed.data)){
-          parsed.data={...parsed.data,...(session.request.intent?{intent:session.request.intent}:{}),...(session.request.context?{context:session.request.context}:{})};
-        }
-      }
       let facts;
       try {
         let timer:ReturnType<typeof setTimeout>|undefined;

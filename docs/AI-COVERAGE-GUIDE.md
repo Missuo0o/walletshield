@@ -2,6 +2,8 @@
 
 This guide describes implemented version 0.4.1 paths and their limits. It is generated from the same coverage profiles used by the webpage and Snap. There are **30 analysis profiles**, with **66 local wallet cases** (51 transaction and 15 message requests) representing **25 profiles**. Counts are not detection accuracy, a safety rating or evidence that every method was tested.
 
+Current checks use the wallet-supplied unsigned request, source origin/network metadata and successfully collected RPC, intelligence and simulation evidence. Muse assesses observable request signals, including supported source/message/request inconsistencies. Chain/provider/execution context means technical observations. Historical reports and acceptance artifacts retain their original recorded data.
+
 ## 1. Request entry and component responsibilities
 
 | Component | What it does | What it does not establish |
@@ -36,7 +38,7 @@ Pre-sign advice only. You decide in the wallet; this tool does not force a block
 | Isolated Anvil fork: simulation.ts | Verifies upstream chain/base block hash; executes only on a temporary local fork; records execution block, native deltas/gas, discovered standard assets and bounded calls | Preserves supplied gas/fees/nonce; missing gas uses an explicit default. It does not forge user balances/permissions or broadcast upstream. Hidden/nonstandard assets and future state remain incomplete. |
 | Selected V2 round trip | Buys, approves only acquired tokens, and reverses a supported path to observe sale/result/gas | Supports selected methods and the same recipient. Sell minimum is zero only in the fork experiment. Loss includes fees/price impact and is not a pure tax rate. |
 | GoPlus, optional | Supported-chain discovery; normalized website origin, up to three explicit counterparty addresses and one primary token candidate; selected phishing/honeypot/tax/control flags | Off by default. Unsupported chains, absent fields, failures and non-hits are not safety. It does not check every path asset. |
-| Rules / router | Tool plan, permission/value/expiry/account/domain signals, user-reported fraud context and explicit gaps | Qualitative observations only. No points, score floor, fixed weights or numeric fallback. A selected tool is not a successful observation. |
+| Rules / router | Tool plan, observable permission/value/expiry/account/domain signals and explicit gaps | Qualitative observations only. No points, score floor, fixed weights or numeric fallback. A selected tool is not a successful observation. |
 | Meta Responses API | Fixed muse-wonder-1.0 model assesses the whitelisted packet and cites actual evidence IDs | A score is an uncalibrated risk indicator, not a loss probability or authenticity certificate. |
 | Hosted EOA authentication | Exact one-use domain/URI/nonce login challenge; recovered signer; hashed web/Snap credentials, owner-scoped reports and per-address quota | Separate from asset-risk analysis. Contract-wallet authentication is unsupported; login does not authorize assets. |
 
@@ -55,11 +57,10 @@ The evidencePacket function in src/security/ai.ts supplies these containers. It 
 | requestSummary | Transactions: from, target, valueWei, selector, calldataBytes. Signatures: from and method. Other RPC: method. Full calldata/digest is not included here. |
 | feeParameters | Supplied gas, gasPrice, maxFeePerGas, maxPriorityFeePerGas and nonce as exact decimal integer strings; missing fields are not invented. |
 | unsupportedTransactionFields | Explicit unsupported execution-field markers; a reduced replacement transaction is not presented as equivalent execution. |
-| intent, userReportedContext | User-entered purpose and structured guaranteedProfit/withdrawalFee/requestedBy claims. These are unverified and do not include automatically collected private conversations. |
 | operation | Category, candidate label, decoded fields, targets, token/standard and permission/complexity markers. Fields must be interpreted with their asset standard and units. |
 | checks | Evidence ID, status, title/detail, source, observedAt and structured data: block/balance/code, permissions, protocol returns, signature state, fork deltas/calls or intelligence where obtained. |
-| missing_checks | Union of explicit missing data and unknown checks, including incomplete-report state. All original gaps remain visible; contextual classification does not make a check successful. |
-| assessment_scope | Server-derived observable-request scope; exact contextual fraud_context gap separated from critical unknown/missing items. This is a scope policy, not a numerical score or a claim that full evidence is complete. |
+| missing_checks | Union of explicit missing data and unknown checks, including incomplete-report state. Missing observations are not successful checks. |
+| assessment_scope | Server-derived observable-request scope and unresolved check/missing-data inventory. It is not a numerical score or a claim that incomplete evidence is complete. |
 | request_data_scope, snapshot_consistency, quantity_conventions | Bounded extraction/provenance, per-collector snapshot differences and exact quantity/unit interpretation. |
 | analysis_dimensions, score_meaning | The six required cited dimensions and the independent 0–100-or-null risk-indicator policy. |
 
@@ -78,7 +79,7 @@ The following fields describe the attempted path. Only successful observations b
 - **Entry:** Automatic when the wallet supplies a transaction.
 - **Current scope:** Common transaction checks; recipient identity is unverified.
 - **Fields/evidence supplied when obtained:** from, to, value, chainId, source origin, gas and supplied fee parameters; Verified RPC chain/block, nativeBalanceWei, target code and one-hop delegation code; confirmed nonce at a pinned block, separate unpinned node pending-nonce view and supplied fee versus observed base fee; optional fork native deltas, gas and bounded calls; Available address and website intelligence, only when enabled.
-- **Still unknown:** A transfer does not prove recipient identity, payment purpose, correct destination network, future honesty or final fees.
+- **Still unknown:** A transfer does not prove recipient identity, correct destination network, future honesty or final fees.
 - **Possible extension and its boundary:** Add trusted address-book/name resolution, verified recipients, supported-chain policies and fee references. These still cannot guarantee recipient honesty.
 
 ### 2. ERC-20 transfer
@@ -237,7 +238,7 @@ The following fields describe the attempted path. Only successful observations b
 
 - **Entry:** Automatic when the wallet supplies a message signature request.
 - **Current scope:** Text preview and explicit uncertainty.
-- **Fields/evidence supplied when obtained:** Requested signer, method, source origin and up to 1,600 preview characters; User-supplied intent/context and available website/address intelligence.
+- **Fields/evidence supplied when obtained:** Requested signer, method, source origin and up to 1,600 preview characters; Available website/address intelligence and observable source/account differences.
 - **Still unknown:** A website or contract can assign extra meaning to text. Previews can truncate; an independent provider snapshot does not establish the signing dApp network.
 - **Possible extension and its boundary:** Add verification for specific message protocols and consuming contracts. Arbitrary server-side interpretation cannot be established from text alone.
 
@@ -245,7 +246,7 @@ The following fields describe the attempted path. Only successful observations b
 
 - **Entry:** Currently requires explicit submission.
 - **Current scope:** Backend blind-signing analysis; wallet/SDK delivery is not guaranteed.
-- **Fields/evidence supplied when obtained:** Method, signer, claimed network/source and blind-signing signal; Available context/intelligence; no full raw digest is sent to AI.
+- **Fields/evidence supplied when obtained:** Method, signer, claimed network/source and blind-signing signal; Available origin/network metadata and intelligence; no full raw digest is sent to AI.
 - **Still unknown:** A hash cannot uniquely reveal its original message. The Snap may not receive eth_sign, and authority/replay scope can remain unknown.
 - **Possible extension and its boundary:** If the caller supplies the original message, protocol and hash correspondence, verify those separately. Automatic delivery needs wallet support; a one-way hash cannot reveal a unique original.
 
@@ -319,7 +320,7 @@ Only Muse supplies a new numeric score. Its output contains score (integer 0–1
 
 The number is an uncalibrated indicator of this request's evidenced risk. It is not a loss probability, identity-trust score or evidence-confidence percentage. There are no fixed numeric bands, floors, additive points, weights or rule/model-provider fallbacks. Rules can retain a qualitative high-risk signal independently of the number. Historical rule scores remain labeled historical.
 
-Validation checks nonce/domain assertions across summary, reasons, all dimensions, suggested_action and missing_data, including indexed nonce claims, match/mismatch direction and negated/conditional advice. A claimed check must cite the corresponding observed RPC result; an unrelated citation cannot establish verification. It also rejects nonexistent/ambiguous citations, duplicate/missing dimensions, unsupported certainty/honeypot claims and inconsistent null/unknown output. Natural-language checks remain partial safeguards, not a proof of every sentence. The server classifies only its own unknown fraud_context observation and exact related gap as contextual: absent off-chain intent is not an automatic permanent veto on the observable request. All other unresolved checks/gaps, newly identified model gaps, stale/missing/future observation timestamps and conflicting same-height block hashes remain critical and prohibit overall low/strong. Full report.complete and all missing checks stay unchanged. Exact repetition of the canonical contextual caveat stays contextual; newly identified or paraphrased gaps stay critical. A permitted low/strong applies only to the observable-request scope and never establishes recipient identity, off-chain honesty or future safety. Every low/review/high dimension needs a cited non-unknown observation beyond a tool plan. A meaningful conditional score can still be supported by known authority/exposure while identity or future execution remain unknown; all-unknown/not-applicable dimensions or citations only to unknown/tool-plan observations cannot support a number. Missing reputation alone is not malicious identity.
+Validation checks nonce/domain assertions across summary, reasons, all dimensions, suggested_action and missing_data, including indexed nonce claims, match/mismatch direction and negated/conditional advice. A claimed check must cite the corresponding observed RPC result; an unrelated citation cannot establish verification. It also rejects nonexistent/ambiguous citations, duplicate/missing dimensions, unsupported certainty/honeypot claims and inconsistent null/unknown output. Natural-language checks remain partial safeguards, not a proof of every sentence. The assessment scope records unresolved checks and missing evidence from this request. Any unresolved check/gap, model-identified missing data, stale/missing/future observation timestamp or conflicting same-height block hash prohibits overall low or strong evidence confidence. The full completeness flag and missing-check lists remain visible. The packet key is assessment_scope; reports store assessmentScope with policy observable-request-v1. A permitted low/strong applies only to the observable-request scope and never establishes recipient identity or future safety. Every low/review/high dimension needs a cited non-unknown observation beyond a tool plan. A meaningful conditional score can still be supported by known authority/exposure while identity or future execution remain unknown; all-unknown/not-applicable dimensions or citations only to unknown/tool-plan observations cannot support a number. Missing reputation alone is not malicious identity.
 
 Invalid output is never locally patched into a score. One optional model repair can reuse the same evidence, controlled validation feedback and at most 20,000 characters of rejected output labeled untrusted. It needs a separate successful quota reservation and at least five seconds remaining; total model time is at most 50 seconds and the repair itself at most 25 seconds. HTTP/authentication/429/transport failures, refusals, incomplete envelopes and valid honest null results are not retried. A second invalid result stays failed. Valid usage is summed across calls only when every response supplies valid counters; otherwise usage is omitted rather than partially totaled.
 
@@ -336,7 +337,7 @@ Thirty profiles are not thirty complete protocol integrations. Separate these de
 | Configured RPC and tested specific adapters | More allowance/position/wrapper reads, known recursive batches, post-operation lending scenarios, swap routes and two-chain bridge state | Cannot authenticate a protocol, prove arbitrary semantics or guarantee future arrival/solvency. |
 | Additional trusted quote/price/market data | Expected output, liquidity, asset/LP/share valuation and stress assumptions | Data must match asset/network/time; future prices and ordering remain uncertain. |
 | Verified source/deployment or reputation data | Build/code identity, genuine collections/protocols, administrator graphs and broader phishing/address history | A name, non-hit or empty proxy slot is not proof of safety. |
-| Wallet/dApp/relying-party cooperation and user context | Expose permission/UserOperation entries, original hash input, login nonce/session state, intended recipient and purpose | A prompt cannot observe missing requests/stores, and user claims remain unverified. |
+| Wallet/dApp/relying-party cooperation | Expose permission/UserOperation entries, original hash input and login nonce/session state | A prompt cannot observe missing requests or stores. |
 | Off-chain services or investigation | Business identity, exchange internals, fraud conversations and device/key compromise | Needs separate integrations/consent/privacy controls; chain data does not establish all off-chain facts. |
 | Not provable before signing from one snapshot | Explore future price/liquidity, ordering, blacklists/upgrades, relays and hidden effects as scenarios | Scenarios cannot guarantee future events or universal absence of malicious behavior. |
 
@@ -367,11 +368,11 @@ A neutral personal_sign message with a unique nonce can exercise the real wallet
 
 Wallet/webpage → configured backend → configured RPC and enabled intelligence → bounded evidence packet → Meta Responses API → backend report → webpage/Snap.
 
-The configured backend sends necessary evidence to Meta Muse Wonder when enabled. It does not request seed phrases, private keys or generated asset signatures. Message previews and user context can still contain private information; hosted login uses a separate explicit signature.
+The configured backend sends necessary evidence to Meta Muse Wonder when enabled. It does not request seed phrases, private keys or generated asset signatures. Message previews and decoded request fields can still contain private information; hosted login uses a separate explicit signature.
 
 - Meta/RPC keys remain backend-only, never in browser/Snap configuration or AI evidence. Runtime deployment settings are public, nonsecret values.
 - The backend stores the full unsigned request, evidence and outputs in SQLite; hosted mode stores these on the operator's server. Credentials are hashed there. The database is not encrypted and has no automatic retention policy.
-- Model input omits full calldata/history but can contain private message previews and user context. A repair resends the same evidence and bounded prior output. Filtering is not a universal secret detector.
+- Model input omits full calldata/history but can contain private message previews and decoded request fields. A repair resends the same evidence and bounded prior output. Filtering is not a universal secret detector.
 - RPC can see addresses/call data needed for reads and forking. GoPlus can receive normalized public origins, selected addresses and a primary token when enabled. No automatic full-site crawl or complete wallet-history ingestion is configured.
 - Model requests use store:false. This option is not a universal guarantee about provider logs or retention; review the applicable provider/service policy.
 - Snap display prioritizes up to 24 evidence items, six request-parameter lines and six missing-check summaries. Full stored evidence remains in the workbench. A display limit is not evidence that omitted checks passed.

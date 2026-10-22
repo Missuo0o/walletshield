@@ -2,6 +2,9 @@
 
 This v0.4.1 extension adds bounded adapters within the existing **30 analysis profiles**. It does not turn those profiles into complete protocol integrations, and it does not change the policy that only Muse supplies new numeric scores. Read the [current matrix](CURRENT-COVERAGE.md), [中文范围对照](CURRENT-COVERAGE-zh.md), [user manual](USER-MANUAL.md) and [field guide](AI-COVERAGE-GUIDE.md) together with the actual report.
 
+Current checks use the wallet-supplied unsigned request, source origin/network metadata and successfully collected RPC, intelligence and simulation evidence. Muse assesses observable request signals, including supported source/message/request inconsistencies. Chain/provider/execution context means technical observations. Historical reports and acceptance artifacts retain their original recorded data.
+
+
 ## Request and evidence flow
 
 MetaMask must deliver the unsigned transaction/message to the paired Snap. The backend validates it, decodes an exact supported shape, selects applicable collectors and supplies observations and explicit unknowns to Muse. The model does not browse the protocols or run these tools itself. The webpage initiates explicitly selected tests and displays reports; hosted EOA login/pairing remains separate from asset authorization. Manual permission/session/UserOperation/RPC summaries still have no universal automatic Snap hook.

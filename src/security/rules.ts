@@ -81,10 +81,6 @@ export function assess(request:SecurityRequest, collected:Evidence[], source:'rp
     const amount=op.category==='asset_transfer_from'?op.fields.amountOrTokenId:op.fields.amount;
     if(typeof amount==='string'&&/^\d+$/.test(amount)&&BigInt(amount)>BigInt(token.balance))add('transfer_over_balance','warning','Transfer exceeds the observed owner balance','The declared transfer amount exceeds this token balance at the queried block. The operation does not grant new approval or authority over future deposits; state changes and nonstandard token behavior remain unverified.');
   }
-  if(request.context?.withdrawalFee)add('withdrawal_fee','risk','Payment demanded before withdrawal','The user reports a pay-before-withdrawal demand, a fraud indicator needing review rather than a verified accusation.');
-  if(request.context?.guaranteedProfit)add('guaranteed_profit','warning','User reports guaranteed returns','An ordinary transfer or contract call cannot establish promised returns; verify independently.');
-  if(request.context?.requestedBy==='stranger')add('stranger_request','warning','Request prompted by a stranger','Independently verify the address, website and purpose.');
-  add('fraud_context','unknown','Off-chain purpose is unverified','Ordinary tokens and successful transfers can be used in social-engineering scams. User context is an unverified statement, not platform identity or business authenticity.');
   if(!collected.some(c=>c.id==='tool_plan'))checks.push(planRequest(request,op));
   checks.push(...collected);
   const hasRisk=checks.some(c=>c.status==='risk'), incomplete=checks.some(c=>c.status==='unknown');

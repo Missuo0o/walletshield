@@ -15,7 +15,7 @@ const config:SecurityConfig={apiKey:'',model:'test-model',aiEnabled:true,lookups
 const example=(id:string)=>structuredClone(securityExamples.find(e=>e.id===id)!.request);
 const header={origin:'http://127.0.0.1:5173'};
 const facts=()=>demoEvidence();
-function mockOutput(report:ReturnType<typeof assess>){return {...modelDimensions('fraud_context'),score:63,assessment:report.level==='unknown'?'review':report.level,summary:'基于提供证据的测试意见',reasons:[{text:'存在未完成检查',evidence_ids:['fraud_context']}],missing_data:['未完成项'],suggested_action:'核实实际用途',honeypot:'unknown'};}
+function mockOutput(_report:ReturnType<typeof assess>){return {...modelDimensions('operation'),score:63,assessment:'review',summary:'基于提供证据的测试意见',reasons:[{text:'已提取操作参数，仍存在未完成检查',evidence_ids:['operation']}],missing_data:['未完成项'],suggested_action:'核对收款方与请求参数',honeypot:'unknown'};}
 
 test('direct Snap backend permits authenticated opaque-origin preflight and health, while keeping ordinary history private',async()=>{
  const store=createStore(':memory:'),token='a'.repeat(64);
@@ -76,6 +76,8 @@ test('no model key or disabled mode makes no external requests and never supplie
   assert.equal((await scoreWithAI(report,config,noFetch)).status,'not_configured');
   assert.equal((await scoreWithAI(report,{...config,apiKey:'test-secret',aiEnabled:false},noFetch)).status,'disabled');assert.equal(called,false);assert.equal(report.score,null);
   const packet=JSON.stringify(evidencePacket(report));assert.ok(!packet.includes('test-secret'));assert.ok(!packet.includes('fingerprint'));assert.ok(!packet.includes('transaction'));
+  assert.equal(Object.hasOwn(evidencePacket(report),'intent'),false);assert.equal(Object.hasOwn(evidencePacket(report),'userReportedContext'),false);
+  assert.ok(!report.checks.some(check=>check.id==='fraud_context'));
   assert.equal(evidencePacket(report).requestSummary.valueWei,'1000000000000000000');
   report.request.origin='https://user:password@site.example/path?private=secret#fragment';
   const sanitized=evidencePacket(report);assert.equal(sanitized.origin,'https://site.example');assert.ok(!JSON.stringify(sanitized).includes('password'));assert.ok(!JSON.stringify(sanitized).includes('private=secret'));
@@ -104,7 +106,7 @@ test('security API rejects forged evidence, foreign origins and RPC overrides; d
   const store=createStore(':memory:');let aiCalls=0;
   const app=await buildApp(store,{security:{config:async()=>config,collect:async()=>facts(),score:async()=>{aiCalls++;return {status:'not_configured',message:'No key'};}}});
   try{
-    for(const payload of [{...example('native'),score:0},{...example('native'),rpcUrl:'https://evil.example'},{...example('native'),checks:[]}]) assert.equal((await app.inject({method:'POST',url:'/api/security/scan',headers:header,payload})).statusCode,400);
+    for(const payload of [{...example('native'),score:0},{...example('native'),rpcUrl:'https://evil.example'},{...example('native'),checks:[]},{...example('native'),intent:'Private conversation text'},{...example('native'),context:{withdrawalFee:true}}]) assert.equal((await app.inject({method:'POST',url:'/api/security/scan',headers:header,payload})).statusCode,400);
     assert.equal((await app.inject({method:'POST',url:'/api/security/scan',payload:example('native')})).statusCode,403);
     const scan=await app.inject({method:'POST',url:'/api/security/scan',headers:header,payload:example('native')});assert.equal(scan.statusCode,200);assert.equal(scan.json().score,null);assert.equal(scan.json().ai.status,'not_configured');assert.equal(store.securityList().length,1);
     const count=aiCalls;const demo=await app.inject({method:'POST',url:'/api/security/demo/operator',headers:header,payload:{}});assert.equal(demo.json().source,'demo');assert.equal(aiCalls,count);assert.equal(store.securityList().length,2);
@@ -144,7 +146,7 @@ test('a mocked Responses result updates the original check, keeps evidence gaps 
   const app=await buildApp(store,{security:{config:async()=>({...config,apiKey:'mock-key'}),collect:async()=>facts(),score:(report,c)=>scoreWithAI(report,c,fakeModel)}});
   try {
     const response=await app.inject({method:'POST',url:'/api/security/scan',headers:header,payload:example('approve')});
-    assert.equal(response.statusCode,200);const report=response.json();assert.equal(report.ai.status,'completed');assert.equal(report.score,85);assert.equal(report.scoreSource,'ai');assert.equal(report.level,'high');assert.equal(report.complete,false);assert.ok(report.ai.result.missing_data.includes('Off-chain purpose is unverified'));
+    assert.equal(response.statusCode,200);const report=response.json();assert.equal(report.ai.status,'completed');assert.equal(report.score,85);assert.equal(report.scoreSource,'ai');assert.equal(report.level,'high');assert.equal(report.complete,false);assert.ok(report.ai.result.missing_data.includes('Real address reputation is unknown'));assert.ok(!report.checks.some((check:{id:string})=>check.id==='fraud_context'));
     assert.equal(requests,1);assert.equal(store.securityAiCallsToday(),1);assert.equal(store.securityList().length,1);assert.equal(store.securityGet(report.id)?.score,85);
   } finally {await app.close();store.close();}
 });

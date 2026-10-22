@@ -18,7 +18,7 @@ const results:any[]=[];
 try{
  const d=await verifiedLab(),artifacts=await labArtifacts();await prepareLocalFunds(account);await prepareLab(account);
  for(const id of selected){
-  const request=await buildWalletCase(id,account,d,artifacts);request.intent='Fixed local request for automated acceptance. No signing request was sent to a real user wallet.';
+  const request=await buildWalletCase(id,account,d,artifacts);
   const start=Date.now();const response=await fetch(`${url}/api/security/scan`,{method:'POST',headers:{'Content-Type':'application/json',origin:url},body:JSON.stringify(request),signal:AbortSignal.timeout(85000)});assert.equal(response.status,200);
   const report=await response.json() as SecurityReport;
   const accepted=report.ai.status==='completed'&&report.ai.result?.dimensions?.length===6&&(report.ai.result.score===report.score);
