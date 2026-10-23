@@ -6,6 +6,37 @@ import {evidence} from '../src/security/evidence.js';
 import {finitePermitOutput,finitePermitReport,structuredModelOutput} from './fixtures/model.js';
 import {assess} from '../src/security/rules.js';
 import {abstentionFixture} from '../src/evaluation/ai-evaluation.js';
+import {forkProtocolEvidence,type ForkProtocolState} from '../src/security/fork-protocol-state.js';
+
+test('real fork protocol facts bind shares and underlying units separately even when owner subjects are present',()=>{
+ const report=finitePermitReport(),owner='0x2222222222222222222222222222222222222222',vault='0x4444444444444444444444444444444444444444',asset='0x5555555555555555555555555555555555555555';
+ report.operation.category='vault';report.operation.fields.action='deposit';
+ const state:ForkProtocolState={category:'vault',phase:'before',target:vault,asset,subjects:{caller:owner,owner,receiver:owner},snapshot:{chainId:1,blockNumber:'123',blockHash:`0x${'a'.repeat(64)}`},missing:[],values:{totalAssetsRaw:'1000',totalSharesRaw:'800',ownerSharesRaw:'20',receiverSharesRaw:'20',maxOwnerWithdrawRaw:'25',maxOwnerRedeemRaw:'20',shareDecimals:'18',underlyingDecimals:'6',callerUnderlyingRaw:'500',receiverUnderlyingRaw:'500',callerUnderlyingAllowanceToVaultRaw:'100',requestPreviewRaw:'80'}};
+ report.checks.push(...forkProtocolEvidence(state,null));
+ const fact=(field:string)=>modelFactCandidates(report).candidates.find(item=>item.fact.evidence_id==='fork_vault_before'&&item.fact.field===`data.values.${field}`)!.fact;
+ for(const field of ['totalSharesRaw','ownerSharesRaw','receiverSharesRaw','maxOwnerRedeemRaw','shareDecimals','requestPreviewRaw'])assert.deepEqual(fact(field).subject,{role:'asset',value:vault},field);
+ for(const field of ['totalAssetsRaw','maxOwnerWithdrawRaw','underlyingDecimals','callerUnderlyingRaw','receiverUnderlyingRaw','callerUnderlyingAllowanceToVaultRaw'])assert.deepEqual(fact(field).subject,{role:'asset',value:asset},field);
+ for(const action of ['deposit','withdraw','mint','redeem']){
+  report.operation.fields.action=action;
+  assert.deepEqual(fact('requestPreviewRaw').subject,{role:'asset',value:['deposit','withdraw'].includes(action)?vault:asset},`preview${action}`);
+ }
+ report.operation.fields.action='unrecognized';assert.deepEqual(fact('requestPreviewRaw').subject,{role:'evidence',value:'fork_vault_before'});
+ const after:ForkProtocolState={...structuredClone(state),phase:'after',values:{...state.values,totalAssetsRaw:'1100',totalSharesRaw:'880',ownerSharesRaw:'100',callerUnderlyingRaw:'400'}};
+ const changes={...report,checks:forkProtocolEvidence(state,after)};
+ const changeFact=(name:string)=>modelFactCandidates(changes).candidates.find(item=>item.fact.evidence_id==='fork_vault_change'&&item.fact.field===`data.differences.${name}`)!.fact;
+ assert.deepEqual(changeFact('ownerSharesRaw').subject,{role:'asset',value:vault});assert.deepEqual(changeFact('callerUnderlyingRaw').subject,{role:'asset',value:asset});
+ report.checks.find(check=>check.id==='fork_vault_before')!.data!.asset=undefined;
+ assert.deepEqual(fact('callerUnderlyingRaw').subject,{role:'evidence',value:'fork_vault_before'},'An absent underlying address must not be replaced by the wallet owner or the share token');
+});
+
+test('fork lending base values retain their account subject rather than becoming token quantities',()=>{
+ const report=finitePermitReport(),owner='0x2222222222222222222222222222222222222222',asset='0x5555555555555555555555555555555555555555';
+ const state:ForkProtocolState={category:'lending',phase:'after',target:'0x4444444444444444444444444444444444444444',asset,subjects:{caller:owner,owner,receiver:owner},snapshot:{chainId:1,blockNumber:'123'},missing:[],values:{totalCollateralBaseRaw:'100',totalDebtBaseRaw:'50',availableBorrowsBaseRaw:'20',currentLiquidationThresholdRaw:'8000',ltvRaw:'7500',healthFactor1e18:'1600000000000000000',callerUnderlyingRaw:'500'}};
+ report.checks.push(...forkProtocolEvidence(null,state));
+ const facts=modelFactCandidates(report).candidates.filter(item=>item.fact.evidence_id==='fork_lending_after');
+ for(const name of ['totalCollateralBaseRaw','totalDebtBaseRaw','healthFactor1e18','currentLiquidationThresholdRaw','ltvRaw'])assert.deepEqual(facts.find(item=>item.fact.field===`data.values.${name}`)!.fact.subject,{role:'account',value:owner},name);
+ assert.deepEqual(facts.find(item=>item.fact.field==='data.values.callerUnderlyingRaw')!.fact.subject,{role:'asset',value:asset});
+});
 
 test('structured observations bind subject, field, scalar value, chain, block, hash, source, time and scope exactly',()=>{
  const report=finitePermitReport(),value=structuredModelOutput(finitePermitOutput(27),report);
@@ -33,6 +64,18 @@ test('fact citations must be selected, unique, tied to the same evidence and sem
  const ungrounded=structuredClone(value);ungrounded.reasons[0].fact_ids=[];assert.throws(()=>validateAI(ungrounded,report,'fixture'),/Structured reason lacks observation/);
 });
 
+test('a current reason about an unknown observation needs its exact status fact while historical unstructured reasons remain readable',()=>{
+ const report=finitePermitReport(),legacy=finitePermitOutput(27),structured=structuredModelOutput(legacy,report);
+ const value={...structured,reasons:structured.reasons.map(reason=>({...reason,fact_ids:[...reason.fact_ids]}))};
+ const missing=modelFactCandidates(report).candidates.find(item=>item.fact.evidence_id==='address_reputation'&&item.fact.field==='status')!.fact;
+ value.reasons.push({text:'Address reputation was not observed, so spender identity remains unverified.',evidence_ids:['address_reputation'],fact_ids:[]});
+ assert.throws(()=>validateAI(value,report,'fixture',{requireStructuredFacts:true}),/Structured reason lacks observation/);
+ value.facts.push(missing);value.reasons.at(-1)!.fact_ids=[missing.id];
+ assert.equal(validateAI(value,report,'fixture',{requireStructuredFacts:true}).score,27);
+ legacy.reasons.push({text:'Historical missing observation explanation.',evidence_ids:['address_reputation']});
+ assert.equal(validateAI(legacy,report,'historical').score,27);
+});
+
 test('typed candidates exclude personal messages, metadata injections, signatures and raw calldata',()=>{
  const report=finitePermitReport(),secret='SYNTHETIC_SECRET_DO_NOT_TRANSMIT';report.operation.fields.preview=secret;report.operation.fields.statement=secret;
  report.checks.find(check=>check.id==='token_identity')!.data={...report.checks.find(check=>check.id==='token_identity')!.data,symbol:secret,name:secret,signature:secret,calldata:secret,sourceCode:secret};
@@ -46,7 +89,7 @@ test('candidate extraction is bounded and its omitted inventory is explicit rath
  const packet=modelFactCandidates(report);assert.equal(packet.candidates.length,FACT_LIMITS.candidates);assert.ok(packet.scope.omitted>0);assert.equal(packet.scope.full_report,false);
 });
 
-test('new reference, order-item and fork-state observations keep their actual limited units and provenance',()=>{
+test('retired deployment and price records have no admissible dimensions; source, order and fork facts retain provenance',()=>{
  const report=finitePermitReport(),address=report.operation.token!,snapshot={chainId:1,blockNumber:'123',blockHash:`0x${'a'.repeat(64)}`};
  report.checks.push(
   evidence('registry_deployment_0','pass','Maintained binding','Not official safety','rpc',{...snapshot,address,matched:true,protocol:'fixture',safetyCertified:false}),
@@ -56,8 +99,8 @@ test('new reference, order-item and fork-state observations keep their actual li
   evidence('fork_vault_after','pass','Fork state','Not upstream execution','isolated-fork',{...snapshot,target:address,asset:'0x3333333333333333333333333333333333333333',values:{ownerSharesRaw:'123',callerUnderlyingRaw:'456',shareDecimals:'18',underlyingDecimals:'6'},simulationOnly:true})
  );
  const candidates=modelFactCandidates(report).candidates;
- assert.ok(candidates.find(item=>item.fact.evidence_id==='registry_deployment_0'&&item.fact.field==='data.matched')!.admissible_dimensions.includes('identity'));
- assert.ok(candidates.find(item=>item.fact.evidence_id==='price_reference_0'&&item.fact.field==='data.priceRaw')!.admissible_dimensions.includes('exposure'));
+ assert.deepEqual(candidates.find(item=>item.fact.evidence_id==='registry_deployment_0'&&item.fact.field==='data.matched')!.admissible_dimensions,[]);
+ assert.deepEqual(candidates.find(item=>item.fact.evidence_id==='price_reference_0'&&item.fact.field==='data.priceRaw')!.admissible_dimensions,[]);
  const offered=candidates.find(item=>item.fact.field==='data.offer[0].startAmount')!;assert.equal(offered.fact.subject.value,address);assert.equal(offered.fact.value,'100');
  const native=candidates.find(item=>item.fact.field==='data.offer[1].startAmount')!;assert.deepEqual(native.fact.subject,{role:'asset',value:'native'});assert.equal(native.fact.value,'1000000000000000000','Native order units stay raw wei, never a token ID or USD value');
  const shares=candidates.find(item=>item.fact.field==='data.values.ownerSharesRaw')!,underlying=candidates.find(item=>item.fact.field==='data.values.callerUnderlyingRaw')!;

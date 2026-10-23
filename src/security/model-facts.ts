@@ -40,9 +40,30 @@ const fields=new Set((
 ).split(/\s+/));
 const metadataOnly=new Set(['status','standard','declared','interfaceId','interfaceSupported','hasCode','codeHash','identityVerified','cryptographicSignerVerified','signingNetworkVerified','referenceOnly','sourceCodeAudit','fullWalletInventory']);
 function stable(value:unknown):string{return JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);}
-function subjectFor(check:SecurityReport['checks'][number],field:string):ModelFact['subject']{
+function subjectFor(check:SecurityReport['checks'][number],field:string,report:SecurityReport):ModelFact['subject']{
  const data=check.data??{};
  const subjects=data.subjects as Record<string,unknown>|undefined;
+ // A wallet owner is not the unit of a vault share or underlying-token
+ // quantity. Real fork collectors include subjects.owner, unlike early minimal
+ // fixtures; choosing that owner first silently collapsed distinct assets.
+ if(/^fork_(?:vault|lending)_(?:before|after|change)$/.test(check.id)&&/^data\.(?:values|differences)\./.test(field)){
+  const name=field.split('.').at(-1)!;
+  const shares=/^(?:totalSharesRaw|ownerSharesRaw|receiverSharesRaw|maxOwnerRedeemRaw|shareDecimals)$/.test(name);
+  const underlying=/^(?:totalAssetsRaw|maxOwnerWithdrawRaw|(?:caller|receiver)Underlying(?:Raw|AllowanceTo(?:Vault|Pool)Raw)|underlyingDecimals)$/.test(name);
+  // ERC-4626 previewDeposit/previewWithdraw return shares, whereas previewMint/
+  // previewRedeem return assets. Preserve that distinction instead of treating
+  // every preview as the underlying token just because data.asset is present.
+  const action=String(report.operation.fields.action??'');
+  const previewShares=name==='requestPreviewRaw'&&['deposit','withdraw'].includes(action);
+  const previewAssets=name==='requestPreviewRaw'&&['mint','redeem'].includes(action);
+  if(shares||previewShares)return address(data.target)?{role:'asset',value:data.target.toLowerCase()}:{role:'evidence',value:check.id};
+  if(underlying||previewAssets)return address(data.asset)?{role:'asset',value:data.asset.toLowerCase()}:{role:'evidence',value:check.id};
+  if(name==='requestPreviewRaw')return {role:'evidence',value:check.id};
+  if(/BaseRaw|healthFactor|ltvRaw|currentLiquidationThresholdRaw/.test(name)){
+   const owner=subjects?.owner??data.owner;
+   return address(owner)?{role:'account',value:owner.toLowerCase()}:{role:'evidence',value:check.id};
+  }
+ }
  if(/^data\.(?:values|differences|beforeValues|afterValues)\./.test(field)&&subjects){for(const [key,role] of [['token','token'],['account','account'],['owner','owner']] as const)if(address(subjects[key]))return {role,value:String(subjects[key]).toLowerCase()};}
  const item=/^data\.(offer|consideration)\[(\d+)\]\./.exec(field);if(item&&Array.isArray(data[item[1]])){const entry=(data[item[1]] as Record<string,unknown>[])[Number(item[2])],token=entry?.token;if(Number(entry?.itemType)===0&&typeof token==='string'&&/^0x0{40}$/i.test(token))return {role:'asset',value:'native'};if(address(token))return {role:'token',value:token.toLowerCase()};}
  if(/Shares|Redeem/.test(field)&&address(data.target))return {role:'asset',value:data.target.toLowerCase()};
@@ -57,7 +78,7 @@ export function modelFactCandidates(report:SecurityReport):{version:typeof FACT_
  const add=(check:SecurityReport['checks'][number],field:string,value:unknown,dimensions:AIDimension['dimension'][]=[]):void=>{
   if(!scalar(value))return;
   const data=check.data??{},chain=Number(data.chainId),block=data.blockNumber??data.baseBlock,hash=data.blockHash??data.baseBlockHash;
-  const base:Omit<ModelFact,'id'>={evidence_id:check.id,subject:subjectFor(check,field),field,value,scope:check.status==='unknown'?'unresolved-check':/^rules(?:\/|$)/.test(check.source)||['eip712','request','calldata/batch-v1'].includes(check.source)?'decoded-request':check.source==='isolated-fork'?'isolated-fork':['reference','sourcify'].includes(check.source)?'reference-observation':'reported-observation',provenance:{source:check.source,chain_id:Number.isSafeInteger(chain)&&chain>0?chain:null,block_number:typeof block==='string'&&/^\d+$/.test(block)?block:null,block_hash:typeof hash==='string'&&/^0x[\da-f]{64}$/i.test(hash)?hash.toLowerCase():null,observed_at:check.observedAt}};
+  const base:Omit<ModelFact,'id'>={evidence_id:check.id,subject:subjectFor(check,field,report),field,value,scope:check.status==='unknown'?'unresolved-check':/^rules(?:\/|$)/.test(check.source)||['eip712','request','calldata/batch-v1'].includes(check.source)?'decoded-request':check.source==='isolated-fork'?'isolated-fork':['reference','sourcify'].includes(check.source)?'reference-observation':'reported-observation',provenance:{source:check.source,chain_id:Number.isSafeInteger(chain)&&chain>0?chain:null,block_number:typeof block==='string'&&/^\d+$/.test(block)?block:null,block_hash:typeof hash==='string'&&/^0x[\da-f]{64}$/i.test(hash)?hash.toLowerCase():null,observed_at:check.observedAt}};
   const fact={id:`fact_${createHash('sha256').update(stable(base)).digest('hex').slice(0,24)}`,...base};
   if(!modelFactSchema.safeParse(fact).success)return;
   if(candidates.length>=FACT_LIMITS.candidates){omitted++;return;}candidates.push({fact,admissible_dimensions:dimensions});

@@ -78,8 +78,8 @@ test('coverage descriptions distinguish automatic wallet hooks from manual reque
  for(const id of ['permit','permit2','message'])assert.equal(coverageForCategory(decodeRequest(example(id)).category).entry,'signature',id);
  for(const id of ['permission','user-operation','network'])assert.equal(coverageForCategory(decodeRequest(example(id)).category).entry,'manual',id);
  assert.equal(coverageForCategory('unimplemented-future-protocol').id,'unknown');
- const v3=coverageForCategory('swap_v3');assert.match(v3.scope,/single\/path exact-input\/exact-output/);assert.match(v3.data.join(' '),/observed input debit/);assert.match(v3.data.join(' '),/Native funding only.*maintained/);assert.match(v3.uncertain,/Opaque aggregators/);assert.match(v3.uncertain,/future sellability|future.*liquidity/);
- const bridge=coverageForCategory('bridge');assert.match(bridge.data.join(' '),/two server RPC snapshots/);assert.match(bridge.uncertain,/proof validity/);assert.match(bridge.uncertain,/active cross-domain sender/);assert.match(bridge.uncertain,/arrival/);
+ const v3=coverageForCategory('swap_v3');assert.match(v3.scope,/single\/path exact-input\/exact-output/);assert.match(v3.data.join(' '),/observed input debit/);assert.match(v3.data.join(' '),/Token-funded.*native funding.*unsupported/);assert.match(v3.uncertain,/Opaque aggregators/);assert.match(v3.uncertain,/future sellability|future.*liquidity/);
+ const bridge=coverageForCategory('bridge');assert.match(bridge.data.join(' '),/source-chain.*no maintained two-chain endpoint/);assert.match(bridge.uncertain,/proof validity/);assert.match(bridge.uncertain,/active cross-domain sender/);assert.match(bridge.uncertain,/arrival/);
 });
 test('wallet display bounds facts and preserves exact raw units and total missing count without showing raw calldata',()=>{
  const lines=operationLines({fields:{recipient:from,amount:'900719925474099300000',data:'DO_NOT_SHOW',messagePreview:'DO_NOT_SHOW',tokens:Array(10).fill(to),deadline:'2',method:'long'.repeat(100),action:'deposit',owner:to}});

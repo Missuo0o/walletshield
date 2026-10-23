@@ -68,7 +68,7 @@ test('failed V3 reverse selling is a warning, zero acquired balance is adverse, 
   const protocol=await protocolEvidence(unsupported,decodeRequest(unsupported),config);
   const packet=evidencePacket(assess(unsupported,[...checks,...protocol]));
   assert.equal(packet.checks.find(check=>check.id==='round_trip')?.status,'unknown');
-  assert.match(packet.checks.find(check=>check.id==='protocol_semantics')!.detail,/Unverified native funding or recipient aliases, router-balance input/);
+  assert.match(packet.checks.find(check=>check.id==='protocol_semantics')!.detail,/Native funding or router-specific recipient aliases, router-balance input/);
  }
 });
 

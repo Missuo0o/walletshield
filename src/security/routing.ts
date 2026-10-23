@@ -19,14 +19,12 @@ export function planRequest(request:SecurityRequest,op:Operation,config?:Securit
   add('position_context',op.category==='liquidity_v3','Read selected position ownership/liquidity interfaces and token units at a pinned block; no valuation or pool authentication');
   add('protocol_limits',['swap_v3','liquidity','liquidity_v3','withdrawal','staking','bridge','claim','mint_burn','control_change','account_control','account_execution','batch'].includes(op.category),'Retain unverified route, lockup, destination and internal-authority semantics');
   add('wallet_rpc_summary',['permission','user_operation','wallet_rpc'].includes(request.kind),'Extract allowlisted permission, session, smart-account and RPC fields without execution');
-  add('maintained_deployment_binding',true,'Compare configured chain/address/runtime and optional proxy implementation hashes; not a safety whitelist',config?!!config.trustedDeployments?.length:null);
-  add('reference_price',true,'Read configured positive description-matched bounded-age USD reference feeds; no executable quote or guaranteed dollar loss',config?!!config.priceFeeds?.length:null);
   add('source_verification',true,'Optional bounded cached source-match lookup on a fixed public service; not an audit or current-code comparison',config?!!config.sourceVerification:null);
-  add('canonical_order',op.category==='order_signature','Decode bounded signed Seaport items; observed counters/fill/cancel and zero-conduit approvals require separately verified semantics');
+  add('canonical_order',op.category==='order_signature','Decode bounded committed Seaport-shaped items and time conditions; verifier identity, authoritative counter/status and spending targets are not authenticated');
   add('permit2_witness',typeof op.fields.witnessType==='string','Retain committed witness type/hash, caps and nonce; custom consumer enforcement remains unverified');
-  add('entrypoint_state',request.kind==='user_operation','Read supported version/code-bound EntryPoint keyed nonce, payer deposit, declared prefund and fee relations');
+  add('user_operation_context',request.kind==='user_operation','Inspect declared UserOperation fields, code and fee relations; no authenticated EntryPoint nonce/deposit or full account execution');
   add('delegation_authorizations',request.kind==='transaction'&&!!request.transaction.authorizationList?.length,'Recover EIP-7702 tuple authority, compare chain/nonce/code and conditional sequential eligibility; full set-code execution remains separate');
-  add('bridge_route',op.category==='bridge','Compare a maintained reviewed OP bridge/messenger route across two independently verified chain snapshots; no arrival or relay proof',config?!!config.bridgeRoutes?.length:null);
+  add('bridge_scope',op.category==='bridge','Retain cross-chain execution limits; no endpoint, route or destination verification');
   add('external_intelligence',true,'Address, website, token and honeypot intelligence',config?config.lookups:null);
   add('ai_assessment',true,'Muse assesses obtained evidence and gaps; failures never fabricate a score',config?!!config.apiKey&&config.aiEnabled:null);
   return evidence('tool_plan','pass','Evidence collection plan','This is the tool plan, not successful observations. Check each result and failure. Unrecognized requests still enter analysis and are not safe by default.','router/0.4.0',{category:op.category,tools});

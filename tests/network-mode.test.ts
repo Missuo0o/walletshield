@@ -20,7 +20,8 @@ test('public network API rejects foreign origins, unconfigured networks, forged 
  const store=createStore(':memory:');let probes=0;
  const app=await buildApp(store,{security:{config:async()=>config},networkProbe:async(url,id,who)=>{probes++;assert.equal(url,config.rpc[11155111]);assert.equal(id,11155111);assert.equal(who,address);return snapshot;}});
  try{
-  const list=await app.inject({url:'/api/networks'});assert.equal(list.statusCode,200);assert.ok(!list.body.includes('do-not-expose'));
+  const list=await app.inject({url:'/api/networks'});assert.equal(list.statusCode,200);assert.ok(!list.body.includes('do-not-expose'));assert.equal(Object.hasOwn(list.json(),'evidenceConfiguration'),false);
+  const status=await app.inject({url:'/api/security/status'});assert.equal(status.statusCode,200);assert.equal(Object.hasOwn(status.json(),'registry'),false);
   for(const [headers,payload,code] of [[{origin:'https://evil.example'},{chainId:11155111},403],[{}, {chainId:11155111},403],[{origin},{chainId:31337},400],[{origin},{chainId:8453},409],[{origin},{chainId:11155111,rpcUrl:'https://evil.example'},400],[{origin},{chainId:11155111,address:'0x1234'},400]] as const){assert.equal((await app.inject({method:'POST',url:'/api/networks/check',headers,payload})).statusCode,code);}
   for(let i=0;i<2;i++){const result=await app.inject({method:'POST',url:'/api/networks/check',headers:{origin},payload:{chainId:11155111,address}});assert.equal(result.statusCode,200);assert.equal(result.json().cached,i===1);assert.ok(!result.body.includes('do-not-expose'));}
   assert.equal(probes,1);assert.equal(store.securityAiCallsToday(),0);assert.equal(store.securityList().length,0);

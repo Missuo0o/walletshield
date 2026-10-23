@@ -4,14 +4,14 @@ import {spawn} from 'node:child_process';
 import {createServer} from 'node:net';
 import {readFile} from 'node:fs/promises';
 import solc from 'solc';
-import {decodeFunctionResult,encodeDeployData,encodeFunctionData,erc20Abi,keccak256,parseAbi,type Abi,type Address,type Hex} from 'viem';
+import {decodeFunctionResult,encodeDeployData,encodeFunctionData,erc20Abi,parseAbi,type Abi,type Address,type Hex} from 'viem';
 import {simulateRequest} from '../src/security/simulation.js';
 import {decodeRequest} from '../src/security/decode.js';
 import {V3_EXPERIMENT_ABI,encodePackedV3Path} from '../src/security/swap-experiments.js';
 import type {SecurityConfig} from '../src/security/config.js';
 import type {SecurityRequest} from '../src/security/types.js';
 
-test('real disposable forks execute eight V3 forms, backed native wrapping, and selected vault/lending state changes without upstream writes', {timeout:90000},async()=>{
+test('real disposable forks execute eight token-funded V3 forms, generic native simulation, and selected vault/lending state changes without upstream writes', {timeout:90000},async()=>{
  const files=['SimulationFixtures.sol','V3SimulationFixtures.sol','ForkProtocolFixtures.sol'];
  const sources=Object.fromEntries(await Promise.all(files.map(async file=>[file,{content:await readFile(`contracts/${file}`,'utf8')}])));
  const compiled=JSON.parse(solc.compile(JSON.stringify({language:'Solidity',sources,settings:{evmVersion:'cancun',optimizer:{enabled:true,runs:200},outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}})));
@@ -20,18 +20,18 @@ test('real disposable forks execute eight V3 forms, backed native wrapping, and 
  const endpoint=`http://127.0.0.1:${port}`,child=spawn(process.execPath,['node_modules/@foundry-rs/anvil/bin.mjs','--host','127.0.0.1','--port',String(port),'--chain-id','31337','--silent'],{stdio:'ignore'});
  let serial=0;
  const rpc=async(method:string,params:unknown[]=[])=>{const id=++serial,response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id,method,params}),signal:AbortSignal.timeout(2500)}),body=await response.json();assert.equal(body.id,id);if(body.error)throw Error(`Disposable fixture RPC failed (${body.error.code})`);return body.result;};
+ const mined=async(hash:string)=>{const deadline=Date.now()+5000;while(Date.now()<deadline){const receipt=await rpc('eth_getTransactionReceipt',[hash]);if(receipt)return receipt;await new Promise(resolve=>setTimeout(resolve,25));}throw Error('Disposable fixture transaction did not mine before its deadline');};
  try{
   let ready=false;for(let i=0;i<60;i++){try{assert.equal(await rpc('eth_chainId'),'0x7a69');ready=true;break;}catch{await new Promise(resolve=>setTimeout(resolve,80));}}assert.ok(ready);assert.match(String(await rpc('web3_clientVersion')),/anvil/i);
   const [owner]=await rpc('eth_accounts') as Address[];
-  const deploy=async(file:string,name:string,args:unknown[]=[])=>{const artifact=compiled.contracts[file][name],hash=await rpc('eth_sendTransaction',[{from:owner,data:encodeDeployData({abi:artifact.abi,bytecode:`0x${artifact.evm.bytecode.object}`,args}),gas:'0x989680'}]),receipt=await rpc('eth_getTransactionReceipt',[hash]);assert.equal(receipt.status,'0x1');return receipt.contractAddress as Address;};
+  const deploy=async(file:string,name:string,args:unknown[]=[])=>{const artifact=compiled.contracts[file][name],hash=await rpc('eth_sendTransaction',[{from:owner,data:encodeDeployData({abi:artifact.abi,bytecode:`0x${artifact.evm.bytecode.object}`,args}),gas:'0x989680'}]),receipt=await mined(hash);assert.equal(receipt.status,'0x1');return receipt.contractAddress as Address;};
   const input=await deploy('SimulationFixtures.sol','FixtureToken',[owner]),middle=await deploy('SimulationFixtures.sol','FixtureToken',[owner]),output=await deploy('SimulationFixtures.sol','FixtureToken',[owner]),router=await deploy('V3SimulationFixtures.sol','FixtureV3Router'),wrapper=await deploy('V3SimulationFixtures.sol','FixtureWrappedNative');
   const tokenAbi=parseAbi(['function approve(address,uint256)','function setRouter(address,bool)','function setWrapper(address)','function deposit() payable','function transfer(address,uint256)','function mint(address,uint256)']);
-  const write=async(to:Address,functionName:string,args:unknown[],value='0x0')=>{const hash=await rpc('eth_sendTransaction',[{from:owner,to,data:encodeFunctionData({abi:tokenAbi as Abi,functionName,args}),value,gas:'0x989680'}]);assert.equal((await rpc('eth_getTransactionReceipt',[hash])).status,'0x1');};
+  const write=async(to:Address,functionName:string,args:unknown[],value='0x0')=>{const hash=await rpc('eth_sendTransaction',[{from:owner,to,data:encodeFunctionData({abi:tokenAbi as Abi,functionName,args}),value,gas:'0x989680'}]);assert.equal((await mined(hash)).status,'0x1');};
   const balance=async(token:Address)=>decodeFunctionResult({abi:erc20Abi,functionName:'balanceOf',data:await rpc('eth_call',[{to:token,data:encodeFunctionData({abi:erc20Abi,functionName:'balanceOf',args:[owner]})},'latest']) as Hex});
   await write(input,'approve',[router,1000000n]);await write(output,'setRouter',[router,false]);
   await write(router,'setWrapper',[wrapper]);await write(wrapper,'deposit',[],'0x3f9');await write(wrapper,'transfer',[router,1000n]);
   const config:SecurityConfig={apiKey:'',model:'never-called',aiEnabled:false,lookups:false,goPlusToken:'',forkEnabled:true,rpc:{31337:endpoint}};
-  const boundConfig:SecurityConfig={...config,trustedDeployments:[{chainId:31337,address:router,protocol:'uniswap-v3',version:'swap-router-02',role:'router',codeHash:keccak256(await rpc('eth_getCode',[router,'latest'])),sourceUrl:'https://fixture.example/router'},{chainId:31337,address:wrapper,protocol:'wrapped-native',version:'fixture',role:'wrapped_native',codeHash:keccak256(await rpc('eth_getCode',[wrapper,'latest'])),sourceUrl:'https://fixture.example/wrapper'}]};
   const sourceState=async()=>({header:await rpc('eth_getBlockByNumber',['latest',false]),nonce:await rpc('eth_getTransactionCount',[owner,'pending']),native:await rpc('eth_getBalance',[owner,'latest']),balances:await Promise.all([balance(input),balance(output),balance(wrapper)])});
   const assertUnchanged=async(before:Awaited<ReturnType<typeof sourceState>>)=>{const after=await sourceState();assert.equal(after.header.number,before.header.number);assert.equal(after.header.hash,before.header.hash);assert.equal(after.nonce,before.nonce);assert.equal(after.native,before.native);assert.deepEqual(after.balances,before.balances);};
   const requestFor=async(method:string,deadline:boolean,native=false):Promise<SecurityRequest>=>{
@@ -52,11 +52,9 @@ test('real disposable forks execute eight V3 forms, backed native wrapping, and 
    }
   }
   await write(output,'setRouter',[router,false]);
-  for(const method of ['exactInputSingle','exactOutputSingle','exactInput','exactOutput'])for(const deadline of [true,false]){
-   const before=await sourceState(),request=await requestFor(method,deadline,true),checks=await simulateRequest(request,decodeRequest(request),boundConfig),roundTrip=checks.find(check=>check.id==='round_trip');
-   assert.equal(checks.find(check=>check.id==='simulation_execution')?.status,'pass',JSON.stringify(checks));assert.equal(roundTrip?.data?.inputUnit,'native_wei',JSON.stringify(checks));const actual=method.startsWith('exactOutput')?'80':'100';assert.equal(roundTrip?.data?.returned,actual,JSON.stringify(checks));assert.equal(roundTrip?.data?.observedInputDebitRaw,actual);assert.equal(roundTrip?.data?.wrappedReceivedRaw,actual);assert.equal(roundTrip?.data?.roundTripReturnPercent,100);assert.equal((roundTrip?.data?.fundingBinding as any)?.officialIdentityEstablished,false);await assertUnchanged(before);
-  }
-  {const before=await sourceState(),request=await requestFor('exactInputSingle',false,true),checks=await simulateRequest(request,decodeRequest(request),config);assert.equal(checks.find(check=>check.id==='round_trip')?.status,'unknown');assert.equal(checks.find(check=>check.id==='round_trip')?.data?.returned,undefined);await assertUnchanged(before);}
+  // Original native-funded requests can still be executed generically on the
+  // child fork. No wrapped-native identity or reverse-sale semantics are assumed.
+  {const before=await sourceState(),request=await requestFor('exactInputSingle',false,true),checks=await simulateRequest(request,decodeRequest(request),config),roundTrip=checks.find(check=>check.id==='round_trip');assert.equal(checks.find(check=>check.id==='simulation_execution')?.status,'pass',JSON.stringify(checks));assert.equal(roundTrip?.status,'unknown');assert.equal(roundTrip?.data?.returned,undefined);assert.equal(roundTrip?.data?.fundingBinding,undefined);await assertUnchanged(before);}
   const vault=await deploy('ForkProtocolFixtures.sol','StateFixtureVault',[input]),lending=await deploy('ForkProtocolFixtures.sol','StateFixtureLending');await write(input,'approve',[vault,1000n]);await write(input,'mint',[lending,1000n]);
   const [recipient]=((await rpc('eth_accounts')) as Address[]).slice(1);
   for(const kind of ['vault','lending'] as const){

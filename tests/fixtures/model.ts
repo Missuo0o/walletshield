@@ -8,11 +8,17 @@ export function modelDimensions(id='permission_scope'){return {evidence_confiden
 
 /** Transport fixtures select exact candidate observations; tests of fact
  * validation deliberately construct and mutate their own structured outputs. */
-export function structuredModelOutput<T extends {reasons:{evidence_ids:string[]}[];dimensions:{dimension:string;evidence_ids:string[]}[]}>(value:T,report:SecurityReport){
+type FixtureCitations={reasons:{evidence_ids:string[]}[];dimensions:{dimension:string;evidence_ids:string[]}[]};
+type StructuredFixture<T extends FixtureCitations>=Omit<T,'reasons'|'dimensions'>&{
+ fact_schema_version:typeof FACT_SCHEMA_VERSION;facts:ModelFact[];
+ reasons:(T['reasons'][number]&{fact_ids:string[]})[];
+ dimensions:(T['dimensions'][number]&{fact_ids:string[]})[];
+};
+export function structuredModelOutput<T extends FixtureCitations>(value:T,report:SecurityReport):StructuredFixture<T>{
  const candidates=modelFactCandidates(report).candidates,selected=new Map<string,ModelFact>();
  const reasons=value.reasons.map(reason=>{const candidate=candidates.find(item=>reason.evidence_ids.includes(item.fact.evidence_id)&&item.fact.field!=='status')??candidates.find(item=>reason.evidence_ids.includes(item.fact.evidence_id));if(candidate)selected.set(candidate.fact.id,candidate.fact);return {...reason,fact_ids:candidate?[candidate.fact.id]:[]};});
  const dimensions=value.dimensions.map(dimension=>{const candidate=candidates.find(item=>dimension.evidence_ids.includes(item.fact.evidence_id)&&item.admissible_dimensions.includes(dimension.dimension as any));if(candidate)selected.set(candidate.fact.id,candidate.fact);return {...dimension,fact_ids:candidate?[candidate.fact.id]:[]};});
- return {...value,fact_schema_version:FACT_SCHEMA_VERSION,facts:[...selected.values()],reasons,dimensions};
+ return {...value,fact_schema_version:FACT_SCHEMA_VERSION,facts:[...selected.values()],reasons,dimensions} as StructuredFixture<T>;
 }
 export function structuredFixtureFetcher(report:SecurityReport,fetcher:typeof fetch):typeof fetch{return async(url,init)=>{
  const response=await fetcher(url,init);if(!response.ok)return response;

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {MODEL_RESPONSE_LIMITS,scoreWithAI} from '../src/security/ai.js';
+import {MODEL_REQUEST_LIMITS,MODEL_RESPONSE_LIMITS,scoreWithAI} from '../src/security/ai.js';
+import {evidence} from '../src/security/evidence.js';
 import type {SecurityConfig} from '../src/security/config.js';
 import {finitePermitOutput,finitePermitReport,structuredModelOutput} from './fixtures/model.js';
 const config:SecurityConfig={apiKey:'synthetic-test-key',model:'muse-wonder-1.0',aiEnabled:true,lookups:false,goPlusToken:'',rpc:{}};
@@ -11,6 +12,15 @@ function streamed(bytes:Uint8Array,status=200,chunk=1024){
  Object.defineProperty(response,'text',{value:()=>{throw Error('Whole-body text buffering must not be used');}});
  return {response,state:()=>({offset,cancelled})};
 }
+
+test('paid evidence input is byte-bounded before fetch and never silently truncated to retain a score',async()=>{
+ for(const payload of ['x'.repeat(MODEL_REQUEST_LIMITS.evidenceBytes),'界'.repeat(Math.ceil(MODEL_REQUEST_LIMITS.evidenceBytes/3))]){
+  const report=finitePermitReport();report.checks.push(evidence('bounded_input_test','unknown','Oversized synthetic observation','No network was used.','coverage',{diagnostic:payload}));
+  const before=JSON.stringify(report);let calls=0,reservations=0;
+  const result=await scoreWithAI(report,config,async()=>{calls++;throw Error('Oversized data must not be transmitted');},()=>{reservations++;return true;});
+  assert.equal(result.status,'failed');assert.equal(result.result,undefined);assert.match(result.message,/input-size limit/);assert.match(result.message,/without truncation/);assert.equal(calls,0);assert.equal(reservations,0);assert.equal(JSON.stringify(report),before);
+ }
+});
 
 test('successful Muse JSON is decoded across split UTF-8 bytes without Response.text buffering',async()=>{
  const report=finitePermitReport(),expected=finitePermitOutput(31),bytes=new TextEncoder().encode(envelope(structuredModelOutput(expected,report)));

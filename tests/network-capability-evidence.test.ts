@@ -19,12 +19,12 @@ test('RPC capability probes are fixed read-only observations with independent fa
  const trace=calls.find(r=>r.method==='debug_traceCall');assert.deepEqual(trace.params,[{from:zero,to:zero,data:'0x',gas:'0x5208',value:'0x0'},'0x100',{tracer:'callTracer',timeout:'1s',reexec:0}]);assert.ok(calls.every(r=>!/^eth_send|^anvil_|^evm_/.test(r.method)));
  await assert.rejects(()=>probeNetwork('https://server-rpc.invalid',1,undefined,async()=>new Response('x'.repeat(350001))),/Response too large/);
 });
-test('counterpart chain identity requires the exact maintained route collector snapshot, not declared network claims',()=>{
+test('retired bridge route metadata cannot authenticate another chain snapshot',()=>{
  const report=assess({kind:'transaction',chainId:1,transaction:{from:account,to:bridge,data:'0x'}},[]);report.operation={category:'bridge',label:'Fixture',decoded:true,fields:{},targets:[]};
  const source={chainId:1,blockNumber:'10',blockHash:hash,blockTimestampSeconds:String(Math.floor(Date.now()/1000))},destination={...source,chainId:10,blockNumber:'20'};
  const check=evidence('bridge_destination_bridge','pass','Fixture','Fixture','rpc',destination);
  report.checks=[check];assert.deepEqual(evidenceQuality(report).blockFreshness?.unverifiedChainCheckIds,[check.id]);
- report.checks.push(evidence('bridge_route','pass','Fixture','Fixture','registry',{adapter:'op-standard-bridge-v1',sourceChainId:1,destinationChainId:10,sourceBridge:bridge,destinationBridge:other,sourceSnapshot:source,destinationSnapshot:destination}));assert.deepEqual(evidenceQuality(report).blockFreshness?.unverifiedChainCheckIds,[]);
+ report.checks.push(evidence('bridge_route','pass','Fixture','Fixture','registry',{adapter:'op-standard-bridge-v1',sourceChainId:1,destinationChainId:10,sourceBridge:bridge,destinationBridge:other,sourceSnapshot:source,destinationSnapshot:destination}));assert.deepEqual(evidenceQuality(report).blockFreshness?.unverifiedChainCheckIds,[check.id]);
  check.data={...destination,blockHash:'0x'+'cd'.repeat(32)};assert.deepEqual(evidenceQuality(report).blockFreshness?.unverifiedChainCheckIds,[check.id]);check.data=destination;check.id='arbitrary_counterpart';assert.deepEqual(evidenceQuality(report).blockFreshness?.unverifiedChainCheckIds,[check.id]);
  check.id='bridge_destination_bridge';report.checks[1].source='request';assert.deepEqual(evidenceQuality(report).blockFreshness?.unverifiedChainCheckIds,[check.id]);
 });

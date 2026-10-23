@@ -109,3 +109,25 @@ test('Snap test-session correlation is local-only, expires, and is forwarded sep
   state.testSessionExpiresAt=0;await invoke();assert.equal(headers['X-WalletShield-Test-Session'],undefined);
  }finally{globalThis.fetch=original;(globalThis as any).snap=previous;}
 });
+
+test('chain-scoped contract-wallet pairing is verified, retained and fails closed on another or unobservable network',async()=>{
+ const {onRpcRequest,onSignature}=await import('../snap/src/index.js');const oldSnap=(globalThis as any).snap,oldEthereum=(globalThis as any).ethereum,original=globalThis.fetch;
+ let state:any=null,providerChain:string|undefined='0x7a69',scans=0,posted:any;
+ (globalThis as any).snap={request:async(value:any)=>{if(value.params.operation==='get')return state;state=value.params.newState;}};
+ (globalThis as any).ethereum={request:async()=>{if(!providerChain)throw Error('Provider unavailable');return providerChain;}};
+ const result={...evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'}),id:'bound-check'};
+ globalThis.fetch=async(url,init)=>{if(String(url).endsWith('/pair/status'))return new Response(JSON.stringify({paired:true,address:scenarios[0].input.transaction.from,chainId:31337,expiresAt:null}));scans++;posted=JSON.parse(String(init?.body));return new Response(JSON.stringify(result));};
+ try{
+  const configure={jsonrpc:'2.0',id:1,method:'walletshield_configure',params:{token:'a'.repeat(64)}};
+  const paired:any=await onRpcRequest({origin:'http://127.0.0.1:5173',request:configure} as any);assert.equal(paired.chainId,31337);assert.equal(state.chainId,31337);
+  await onRpcRequest({origin:'http://127.0.0.1:5173',request:{...configure,method:'walletshield_test_session',params:{id:'12345678-abcd-abcd-abcd-123456789012'}}} as any);assert.equal(state.chainId,31337,'A test session must not remove the contract-identity network binding');
+  await invoke();assert.equal(scans,1);assert.equal(posted.chainId,31337);
+  const signature={signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign' as const,data:'hello'}};
+  await onSignature(signature);assert.equal(scans,2);assert.equal(posted.chainId,31337);assert.equal(posted.signature.providerContext.chainId,31337);
+  const wrongTransaction=JSON.stringify(await invoke('eip155:1'));assert.ok(wrongTransaction.includes('Reconnect on this network'));assert.ok(wrongTransaction.includes('No risk score was generated'));assert.equal(scans,2);
+  providerChain='0x1';assert.ok(JSON.stringify(await onSignature(signature)).includes('Reconnect on this network'));assert.equal(scans,2);
+  await assert.rejects(()=>onRpcRequest({origin:'http://127.0.0.1:5173',request:{...configure,method:'walletshield_status',params:{}}} as any),/contract-wallet pairing/);
+  await assert.rejects(()=>onRpcRequest({origin:'http://127.0.0.1:5173',request:configure} as any),/contract-wallet pairing/);assert.equal(state.chainId,31337);
+  providerChain=undefined;assert.ok(JSON.stringify(await onSignature(signature)).includes('Reconnect on this network'));assert.equal(scans,2);
+ }finally{globalThis.fetch=original;(globalThis as any).snap=oldSnap;(globalThis as any).ethereum=oldEthereum;}
+});

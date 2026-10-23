@@ -21,3 +21,7 @@ snap/dist/
 *.key
 *.p12
 *.pfx
+
+# Private audit runs and presentation rendering intermediates.
+.audit-build/
+.presentation-build/

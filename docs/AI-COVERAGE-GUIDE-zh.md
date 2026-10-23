@@ -13,11 +13,11 @@
 
 当前 Muse 回复使用 `walletshield-facts-v1`：精确主体/字段/值/来源/链/区块/时间/范围，并在理由和维度中引用 `fact_ids`；历史回复继续可读。后端验证观察复制和相关性，不证明每个外部响应或自然语言句子真实。数字仍只由 Muse 给出，没有固定权重、下限或兜底。
 
-可选 `.local/registry.json` 配置经运营者审查的部署/代码/实现绑定、参考价格 feed 和已审查 OP 桥路线。`ENABLE_SOURCE_VERIFICATION=1` 独立开启有界 Sourcify 匹配观察；GoPlus 另行选择启用。默认不虚构官方部署或美元锚定；价格是参考，不是可执行报价或确定损失。
+后端部署登记/代码匹配、USD 参考价格源和维护式两链桥接路线核对已移除。已有 `.local/registry.json` 不再读取。基础交易/授权/签名解析、配置的 RPC 状态、部分 V2 路径（含已有原生币路径）、代币出资 V3 与通用分叉模拟、可选 GoPlus 和 Muse 评分保留。`ENABLE_SOURCE_VERIFICATION=1` 仍独立启用有界 Sourcify 源码匹配观察；它不是官方部署登记或代码审计。
 
-新增有界证据包括 Seaport 承诺项目/当前状态、Permit2 witness 外层承诺、版本绑定 UserOperation 状态、EIP-7702 元组密码学/有条件状态、原始分叉交易前后部分权限/金库/借贷状态、扩展 V3 路线与候选池状态。dApp 包装器须主动接入，不是全局钱包拦截；托管 ERC-1271 只验证本次登录，不验证未来资产签名。
+有界证据包括 Seaport 签入承诺、Permit2 witness 外层承诺、UserOperation 参数/代码/费用观察、EIP-7702 元组密码学/有条件状态、原始分叉交易前后部分权限/金库/借贷状态、代币出资的 V3 路线实验和候选池状态。原来依赖登记的 Seaport counter/status/直接授权与 EntryPoint keyed nonce/deposit 检查不再提供。dApp 包装器须主动接入，不是全局钱包拦截；托管 ERC-1271 只验证本次登录，不验证未来资产签名。
 
-Wallet and network 页面显示 registry 数量、源码核对开关及有界只读 RPC 能力观察：固定区块调用、一次历史余额和固定 trace 探测。成功不是完整 archive/trace 保证。registry 与参考价格列表为空时相应增强仍未启用；必须先维护独立审查的网络/地址/代码记录。本页网络切换建议只通过本页显式 SDK 触发。
+Wallet and network 页面提供有界只读 RPC 能力观察：固定区块调用、一次历史余额和固定 trace 探测。成功不是完整 archive/trace 保证。源码核对仍是独立可选后端配置，公网页面不显示其状态。Public networks 的切换按钮通过选定钱包 provider 直接调用 `wallet_switchEthereumChain`，不调用接入 SDK、风险扫描或 Muse，由钱包处理确认。
 
 `npm run evaluate:ai` 默认运行固定哈希的合成校验器检查，不请求模型/RPC，不代表在线 Muse 准确率。付费评估必须显式指定 `--live --confirm-paid`、案例和调用预算，不会自动运行。
 
@@ -162,7 +162,7 @@ DAI allowed 是参考语义推导，不是另一签入数量。ERC-3009 为单�
 
 - **入口：** 支持的钱包交易实际交付时自动进入。
 - **当前范围：** 八种规范 single/path、exact-input/exact-output，支持有界依赖式分叉买卖。
-- **取得后提供的字段/证据：** path/fee/recipient、exact input/output 或 maximum input、价格/最小输出限制、可选 deadline；原买入 gas/费用/nonce；取得输出、实际输入扣减与衍生反向卖出。原生资金须有维护的 router/wrapper 绑定和 WETH9 对应。
+- **取得后提供的字段/证据：** path/fee/recipient、exact input/output 或 maximum input、价格/最小输出限制、可选 deadline；原买入 gas/费用/nonce；取得输出、实际输入扣减与衍生反向卖出。仅对代币出资且由实际 sender 接收的支持路径进行往返实验；原生币出资和路由专用 sender-sentinel 别名不再支持。
 - **仍未知：** 不是官方池、可执行报价、未来可卖或 MEV 防护；不透明聚合器、不支持资金/接收人仍有缺口。
 - **可扩展方向与边界：** 补充可信 quoter、规模/账户/流动性压力情景；不能保证未来排序、价格或管理员行为。
 
@@ -201,8 +201,8 @@ DAI allowed 是参考语义推导，不是另一签入数量。ERC-3009 为单�
 ### 13. 部分跨链发起 / 提款 / 完成候选
 
 - **入口：** 支持的钱包交易实际交付时自动进入。
-- **当前范围：** 部分 OP 结构参数和可选的维护双链路线比较。
-- **取得后提供的字段/证据：** 发起/提款/完成候选、local/remote token、amount/value、recipient、asset sender、gas/extraData 长度；配置双方 RPC 和四个部署绑定后读取审查版本、双向指针、pause 与部分 mintable token counterpart；各自区块/hash/时间。
+- **当前范围：** 部分 OP 结构源链参数和通用源链观察。
+- **取得后提供的字段/证据：** 发起/提款/完成候选、local/remote token、amount/value、recipient、asset sender、gas/extraData 长度；通用合约控制和可选源链分叉效果、源链区块/hash/时间；不再读取维护的两端绑定、双向指针或 counterpart。
 - **仍未知：** 不证明消息/证明有效、active cross-domain sender、结算、储备、custody 或未来到账；不是同步快照。
 - **可扩展方向与边界：** 补充特定版本消息/proof/portal/finality/目标执行证据；未来relay/共识/到账不能保证。
 
@@ -297,10 +297,10 @@ DAI allowed 是参考语义推导，不是另一签入数量。ERC-3009 为单�
 ### 25. 订单 / 挂单 / 其他 EIP-712 消息
 
 - **入口：** 支持的钱包消息实际交付时自动进入。
-- **当前范围：** 规范Seaport OrderComponents承诺和部分状态；其他typed仍部分理解。
-- **取得后提供的字段/证据：** offer/consideration itemType/token/ID或criteria/raw起止数量/recipient；时间/counter/conduit/orderHash/digest；当前counter/填充/取消/时间；维护verifier绑定和零conduit下部分ERC20/ERC721余额授权。
+- **当前范围：** 规范 Seaport OrderComponents 签入承诺；不读取经认证当前订单状态，其他 typed 仍部分理解。
+- **取得后提供的字段/证据：** offer/consideration itemType/token/ID或criteria/raw起止数量/recipient；时间/counter/conduit/orderHash/digest；签入的 counter/时间与零接收人提示；不再读取当前 counter/填充/取消和直接 verifier 资产授权。
 - **仍未知：** criteria证明、非零conduit/controller/channel、任意订单、签名接受、履约/费用/舍入和公平价格未完整覆盖。
-- **可扩展方向与边界：** 增加审查的conduit/criteria/消费方及履约情景；未填满状态不保证未来接受。
+- **可扩展方向与边界：** 增加审查的conduit/criteria/消费方及履约情景；结构正确不保证未来接受。
 
 ### 26. 钱包连接 / 权限 / 会话密钥
 
@@ -313,12 +313,14 @@ DAI allowed 是参考语义推导，不是另一签入数量。ERC-3009 为单�
 ### 27. UserOperation / 智能账户
 
 - **入口：** 需要显式 API 或配合 dApp 集成。
-- **当前范围：** 显式v0.6或拆分v0.7/v0.8与版本绑定EntryPoint状态；不完整执行bundler模拟。
-- **取得后提供的字段/证据：** sender/EntryPoint/factory/paymaster/keyed nonce、selector/字节数、gas/fee；维护版本/代码绑定后读取nonce和payer deposit/声明prefund；代码/base fee独立；不发送raw signature/payload。
+- **当前范围：** 显式 v0.6 或拆分 v0.7/v0.8 参数/代码/费用提取；无经认证 EntryPoint 状态或完整 bundler 模拟。
+- **取得后提供的字段/证据：** sender/EntryPoint/factory/paymaster、声明 nonce、selector/字节数和 gas/fee；代码及 base fee 关系独立观察；不再核对 EntryPoint keyed nonce/deposit/prefund，不发送 raw signature/payload。
 - **仍未知：** bundler/account/aggregator/module/session验证、paymaster授权/代币扣费、factory推导、完整子调用和未来打包未知。
-- **可扩展方向与边界：** 增加支持的account/bundler/paymaster策略模拟，并要求钱包/dApp明确提供入口；当前deposit/代码/nonce不是完整有效性。
+- **可扩展方向与边界：** 增加支持的account/bundler/paymaster策略模拟，并要求钱包/dApp明确提供入口；代码及声明 nonce/费用不证明完整有效性。
 
 ### 28. 添加 / 切换网络 / 显示资产
+
+此类别保留显式 API/主动接入 SDK 的分析能力。Public networks 切换按钮直接向钱包请求切换，不触发该类别的扫描或 Muse 评分。
 
 - **入口：** 当前需要明确提交。
 - **当前范围：** 参数摘要；不连接客户端提供的 RPC 端点。
@@ -372,7 +374,7 @@ nonce/domain 断言检查覆盖摘要、原因、各维度、行动建议和缺�
 | 缺口 | 实际改进 | 为何仍有边界 |
 | --- | --- | --- |
 | 缺少已知协议适配器 | 增加可信 ABI/源码/部署、读取和协议测试 | 相似函数名和欺骗性合约不能确立身份。 |
-| 缺少实时数据 | 配置支持的 RPC/历史、价格、项目登记和情报 | 提供方可能收费、限流、失败、说谎或覆盖不足；模型参数不是实时数据库。 |
+| 缺少实时数据 | 配置支持的 RPC/历史和情报；价格/身份服务需要另行开发接入 | 提供方可能收费、限流、失败、说谎或覆盖不足；模型参数不是实时数据库。 |
 | 钱包未提供请求 | 增加明确的钱包/dApp SDK 或权限/UserOperation 集成 | 改提示词不能观察从未到达 Snap 的数据。 |
 | 跨链到账 / 未来执行 | 读取两条链、桥证明/状态并模拟情景 | 未来共识、中继、排序、停机与状态变化尚未发生。 |
 | 未来黑名单 / 升级 / 流动性撤出 | 检查当前控制权与压力情景 | 单个区块不能预测未来决定和价格。 |
@@ -417,7 +419,7 @@ Muse 新增接收 `evidence_admissibility`（各维度可由哪些实际观察�
 
 GoPlus 仍需显式开启。它从已识别的外层/路径/Permit2/批量字段中最多选八个代币与八个交易对手，不把桥的远端 token 或 delegatecall 目标直接当作本链代币。每轮最多十八个网络请求、四路并发、单请求 1.8 秒、总共 7.5 秒；响应缓存三十秒（最多 256 项），支持链列表缓存一小时。结果带 `fetchedAt`、`cacheHit`、`cacheAgeMs`、`cacheTtlMs`、`providerAsOf:null`、`freshnessVerified:false`；刚取得不表示知道供应商数据的实际日期。缺失标记、闭源/代理导致的遗漏、未查询/截断候选与未命中均是边界，参见 [GoPlus 官方响应说明](https://docs.gopluslabs.io/reference/response-details)。
 
-规范 V3 single/path、exact-input/exact-output 现有有界的依赖式分叉买卖适配器。原买入保留已有执行字段，衍生卖出按实际输入扣减和取得输出计算。原生币出资需要匹配的运营者 router/wrapped-native 记录；可读取候选池/factory 关联、tick/range 和有效流动性，但不认证官方池、市场报价或未来退出。不透明聚合器、不支持的资金/接收人及未来排序仍有缺口。钱包目录仍为 66 个代表性案例；适配器测试与真实钱包/Snap、在线模型验收分开。
+代币出资的规范 V3 single/path、exact-input/exact-output 保留有界依赖式分叉买卖适配器。原买入保留已有执行字段，衍生卖出按实际输入扣减和取得输出计算。移除部署绑定后，V3 原生币出资往返实验及路由专用 sender-sentinel 接收人别名不再支持；适用时仍可进行原交易通用模拟。候选池/factory 关联、tick/range 和有效流动性仅是观察，不认证官方池、报价或未来退出。不透明聚合器、不支持的资金/接收人及未来排序仍有缺口。钱包目录仍为 66 个代表性案例；移除前的历史验收结果不认证当前缩小后的范围。
 
 自动入口仍取决于钱包实际交付。MetaMask 当前仅显示 Critical 严重级别的消息洞察，并在进入 Sign 后展示；交易洞察有独立入口，参见 [官方入口说明](https://docs.metamask.io/snaps/reference/entry-points/)。权限、会话、UserOperation 等仍需显式 API 或配合的 dApp SDK 接入，不安装全局钱包拦截。托管登录支持 EOA 恢复及支持范围内已部署合约的 ERC-1271 精确登录消息核对；未部署/ERC-6492 和不支持的策略仍不可用。公开上线仍需真实域名/TLS、目标 Snap 发布与分发、浏览器钱包验收、安全备份恢复以及负载/故障测试。
 

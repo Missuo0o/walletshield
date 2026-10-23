@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {decodeFunctionData,encodeFunctionData,encodeFunctionResult,keccak256,parseAbi,type Abi,type Address,type Hex} from 'viem';
+import {decodeFunctionData,encodeFunctionData,encodeFunctionResult,parseAbi,type Abi,type Address,type Hex} from 'viem';
 import {decodeRequest} from '../src/security/decode.js';
 import {V3_EXPERIMENT_ABI,MAX_V3_EXPERIMENT_HOPS,decodePackedV3Path,encodePackedV3Path,swapExperiment,reverseSwapCalldata} from '../src/security/swap-experiments.js';
 import {swapFundingBinding} from '../src/security/swap-trust.js';
@@ -38,25 +38,18 @@ test('malformed, over-limit and cyclic packed routes do not become accepted expe
  assert.throws(()=>encodePackedV3Path([input,output],[2**24]));
 });
 
-function trustedConfig():SecurityConfig{return {...config,trustedDeployments:[{chainId:31337,address:router,protocol:'uniswap-v3',version:'swap-router-02',role:'router',codeHash:keccak256(runtime),sourceUrl:'https://source.example/router'},{chainId:31337,address:input,protocol:'wrapped-native',version:'fixture',role:'wrapped_native',codeHash:keccak256(runtime),sourceUrl:'https://source.example/wrapper'}]};}
-function bindingFork(options:{badCode?:boolean;wrongWrapper?:boolean;fail?:boolean}={}):ForkSession{
- return {chainId:31337,blockNumber:'40',blockHash:hash,blockTimestampSeconds:'1900000000',close:async()=>{},rpc:async(method,params=[])=>{
-  assert.ok(['eth_getCode','eth_getStorageAt','eth_call','eth_getBlockByNumber'].includes(method),'Funding checks must be read-only.');if(options.fail)throw Error('SENSITIVE RPC URL');
-  if(method==='eth_getCode')return options.badCode?'0x6001':runtime;
-  if(method==='eth_getBlockByNumber')return {number:'0x29',hash,timestamp:'0x713fb300'};
-  if(method==='eth_call')return encodeFunctionResult({abi:parseAbi(['function WETH9() view returns(address)']),functionName:'WETH9',result:options.wrongWrapper?middle:input});
-  return `0x${'0'.repeat(64)}`;
- }};
-}
-test('native funding requires both maintained code bindings and router-wrapper association; sentinel resolution needs an explicit matched version',async()=>{
+test('V3 native funding and recipient sentinels remain unsupported; V2 native paths need no registry or getter',async()=>{
+ let reads=0;const fork:ForkSession={chainId:31337,blockNumber:'40',blockHash:hash,close:async()=>{},rpc:async()=>{reads++;throw Error('No getter may authenticate native funding');}};
  const request=v3('exactInputSingle',false,true),route=swapExperiment(request,decodeRequest(request))!;
- assert.equal((await swapFundingBinding(request,route,config,bindingFork())).allowed,false);
- assert.equal((await swapFundingBinding(request,route,trustedConfig(),bindingFork())).allowed,true);
- assert.equal((await swapFundingBinding(request,route,trustedConfig(),bindingFork({badCode:true}))).allowed,false);
- assert.equal((await swapFundingBinding(request,route,trustedConfig(),bindingFork({wrongWrapper:true}))).allowed,false);
- const missing=trustedConfig();missing.trustedDeployments=missing.trustedDeployments!.slice(0,1);assert.equal((await swapFundingBinding(request,route,missing,bindingFork())).allowed,false);
- const unavailable=await swapFundingBinding(request,route,trustedConfig(),bindingFork({fail:true}));assert.equal(unavailable.allowed,false);assert.ok(!unavailable.reason?.includes('SENSITIVE'));
- const alias={...route,nativeInput:false,recipient:at(1)};assert.equal((await swapFundingBinding(request,alias,trustedConfig(),bindingFork(),'current')).binding?.recipientResolution,'matched_swap_router_02_sender_sentinel');const wrong=trustedConfig();wrong.trustedDeployments![0].version='unknown';assert.equal((await swapFundingBinding(request,alias,wrong,bindingFork())).allowed,false);
+ const staleConfig={...config,trustedDeployments:[{chainId:31337,address:router,protocol:'uniswap-v3',version:'swap-router-02',role:'router',codeHash:'0x'+'11'.repeat(32),sourceUrl:'https://fixture.invalid/router'}]};
+ for(const cfg of [config,staleConfig]){const unsupported=await swapFundingBinding(request,route,cfg,fork);assert.equal(unsupported.allowed,false);assert.equal(unsupported.native,true);assert.match(unsupported.reason!,/unsupported/);assert.equal(unsupported.binding,undefined);
+  for(const recipient of [at(1),receiver])assert.equal((await swapFundingBinding(request,{...route,nativeInput:false,recipient},cfg,fork,'current')).allowed,false);
+ }
+ const v2Abi=parseAbi(['function swapExactETHForTokens(uint256 amountOutMin,address[] path,address to,uint256 deadline) payable']);
+ const v2Request:Transaction={kind:'transaction',chainId:31337,transaction:{from:caller,to:router,value:'0x64',data:encodeFunctionData({abi:v2Abi,functionName:'swapExactETHForTokens',args:[1n,[input,output],caller,2000000000n]})}},v2Route=swapExperiment(v2Request,decodeRequest(v2Request));assert.ok(v2Route);assert.equal(v2Route.variant,'v2');assert.equal(v2Route.nativeInput,true);
+ for(const cfg of [config,staleConfig])assert.deepEqual(await swapFundingBinding(v2Request,v2Route,cfg,fork),{allowed:true,native:true});
+ assert.equal((await swapFundingBinding(v2Request,{...v2Route,recipient:receiver},config,fork)).allowed,false);
+ assert.equal(reads,0);const token=v3('exactInputSingle',false),tokenRoute=swapExperiment(token,decodeRequest(token))!;assert.deepEqual(await swapFundingBinding(token,tokenRoute,config,fork),{allowed:true,native:false});
 });
 
 const stateAbi=parseAbi(['function asset() view returns(address)','function decimals() view returns(uint8)','function balanceOf(address) view returns(uint256)','function totalAssets() view returns(uint256)','function totalSupply() view returns(uint256)','function allowance(address,address) view returns(uint256)','function maxWithdraw(address) view returns(uint256)','function maxRedeem(address) view returns(uint256)','function previewDeposit(uint256) view returns(uint256)','function getUserAccountData(address) view returns(uint256,uint256,uint256,uint256,uint256,uint256)']);
@@ -85,14 +78,15 @@ function stateRpc(kind:'vault'|'lending',options:{afterFailure?:boolean;changedA
 test('actual fork-phase vault reads separate caller assets and receiver shares, retain units/preview/allowance, and never invent dollar amounts',async()=>{
  const fixture=stateRpc('vault'),before=await captureForkProtocolState(fixture.rpc,fixture.request,fixture.op,'before',base,'0x28'),after=await captureForkProtocolState(fixture.rpc,fixture.request,fixture.op,'after',base,'0x29'),facts=forkProtocolEvidence(before,after);
  assert.equal(before?.values.receiverSharesRaw,'20');assert.equal(after?.values.receiverSharesRaw,'110');assert.equal(after?.values.ownerSharesRaw,'10');assert.equal(before?.values.requestPreviewRaw,'90');
- const changed=facts.find(check=>check.id==='fork_vault_change')!;assert.equal(changed.status,'pass');assert.equal((changed.data?.differences as any).receiverSharesRaw,'90');assert.equal((changed.data?.differences as any).callerUnderlyingRaw,'-100');assert.equal((changed.data?.differences as any).callerUnderlyingAllowanceToVaultRaw,'-100');assert.equal(changed.data?.identityVerified,false);assert.equal(changed.data?.simulationOnly,true);assert.ok(!JSON.stringify(facts).includes('usdValue'));
+ const changed=facts.find(check=>check.id==='fork_vault_change')!;assert.equal(changed.status,'pass');assert.equal(String(changed.data?.asset).toLowerCase(),input.toLowerCase());assert.equal((changed.data?.differences as any).receiverSharesRaw,'90');assert.equal((changed.data?.differences as any).callerUnderlyingRaw,'-100');assert.equal((changed.data?.differences as any).callerUnderlyingAllowanceToVaultRaw,'-100');assert.equal(changed.data?.identityVerified,false);assert.equal(changed.data?.simulationOnly,true);assert.ok(!JSON.stringify(facts).includes('usdValue'));
 });
 test('post-fork lending health is observed rather than forecast, and partial failures/header or asset changes preserve independent facts',async()=>{
  const lending=stateRpc('lending'),before=await captureForkProtocolState(lending.rpc,lending.request,lending.op,'before',base,'0x28'),after=await captureForkProtocolState(lending.rpc,lending.request,lending.op,'after',base,'0x29'),facts=forkProtocolEvidence(before,after);
  assert.equal(facts.find(check=>check.id==='fork_lending_health')?.status,'risk');assert.equal(after?.values.totalDebtBaseRaw,'900');assert.equal((facts.find(check=>check.id==='fork_lending_change')?.data?.differences as any).totalDebtBaseRaw,'800');
  const partial=stateRpc('lending',{afterFailure:true,missingAfterHeader:true}),partialAfter=await captureForkProtocolState(partial.rpc,partial.request,partial.op,'after',base,'0x29'),partialFacts=forkProtocolEvidence(before,partialAfter);assert.equal(partialFacts.find(check=>check.id==='fork_lending_after')?.status,'unknown');assert.equal(partialAfter?.values.callerUnderlyingRaw,'400');assert.equal(partialAfter?.snapshot.blockHash,undefined);assert.equal(partialAfter?.snapshot.blockNumber,'41');assert.ok(!partialFacts.some(check=>check.id==='fork_lending_health'));
  const partialHeader=stateRpc('lending',{partialAfterHeader:true}),headerAfter=await captureForkProtocolState(partialHeader.rpc,partialHeader.request,partialHeader.op,'after',base,'0x29');assert.equal(headerAfter?.snapshot.blockHash,undefined);assert.equal(headerAfter?.snapshot.blockTimestampSeconds,undefined);assert.equal(headerAfter?.snapshot.baseBlockHash,hash);assert.equal(headerAfter?.values.totalDebtBaseRaw,'900');
- const changed=stateRpc('vault',{changedAsset:true,changedDecimals:true}),changedBefore=await captureForkProtocolState(changed.rpc,changed.request,changed.op,'before',base,'0x28'),changedAfter=await captureForkProtocolState(changed.rpc,changed.request,changed.op,'after',base,'0x29'),delta=forkProtocolEvidence(changedBefore,changedAfter).find(check=>check.id==='fork_vault_change')!;assert.equal(delta.status,'unknown');assert.equal((delta.data?.differences as any).callerUnderlyingRaw,undefined);assert.equal((delta.data?.differences as any).receiverSharesRaw,undefined);
+ const changed=stateRpc('vault',{changedAsset:true,changedDecimals:true}),changedBefore=await captureForkProtocolState(changed.rpc,changed.request,changed.op,'before',base,'0x28'),changedAfter=await captureForkProtocolState(changed.rpc,changed.request,changed.op,'after',base,'0x29'),delta=forkProtocolEvidence(changedBefore,changedAfter).find(check=>check.id==='fork_vault_change')!;assert.equal(delta.status,'unknown');assert.equal(delta.data?.asset,undefined);assert.equal((delta.data?.differences as any).callerUnderlyingRaw,undefined);assert.equal((delta.data?.differences as any).receiverSharesRaw,undefined);
+ const units=stateRpc('vault',{changedDecimals:true}),unitsBefore=await captureForkProtocolState(units.rpc,units.request,units.op,'before',base,'0x28'),unitsAfter=await captureForkProtocolState(units.rpc,units.request,units.op,'after',base,'0x29'),unitDelta=forkProtocolEvidence(unitsBefore,unitsAfter).find(check=>check.id==='fork_vault_change')!;assert.equal(unitDelta.data?.assetSame,true);assert.equal(unitDelta.data?.assetUnitsSame,true);assert.equal(unitDelta.data?.shareUnitsSame,false);assert.equal(unitDelta.status,'unknown','Changing share units must not appear as a complete successful delta comparison');assert.equal((unitDelta.data?.differences as any).receiverSharesRaw,undefined);assert.equal((unitDelta.data?.differences as any).callerUnderlyingRaw,'-100');
 });
 
 test('candidate pool tick/liquidity and binding checks preserve partial observations without authenticating price or deployment',async()=>{

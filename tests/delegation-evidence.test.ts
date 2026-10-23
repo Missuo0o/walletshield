@@ -40,3 +40,7 @@ test('missing RPC/nonce/code leaves eligibility unknown and never converts autho
  const missing=await delegationEvidence(request(list),op,{...config,rpc:{}},async()=>{throw Error('Must not fetch');});assert.equal(find(missing,'delegation_state').status,'unknown');assert.equal(find(missing,'delegation_signature_0').data?.signatureRecovered,true);
  const empty=await delegationEvidence(request([]),op,config,async()=>{throw Error('Must not fetch');});assert.equal(find(empty,'delegation_envelope').status,'warning');
 });
+
+test('delegate observations do not read obsolete deployment metadata or certify code identity',async()=>{
+ const item=await tuple(),stale={...config,trustedDeployments:[{chainId:31337,address:delegate,protocol:'account',role:'account',version:'fixture',codeHash:'0x'+'11'.repeat(32),sourceUrl:'https://fixture.invalid/delegate'}]},fixture=rpc(),checks=await delegationEvidence(request([item]),op,stale,fixture.fetcher),target=find(checks,'delegation_target_0');assert.equal(target.data?.identityVerified,false);assert.equal(target.data?.implementationPolicyVerified,false);assert.equal(target.data?.registryMatched,undefined);assert.equal(target.data?.configuredProtocol,undefined);assert.ok(!fixture.calls.some(call=>call.method==='eth_getStorageAt'||call.method==='eth_call'));
+});

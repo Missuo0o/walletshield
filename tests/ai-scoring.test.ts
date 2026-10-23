@@ -81,6 +81,12 @@ test('the Muse request declares the same six-dimension bounds validated locally 
     assert.equal(schema.properties.dimensions.items.properties.evidence_ids.minItems,1);
     assert.equal(schema.properties.dimensions.items.properties.reason.maxLength,500);
     assert.equal(schema.properties.reasons.minItems,1);assert.equal(schema.properties.reasons.maxItems,12);
+    assert.equal(schema.properties.reasons.items.properties.fact_ids.minItems,1,'The provider schema must prohibit an empty reason citation, matching current structured-fact validation');
+    assert.equal(schema.properties.dimensions.items.properties.fact_ids.minItems,0,'Unknown dimensions must retain their legitimate abstention shape');
+    assert.match(request.instructions,/include ALL those parent IDs in evidence_ids/);
+    assert.match(request.instructions,/Empty fact_ids is allowed only for unknown\/not_applicable dimensions, NEVER reasons/);
+    assert.match(request.instructions,/nonce mismatch is a snapshot usability observation, not proof of a replay vulnerability/);
+    assert.match(request.instructions,/may become current after earlier nonces are validly consumed/);
     assert.equal(schema.properties.summary.maxLength,1600);
     assert.equal(schema.properties.missing_data.maxItems,20);
     return new Response(JSON.stringify({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(output(1))}]}]}));

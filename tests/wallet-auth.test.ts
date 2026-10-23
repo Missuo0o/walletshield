@@ -132,7 +132,7 @@ test('bounded challenges and verification rate limits survive clock windows and 
  const dir=await mkdtemp(join(tmpdir(),'walletshield-auth-rate-')),path=join(dir,'auth.sqlite');let f=await fixture(path);
  try{
   for(let i=0;i<WALLET_AUTH_LIMITS.challengePerAddress;i++)await challenge(f);
-  const blocked=()=>f.app.inject({method:'POST',url:'/api/wallet-auth/challenge',headers:{origin},payload:{address:alice.address,chainId:1}});
+  const blocked=()=>f.app.inject({method:'POST',url:'/api/wallet-auth/challenge',headers:{origin},payload:{address:alice.address,chainId:11155111}});
   assert.equal((await blocked()).statusCode,429);await f.close();f=await fixture(path);assert.equal((await blocked()).statusCode,429);
   f.time.value+=60000;assert.equal((await blocked()).statusCode,200);
   for(let i=0;i<WALLET_AUTH_LIMITS.verifyPerMinute;i++)assert.equal((await f.app.inject({method:'POST',url:'/api/wallet-auth/verify',headers:{origin},payload:{id:'00000000-0000-4000-8000-000000000001',signature:`0x${'0'.repeat(130)}`}})).statusCode,401);

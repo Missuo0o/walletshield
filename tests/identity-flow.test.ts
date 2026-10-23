@@ -15,3 +15,16 @@ test('identity flow commits only a current matching account and never accepts a 
  assert.equal((await authenticateWallet(provider,account,()=>true,api)).address,account);assert.deepEqual(methods,['eth_accounts','eth_chainId','personal_sign','eth_accounts']);
  await assert.rejects(()=>authenticateWallet(provider,account,()=>true,async<T>(path:string)=>path.endsWith('challenge')?{id:'id',message:'login'} as T:{...credential,address:'0x2222222222222222222222222222222222222222'} as T),/invalid/);
 });
+test('contract-wallet login validates its verified chain and rechecks the wallet after signing',async()=>{
+ let chain='0x1';
+ const provider={request:async({method}:{method:string})=>method==='eth_accounts'?[account]:method==='eth_chainId'?chain:`0x${'a'.repeat(130)}`};
+ const apiFor=(chainId:unknown,switched=false)=>async<T>(path:string)=>{
+  if(path.endsWith('challenge'))return {id:'id',message:'WalletShield login only'} as T;
+  if(switched)chain='0xa';return {...credential,chainId} as T;
+ };
+ assert.equal((await authenticateWallet(provider,account,()=>true,apiFor(1))).chainId,1);
+ for(const invalid of [null,'1',0,-1,10,Number.MAX_SAFE_INTEGER+1]){
+  chain='0x1';await assert.rejects(()=>authenticateWallet(provider,account,()=>true,apiFor(invalid)),/different network/);
+ }
+ chain='0x1';await assert.rejects(()=>authenticateWallet(provider,account,()=>true,apiFor(1,true)),/network changed/);
+});

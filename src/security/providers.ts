@@ -11,17 +11,17 @@ import { protocolEvidence } from './protocols.js';
 import {accountEvidence} from './account-evidence.js';
 import {batchEvidence} from './batch-evidence.js';
 import {positionEvidence} from './position-evidence.js';
-import {registryEvidence} from './registry.js';
+import {sourceVerificationEvidence} from './source-verification.js';
 import {orderEvidence} from './orders.js';
 import {userOperationEvidence} from './user-operation-evidence.js';
 import {delegationEvidence} from './delegation-evidence.js';
-import {bridgeEvidence} from './bridge-evidence.js';
+import {bridgeScopeEvidence} from './bridge-scope.js';
 import {executionLimitations} from './transaction-fields.js';
 export { evidence } from './evidence.js';
 export type Collector = (request:SecurityRequest, op:Operation) => Promise<Evidence[]>;
 export function collector(config:SecurityConfig, fetcher:typeof fetch = fetch):Collector {
   return async(request,op)=>{
-    const tasks=[basicCollector(config,fetcher)(request,op),simulateRequest(request,op,config),signatureChainEvidence(request,config),protocolEvidence(request,op,config,fetcher),assetEvidence(request,op,config),accountEvidence(request,op,config,fetcher),Promise.resolve(batchEvidence(request,op)),positionEvidence(request,op,config,fetcher),intelligenceEvidence(request,op,config,fetcher),registryEvidence(request,op,config,fetcher),orderEvidence(request,op,config,fetcher),userOperationEvidence(request,op,config,fetcher),delegationEvidence(request,op,config,fetcher),bridgeEvidence(request,op,config,fetcher)];
+    const tasks=[basicCollector(config,fetcher)(request,op),simulateRequest(request,op,config),signatureChainEvidence(request,config),protocolEvidence(request,op,config,fetcher),assetEvidence(request,op,config),accountEvidence(request,op,config,fetcher),Promise.resolve(batchEvidence(request,op)),positionEvidence(request,op,config,fetcher),intelligenceEvidence(request,op,config,fetcher),sourceVerificationEvidence(request,op,config,fetcher),orderEvidence(request,op,config,fetcher),userOperationEvidence(request,op,config,fetcher),delegationEvidence(request,op,config,fetcher),Promise.resolve(bridgeScopeEvidence(request,op))];
     // Leave time for the API to retain completed tools before its overall budget.
     const results=await Promise.allSettled(tasks.map(async(task,index)=>{
       let timer:ReturnType<typeof setTimeout>|undefined;
@@ -76,7 +76,7 @@ function basicCollector(config:SecurityConfig, fetcher:typeof fetch):Collector {
           if(balance!==undefined && BigInt(tx.value??'0x0')>balance) collected.push(evidence('native_balance','risk','Transfer value exceeds the native balance','The declared value alone exceeds the current native balance, before gas.','rpc',snapshot));
           try {
             if(unsupported.length)throw Error('Unsupported execution fields');
-            const executionFields=Object.fromEntries((['gas','gasPrice','maxFeePerGas','maxPriorityFeePerGas','nonce'] as const).filter(key=>tx[key]!==undefined).map(key=>[key,tx[key]]));
+            const executionFields=Object.fromEntries((['gas','gasPrice','maxFeePerGas','maxPriorityFeePerGas','nonce','type'] as const).filter(key=>tx[key]!==undefined).map(key=>[key,tx[key]]));
             await client.request({method:'eth_call',params:[{from:tx.from as `0x${string}`,...(tx.to?{to:tx.to as `0x${string}`} :{}),data:tx.data as `0x${string}`,value:(tx.value??'0x0') as `0x${string}`,...executionFields},`0x${block.toString(16)}`]});
             collected.push(evidence('basic_call','pass','Basic call did not revert','Only eth_call was performed with supplied execution fields. Inclusion, nonce submission validity, complete asset changes, sellability, and future execution were not verified.','rpc',snapshot));
           } catch { collected.push(evidence('basic_call','unknown',unsupported.length?'Basic call cannot preserve this execution envelope':'Basic call failed',unsupported.length?'Unsupported execution fields are not removed to check a substitute request.':'Balance, allowance, routing, or contract restrictions may explain failure. This alone does not establish a honeypot.','rpc',{...snapshot,...(unsupported.length?{unsupportedFields:unsupported}:{})})); }

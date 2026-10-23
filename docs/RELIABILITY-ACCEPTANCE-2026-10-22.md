@@ -1,5 +1,7 @@
 # Reliability extension verification — 2026-10-22
 
+> **Historical acceptance record.** The observations and counts below are preserved for the implementation tested at that time; they are not the current project validation. Read [Full validation — 2026-10-22](FULL-VALIDATION-2026-10-22.md) for the latest checks, repairs and limitations.
+
 Version remains 0.4.1. These results validate the bounded implementation and its failure paths; they are not a wallet-safety certification or measured detection accuracy.
 
 | Check | Result and practical scope |

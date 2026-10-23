@@ -7,17 +7,6 @@ export function evidenceQuality(report:SecurityReport):EvidenceQuality {
  const reference=Date.parse(report.createdAt);
  const now=Number.isFinite(reference)?reference:Date.now();
  const claimed=Number(report.operation.fields.domainChainId??report.operation.fields.chainId),expectedChain=report.request.chainId||(Number.isSafeInteger(claimed)&&claimed>0?claimed:undefined);
- // Only the maintained bridge collector's independently RPC-bound endpoint
- // snapshots can introduce a second chain. Arbitrary domain/route claims and
- // operation parameters cannot establish counterpart chain identity.
- const route=report.checks.find(check=>check.id==='bridge_route'&&check.source==='registry')?.data;
- const bridgeSnapshotMatches=(check:SecurityReport['checks'][number],chain:number|undefined,block:string,hash:string|undefined)=>{
-  if(report.request.kind!=='transaction'||report.operation.category!=='bridge'||!route||route.adapter!=='op-standard-bridge-v1'||!check.id.match(/^bridge_(source|destination)_(bridge|messenger|token)$/)||check.source!=='rpc')return false;
-  const side=check.id.startsWith('bridge_source_')?'source':'destination',at=route[`${side}Snapshot`] as Record<string,unknown>|undefined;
-  const source=Number(route.sourceChainId),destination=Number(route.destinationChainId),target=report.request.transaction.to?.toLowerCase();
-  if(!Number.isSafeInteger(source)||!Number.isSafeInteger(destination)||source<=0||destination<=0||source===destination||!(expectedChain===source&&target===String(route.sourceBridge).toLowerCase()||expectedChain===destination&&target===String(route.destinationBridge).toLowerCase()))return false;
-  return !!at&&chain===route[`${side}ChainId`]&&at.chainId===chain&&at.blockNumber===block&&!!hash&&typeof at.blockHash==='string'&&at.blockHash.toLowerCase()===hash.toLowerCase();
- };
  const counts={pass:0,warning:0,risk:0,unknown:0};
  const sources=new Map<string,{source:string;observed:number;unknown:number}>();
  const stale:string[]=[],future:string[]=[],missing:string[]=[];
@@ -43,7 +32,7 @@ export function evidenceQuality(report:SecurityReport):EvidenceQuality {
   if(report.source!=='demo'&&(check.source==='rpc'||check.source==='isolated-fork')){
    if(chain===31337&&expectedChain===31337)blockFreshness.localCheckIds.push(check.id);
    else {
-    if((!chain||!expectedChain||chain!==expectedChain)&&!bridgeSnapshotMatches(check,chain,block,blockHash))blockFreshness.unverifiedChainCheckIds.push(check.id);
+    if(!chain||!expectedChain||chain!==expectedChain)blockFreshness.unverifiedChainCheckIds.push(check.id);
     if(!blockHash)blockFreshness.missingHashCheckIds.push(check.id);
     if(!timestampSeconds)blockFreshness.missingTimestampCheckIds.push(check.id);
     else {const delta=BigInt(Math.floor(now/1000))-BigInt(timestampSeconds);if(delta>300n)blockFreshness.staleCheckIds.push(check.id);else if(delta< -30n)blockFreshness.futureCheckIds.push(check.id);}

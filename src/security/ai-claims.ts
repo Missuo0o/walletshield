@@ -72,14 +72,11 @@ export function dimensionsForEvidence(check:Evidence,report:SecurityReport):Dime
   if(matches(id,/^(?:signature_(?:signer_account|verifier_code|delegate_code)|delegated_account|target_delegate_code|account_(?:code|authority_code_\d+)|contract_controls|new_controller)$/))add('authority','protocol');
   if(matches(id,/^(?:basic_call|transaction_nonce|transaction_pending_nonce|transaction_base_fee)$/))add('execution');
   if(id==='transaction_base_fee')add('exposure');
-  if(/^registry_deployment_\d+$/.test(id)&&check.data?.matched===true)add('identity','protocol');
-  if(/^price_reference_\d+$/.test(id)&&check.data?.referenceOnly===true&&typeof check.data?.priceRaw==='string')add('exposure');
   if(matches(id,/^(?:order_status|order_counter|order_authorization_state|order_time|order_deployment)$/))add('authority','execution','protocol');
   if(/^order_asset_\d+$/.test(id))add('authority','exposure','protocol');
   if(matches(id,/^(?:userop_nonce|delegation_sender_nonce|delegation_state_\d+|delegation_sequence)$/))add('authority','execution');
   if(matches(id,/^(?:userop_deposit|userop_fee)$/))add('exposure','execution');
   if(matches(id,/^(?:userop_entrypoint|userop_(?:sender|factory|paymaster)_code|delegation_target_\d+)$/))add('authority','protocol','execution');
-  if(/^bridge_(?:source|destination)_(?:bridge|messenger|token)$/.test(id))add('protocol','execution');
  }
  if(check.source==='eip712'){
   if(matches(id,/^(?:typed_structure|signature_scope|signature_validation|signature_protocol)$/))add('authority');
@@ -111,7 +108,6 @@ export function dimensionsForEvidence(check:Evidence,report:SecurityReport):Dime
  if(check.source==='request'&&['userop_request','delegation_envelope'].includes(id))add('authority','exposure');
  if(check.source==='signature'&&/^delegation_signature_\d+$/.test(id))add('authority','identity');
  if(check.source==='request'&&id==='bridge_finalization_caller')add('authority','protocol');
- if(check.source==='registry'&&['bridge_route','bridge_token_pair'].includes(id))add('protocol');
  return AI_DIMENSIONS.filter(value=>out.has(value));
 }
 export function evidenceAdmissibility(report:SecurityReport){return report.checks.map(check=>({evidence_id:check.id,dimensions:dimensionsForEvidence(check,report)}));}
@@ -128,7 +124,7 @@ function boundedFacts(check:Evidence):BoundedFact[]{
  if(check.source==='rpc'&&check.id==='basic_call'&&check.status==='pass')return ['basic_call'];
  return [];
 }
-export function claimSupport(report:SecurityReport){return {officialIdentity:false,guaranteedSafety:false,futureExecution:false,futureSellability:false,usdLoss:false,boundedObservations:report.checks.flatMap(check=>boundedFacts(check).map(kind=>({evidence_id:check.id,kind}))),boundary:'Only the listed bounded observations can be reported as completed. They are not official identity, future guarantees, dollar loss or a safety certificate.'};}
+export function claimSupport(report:SecurityReport){return {officialIdentity:false,securityAudit:false,guaranteedSafety:false,futureExecution:false,futureSellability:false,usdLoss:false,boundedObservations:report.checks.flatMap(check=>boundedFacts(check).map(kind=>({evidence_id:check.id,kind}))),boundary:'Only the listed bounded observations can be reported as completed. Source matching is not a security audit. Observations are not official identity, future guarantees, dollar loss or a safety certificate.'};}
 
 /** Explicit high-impact certainty assertions receive an additional bounded
  * guard. This is deliberately not advertised as universal language proof.
@@ -152,6 +148,7 @@ export function validateCertaintyClaims(statements:readonly CitedStatement[],rep
    const hazards=[
     /\b(?:guaranteed\s+(?:safe|secure|safety|execution|success)|(?:completely|entirely|totally|provably)\s+safe|risk[ -]?free|(?:no|zero)\s+(?:risk|chance\s+of\s+loss)|(?:funds|assets|tokens?)\s+(?:cannot|can't|will\s+not)\s+(?:be\s+)?(?:lost|stolen|drained)|(?:is|are)\s+(?:safe|secure|trustworthy|trusted)(?:\s+to\s+(?:sign|proceed))?|(?:is|are)\s+not\s+a\s+honeypot|honeypot[ -]free)\b|绝对安全|完全安全|毫无风险|没有(?:任何)?风险|(?:资金|资产)(?:绝对)?不会(?:损失|被盗|丢失)/gi,
     /\b(?:(?:verified|authenticated|confirmed|known)\s+(?:as\s+)?(?:the\s+)?(?:official|legitimate|authentic)|(?:recipient|spender|contract|protocol|website|address|collection|token|source)\s+(?:is|are|was|has\s+been|belongs\s+to)\s+(?:the\s+)?(?:official|officially\s+(?:verified|authenticated|confirmed)|trusted|legitimate|authentic|verified)|verified\s+(?:recipient|spender|protocol|website|collection|identity))\b|(?:已(?:经)?(?:确认|验证|认证).{0,8}(?:官方|可信|真实身份))|(?:合约|收款方|网站|协议|地址)(?:是|属于)(?:官方|可信)/gi,
+    /\b(?:(?:has|have)\s+(?:passed|completed|undergone)\s+(?:an?\s+)?(?:(?:independent|external|formal|security|source[ -]code)\s+)*audits?|(?:is|are|was|were|has\s+been|have\s+been)\s+(?:(?:independently|externally|formally|fully|security)\s+)*audited|(?:security|source[ -]code)\s+audit\s+(?:(?:has|have)\s+)?(?:passed|succeeded|completed)|audit\s+(?:is|was|has\s+been)\s+(?:completed|passed|successful))\b|已(?:经)?(?:通过|完成|接受).{0,10}(?:安全|代码|合约)审计|(?:合约|代码|协议).{0,4}已(?:经)?(?:审计|安全认证)/gi,
     /\b(?:(?:will|always|guaranteed\s+to)\s+(?:be\s+)?(?:sell|sold|sellable|withdraw)|(?:can\s+(?:always\s+)?be\s+sold|sellability\s+is\s+guaranteed)|(?:can|will)\s+sell\s+(?:anytime|any\s+time|later|in\s+the\s+future)|(?:execution|transaction|transfer)\s+(?:is\s+)?guaranteed|(?:will|must)\s+(?:succeed|execute\s+successfully)|(?:will|can)\s+never\s+(?:fail|revert)|will\s+not\s+(?:fail|revert)|cannot\s+revert)\b|(?:保证|永远|随时|未来一定).{0,8}(?:卖出|出售|提现|执行成功)|(?:交易|执行|转账)(?:保证|一定|必定)(?:成功|执行)/gi,
     /(?:\b(?:USD|dollar|dollars|US\$)\s+(?:loss|losses|value\s+lost)|\b(?:loss|losses|lose|lost)\b.{0,35}(?:\bUSD\b|\bdollars?\b|US\$|\$\s*\d)|\$\s*\d.{0,25}\b(?:loss|lost)\b)|(?:美元|美金)(?:损失|亏损)|(?:损失|亏损).{0,15}(?:美元|美金)/gi
    ];

@@ -2,6 +2,8 @@
 
 [English README](README.md) · 简体中文说明
 
+最新完整检查、修复、模型观察及剩余验收边界见[完整验证记录 — 2026-10-22](docs/FULL-VALIDATION-2026-10-22-zh.md)。旧验收文件保留为历史记录，不代表最新验证结果。
+
 WalletShield 是一个 EVM 钱包安全原型，包含本地钱包实验室，以及可选的、需要身份验证的托管模式。配对后的 MetaMask Snap 将尚未签名的交易或消息请求发送到配置的后端。默认情况下，后端运行在你的电脑上。后端解码请求、选择证据采集器、读取配置网络的状态，按需在隔离的 Anvil 分叉中模拟交易，并请求 **Meta Muse Wonder `muse-wonder-1.0`** 评估所收集的证据。网页和 Snap 会在你决定于钱包中确认或取消之前显示结果。
 
 它提供的是**签名前建议**。它不会强制阻止操作、代你签名、追回资金，也不会在签名后持续监控。自动分析仅覆盖 MetaMask 实际交给 Snap 的 EVM 交易和消息请求。安装 Snap 并不代表它会拦截每一项钱包操作。
@@ -21,11 +23,11 @@ WalletShield 是一个 EVM 钱包安全原型，包含本地钱包实验室，�
 
 当前 Muse 回复使用 `walletshield-facts-v1`：精确主体/字段/值/来源/链/区块/时间/范围，并在理由和维度中引用 `fact_ids`；历史回复继续可读。后端验证观察复制和相关性，不证明每个外部响应或自然语言句子真实。数字仍只由 Muse 给出，没有固定权重、下限或兜底。
 
-可选 `.local/registry.json` 配置经运营者审查的部署/代码/实现绑定、参考价格 feed 和已审查 OP 桥路线。`ENABLE_SOURCE_VERIFICATION=1` 独立开启有界 Sourcify 匹配观察；GoPlus 另行选择启用。默认不虚构官方部署或美元锚定；价格是参考，不是可执行报价或确定损失。
+后端部署登记/代码匹配、USD 参考价格源和维护式两链桥接路线核对已移除。已有 `.local/registry.json` 不再读取。基础交易/授权/签名解析、配置的 RPC 状态、部分 V2 路径（含已有原生币路径）、代币出资 V3 与通用分叉模拟、可选 GoPlus 和 Muse 评分保留。`ENABLE_SOURCE_VERIFICATION=1` 仍独立启用有界 Sourcify 源码匹配观察；它不是官方部署登记或代码审计。
 
-新增有界证据包括 Seaport 承诺项目/当前状态、Permit2 witness 外层承诺、版本绑定 UserOperation 状态、EIP-7702 元组密码学/有条件状态、原始分叉交易前后部分权限/金库/借贷状态、扩展 V3 路线与候选池状态。dApp 包装器须主动接入，不是全局钱包拦截；托管 ERC-1271 只验证本次登录，不验证未来资产签名。
+有界证据包括 Seaport 签入承诺、Permit2 witness 外层承诺、UserOperation 参数/代码/费用观察、EIP-7702 元组密码学/有条件状态、原始分叉交易前后部分权限/金库/借贷状态、代币出资的 V3 路线实验和候选池状态。原来依赖登记的 Seaport counter/status/直接授权与 EntryPoint keyed nonce/deposit 检查不再提供。dApp 包装器须主动接入，不是全局钱包拦截；托管 ERC-1271 只验证本次登录，不验证未来资产签名。
 
-Wallet and network 页面显示 registry 数量、源码核对开关及有界只读 RPC 能力观察：固定区块调用、一次历史余额和固定 trace 探测。成功不是完整 archive/trace 保证。registry 与参考价格列表为空时相应增强仍未启用；必须先维护独立审查的网络/地址/代码记录。本页网络切换建议只通过本页显式 SDK 触发。
+Wallet and network 页面提供有界只读 RPC 能力观察：固定区块调用、一次历史余额和固定 trace 探测。成功不是完整 archive/trace 保证。源码核对仍是独立可选后端配置，公网页面不显示其状态。Public networks 的切换按钮通过选定钱包 provider 直接调用 `wallet_switchEthereumChain`，不调用接入 SDK、风险扫描或 Muse，由钱包处理确认。
 
 `npm run evaluate:ai` 默认运行固定哈希的合成校验器检查，不请求模型/RPC，不代表在线 Muse 准确率。付费评估必须显式指定 `--live --confirm-paid`、案例和调用预算，不会自动运行。
 
@@ -169,9 +171,9 @@ ENABLE_MONITOR=0
 
 ### 预算与连通性
 
-每次已配置且启用模型的扫描，会为首次模型调用预留一次**每日尝试**；HTTP 失败、超时、拒答及被拒绝的模型输出也计入其中。允许的验证修正会再预留一次尝试，因此一次扫描最多消耗两次。计数按 UTC 日历日期计算，重启后保留。`AI_DAILY_LIMIT` 默认限制整个后端每天 100 次尝试；在本地模式中，用户主动发起的合成 AI 连通性测试也共享此额度。托管模式还默认限制每个钱包地址每天 20 次，该地址的网页凭据与 Snap 凭据共享额度。两项托管预算会原子预留：任一上限触发时，两项计数都不扣减，也不调用模型。这些是尝试次数上限，不是美元预算或提供方支出上限。RPC、Infura 和 GoPlus 有各自的服务限制与计费。分叉可能需要大量上游读取及历史状态访问；提供方套餐和支持的方法可能限制这些操作。
+每次已配置且启用模型的扫描，会为首次模型调用预留一次**每日尝试**；HTTP 失败、超时、拒答及被拒绝的模型输出也计入其中。允许的验证修正会再预留一次尝试，因此一次扫描最多消耗两次。计数按 UTC 日历日期计算，重启后保留。`AI_DAILY_LIMIT` 默认限制整个后端每天 100 次尝试；在本地模式中，用户主动发起的合成 AI 连通性测试也共享此额度。托管模式还默认限制每个已验证身份每天 20 次，该身份的网页凭据与 Snap 凭据共享额度。两项托管预算会原子预留：任一上限触发时，两项计数都不扣减，也不调用模型。这些是尝试次数上限，不是美元预算或提供方支出上限。RPC、Infura 和 GoPlus 有各自的服务限制与计费。分叉可能需要大量上游读取及历史状态访问；提供方套餐和支持的方法可能限制这些操作。
 
-保存了密钥或出现 `aiConfigured` 标记，不代表已连通。来自配置提供方、已完成且通过验证的报告才能证明相应调用成功。模型评分可能耗时数十秒。本地模式允许一个进行中的扫描/模型测试。托管模式允许每个地址一个进行中的扫描，服务总上限可配置（默认三个，范围 1–8）。托管模式每地址每分钟最多接受八次扫描启动，本地模式则按整个服务计数。过载会返回检查未完成错误，不会编造评估。
+保存了密钥或出现 `aiConfigured` 标记，不代表已连通。来自配置提供方、已完成且通过验证的报告才能证明相应调用成功。模型评分可能耗时数十秒。本地模式允许一个进行中的扫描/模型测试。托管模式允许每个已验证身份一个进行中的扫描，服务总上限可配置（默认三个，范围 1–8）。托管模式每个已验证身份每分钟最多接受八次扫描启动，本地模式则按整个服务计数。过载会返回检查未完成错误，不会编造评估。
 
 如需主动检查模型连接，开发者可对已运行的**本地模式**服务执行以下固定合成样本。此路由在托管模式禁用。它会向 Meta 发送合成证据，并消耗一次尝试；若需要允许的验证修正，则最多两次；两次都可能产生费用：
 
@@ -222,7 +224,7 @@ curl -sS -X POST http://127.0.0.1:5173/api/security/ai/test \
 1. 按前文配置可信的后端 RPC。先使用 **Sepolia（`11155111`）** 和专门的测试账户。主网涉及真实价值；此 Flask 开发环境不适合存放真实资产。
 2. 打开 **Public networks**，连接目标钱包。本地模式可在不连接账户时检查 RPC 连通性，此时不会查询余额/代码。托管模式在账户探测、配对和访问报告前，需要完成下文的钱包身份登录。
 3. 选择后端数据网络，再点击 **Check RPC and account state**。后端验证 RPC 实际链 ID，读取区块、区块时间，并在已连接账户时，读取该账户在该区块的原生币余额和代码。委托代码与普通无代码账户会分别标明。结果最多可复用 15 秒。只使用服务端配置的端点；密钥和完整 RPC URL 不会返回浏览器。
-4. 可选择 **Switch wallet to this network**。这会明确请求 `wallet_switchEthereumChain`，切换到钱包中已添加的网络。如果未添加，请使用可信官方信息在钱包中添加，然后重试。页面不会将后端 Infura URL 暴露给钱包设置。仅选择数据网络不会切换钱包，请比较两处网络标签。
+4. 可选择 **Switch wallet to this network**。按钮直接向选定钱包请求 `wallet_switchEthereumChain`，不经过 SDK/风险扫描、不调用或等待 Muse；在钱包中确认或取消。如果未添加，请使用可信官方信息在钱包中添加，然后重试。页面不会将后端 Infura URL 暴露给钱包设置。仅选择数据网络不会切换钱包，请比较两处网络标签。
 5. 安装或重新加载/配对配置的 Snap。后端健康握手必须对当前绑定账户通过。选择 **Test the wallet signing insight**，向真实钱包请求一条唯一的普通 `personal_sign` 消息。它不需要测试币或 gas。阅读消息说明的用途和钱包内 WalletShield insight，再决定签名或取消。页面将精确匹配该唯一消息与服务端记录的 `paired-snap` 报告；仅返回签名不能通过此检查。生成的签名在浏览器中被丢弃，而未签名消息和报告存入后端。若启用模型，这次真实 Snap 分析会调用 Muse 并消耗模型预算。
 6. 对于转账、授权、Permit、兑换和其他支持的请求，请使用相应外部 dApp，并逐项阅读钱包 insight。本地模式需要相关服务持续运行。钱包连接、配对健康、请求交付和评估完成是需要分别核实的事实。
 
@@ -231,6 +233,12 @@ curl -sS -X POST http://127.0.0.1:5173/api/security/ai/test \
 默认构建使用 Flask、本地配对和 `http://127.0.0.1:8787/api/security/scan`。托管构建使用编译时配置的 HTTPS 配套服务 origin 和 npm Snap ID。打包托管构建不会自动发布 npm 包，也不会自动获得 MetaMask 分发资格。连接/网络切换不是通用 Snap 拦截钩子。
 
 ## 配置与运行需要身份验证的托管模式
+
+EOA 恢复证明同一密钥对 EVM 地址的控制，因此其身份仍按地址跨链使用。ERC-1271 登录则建立**地址加已验证链的身份**：网页/Snap 凭据、扫描、私有报告访问、删除和撤销均限定在该链。同一个合约地址在另一条链上可能有不同所有者。切换网络后，请在目标链重新登录并配对；Snap 健康和请求检查会拒绝不匹配或无法观察到的绑定网络。链绑定签名仅在 provider 观察匹配后，使用已验证身份链作为认证/取数范围，并不证明 dApp 的实际签名网络。
+
+托管资源也按已验证身份隔离：EOA 使用地址键，合约身份使用 `eip155:<chainId>:<address>` 键。活动/最近扫描、每身份 AI 和取证预算、Snap 配对签发频率及活动凭据容量都使用该范围；该身份的网页和 Snap 会话共用额度。IP/全局限额以及服务总并发、总凭据容量仍由所有身份共享，不因切换链而增加。
+
+首次按此身份策略启动时，会一次性使旧托管登录挑战及网页/Snap 凭据失效，因为旧记录没有区分 EOA 与合约身份。请重新登录并配对。已存报告、使用额度、配置和本地链资产保留，迁移不会删除它们。
 
 托管模式已实现为显式启用的服务配置和独立发布产物。**本项目工作流程尚未将其部署、发布到 npm、注册或取得独立批准。** 准备发布前，需要提供真实域名、TLS、你拥有的 npm 包和公共源码仓库。默认本地启动器仍是 Flask 开发环境。
 
@@ -266,9 +274,9 @@ npm pack --dry-run --ignore-scripts
 
 1. 连接目标账户，选择 **Verify current wallet identity**（设置页中为 **Sign to verify this wallet**）。确认前逐项核对准确登录消息、应用域名、URI、账户、链、nonce 和到期时间。这是用于身份验证的账户控制权证明，不是资产支出权限。
 2. 服务端签发有效期五分钟的一次性 challenge，并验证对其存储消息的 EOA 签名。支持的已部署合约可经可信 RPC 使用有界 ERC-1271 STATICCALL，绑定本次存储消息及区块；未部署账户或不支持策略不使用未经检查的兜底。登录成功后创建有效期八小时的网页 bearer，只保存在浏览器内存中。刷新、更换 provider/账户或断开连接都会清除内存身份；重新访问记录需再次验证。
-3. 安装并配对 Snap。服务端签发**不同的**、绑定地址且有效期 30 天的 Snap bearer，通过配对传入 Snap；不会把网页 bearer 交给 Snap。Snap 在存储前验证后端接受该凭据，健康检查会验证绑定地址。配对到期或被撤销后，需要重新登录并配对。持久化原子签发上限为每分钟每地址 4 次、每个服务端观察到的 IP 12 次、全局 60 次；每地址最多保留 4 个活动 Snap 凭据，全局最多 8192 个。成功重配只轮换该地址最早到期的凭据。拒绝签发返回 429/Retry-After，不改变既有配对，也不扣签发计数。
-4. 扫描必须来自已验证地址。历史、单份报告和证据由服务端拥有的地址映射控制访问；知道报告 ID 或伪造 Origin 不能获得访问权。UI 会将 Snap 采集与网页分析分别标注。每钱包预算由该地址的网页/Snap 会话共享。
-5. 选择 **Sign out all sessions and revoke pairing**，以原子操作撤销该地址的全部网页/Snap 凭据及未完成登录挑战，其他钱包不变。切换账户会清除浏览器会话，但不会自动撤销服务端之前签发的凭据。账户/provider/断开或加载失败会清空历史与详情；取消/延迟响应不能恢复前一身份的记录，当前所有者列表不存在的选择会清空。本地模式仍是同机共享历史，托管模式才按所有者隔离。
+3. 安装并配对 Snap。服务端签发**不同的**、绑定地址且有效期 30 天的 Snap bearer，通过配对传入 Snap；不会把网页 bearer 交给 Snap。Snap 在存储前验证后端接受该凭据，健康检查会验证绑定地址。配对到期或被撤销后，需要重新登录并配对。持久化原子签发上限为每分钟每身份 4 次、每个服务端观察到的 IP 12 次、全局 60 次；每身份最多保留 4 个活动 Snap 凭据，全局最多 8192 个。成功重配只轮换该身份最早到期的凭据。拒绝签发返回 429/Retry-After，不改变既有配对，也不扣签发计数。
+4. 扫描必须来自已验证地址。历史、单份报告和证据由服务端地址映射控制，合约身份还限定已验证链；知道报告 ID 或伪造 Origin 不能获得访问权。UI 会将 Snap 采集与网页分析分别标注。每身份预算由该身份的网页/Snap 会话共享。
+5. 选择 **Sign out all sessions and revoke pairing**，以原子操作撤销当前身份范围的网页/Snap 凭据及未完成登录挑战：EOA 为该地址，ERC-1271 为该地址的已验证链，其他身份范围不变。切换账户会清除浏览器会话，但不会自动撤销服务端之前签发的凭据。账户/provider/断开或加载失败会清空历史与详情；取消/延迟响应不能恢复前一身份的记录，当前所有者列表不存在的选择会清空。本地模式仍是同机共享历史，托管模式才按所有者隔离。
 
 托管模式禁用本地实验室/资产准备、旧授权/workflow/demo 路由、monitor 兼容路由、覆盖指南下载和合成 AI 测试路由。身份验证速率限制和待处理 challenge 上限约束登录请求；签发 Snap 凭据需要有效网页 bearer。网页/Snap token 的到期、撤销、所有者映射和每日尝试次数都持久化到后端 SQLite，其中仅存储 token 哈希。HTTPS 服务和 npm 包仍需要真实钱包/浏览器验收，以及适用的 MetaMask 分发流程。准备产物不等于公开部署或独立安全认证。
 
@@ -311,7 +319,7 @@ DAI 权限来自 allowed 的参考语义推导；ERC-3009 承诺单次精确数�
 
 标准 Permit2 中，`expiration = 0` 表示授权提交所在区块的时间戳，可在该区块内使用。它不证明权限在签名前已经过期，也不等于自动撤销。非零 expiration 已在过去，也不代表签名无害：提交仍可能更新 allowance 或 nonce 状态。报告保留此区别，以及候选合约是否真正实现标准 Permit2 语义的不确定性。
 
-Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一次短时、只读的 `eth_chainId` 观察。结果作为带时间戳的 `signature.providerContext` 快照保存，与钩子请求的链字段和消息已签名 domain 分开。签名钩子仍不提供与该请求绑定的链，因此 Snap 请求保留 `chainId: 0`；不会把观察到的 provider 链悄悄替代为类型化签名合约读取所用的 domain。对于有效 typed data，证据可比较 domain 与 provider 快照；差异是上下文警告，相同也不证明发起 dApp 的签名网络。失败或超时则保留上下文缺失。`signature.from` 提供钩子请求的签名者；Snap 不会仅为检查而请求选账户权限或新的签名。
+Snap 通过 `endowment:ethereum-provider` 在签名洞察期间尝试短时只读 `eth_chainId`，并单独记录带时间戳的 `signature.providerContext`。签名钩子没有与请求绑定的链：本地/EOA 请求保留 `chainId: 0`。托管合约身份只有在 provider 观察匹配时，才使用其已验证绑定链作为认证/取数范围；provider 链缺失或不匹配时要求重新连接，不生成评分。这不证明发起 dApp 的签名网络，也不把 provider 观察冒充签名 domain。签名者来自 `signature.from`；Snap 不会仅为检查额外请求选账户权限或新签名。
 
 普通未签名消息分析没有新生成的消息签名可恢复或提交。提供的 EIP-7702 authorization list 例外：其中已含用于有界恢复的签名元组；raw r/s 不成为模型事实，但存储的外层请求可能包含这些字段。匹配 Permit nonce/domain、读取签名者代码或 ERC-1271 相关账户状态，都不等于验证签名有效或未来会被使用。标准权限还可能允许 spender 在编码的上限内决定最终收款方或实际转移金额；匹配结构不会承诺所有后续交易细节。
 
@@ -328,12 +336,12 @@ Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一
 | NFT operator 授权 / 撤销 | 集合、operator、布尔值及可读取的现有 operator 状态；控制/信誉/分叉证据 | 不完整枚举当前/未来持有资产，也不证明 operator 会诚实行事。 |
 | 链上 Permit2 结构 allowance | 代币、spender、`uint160` 数量、expiration 和可用代币事实 | 结构不证明官方 Permit2 身份；独立读取用户对候选 Permit2 合约的底层 ERC-20 授权，以及其内部对最终 spender 的 amount/expiration/nonce。可读状态不证明部署身份、domain 语义或未来用途。 |
 | V2 结构兑换 | 路径、输入量、最低输出、收款方、deadline；支持时，在分叉执行买入 → 授权所得代币 → 反向卖出，记录返回数量/gas、变化量及可选代币情报 | 限定路径结构且要求相同收款方；卖出失败有多种原因；往返损失含费用/价格冲击，不是纯税率。 |
-| V3 结构兑换 | 八种规范 single/path、exact-in/exact-out；原始分叉买入与按实际输入扣减的衍生卖出；原生资金须有匹配 router/wrapper 绑定 | 不完整覆盖接收人/资金/聚合器、经济报价、MEV 或未来卖出。 |
+| V3 结构兑换 | 八种规范 single/path、exact-in/exact-out；原始分叉买入与按实际输入扣减的衍生卖出；仅限代币出资；不支持原生资金与路由专用 sender 别名 | 不完整覆盖接收人/资金/聚合器、经济报价、MEV 或未来卖出。 |
 | ERC-4626 结构金库 | 当前 asset/totals/preview/max/单位，以及原始分叉交易前后份额/底层余额/限制与兼容单位差值 | 接口不认证身份；不证明完整经济审计、未来价格/偿付或赎回。 |
 | 借贷 / 抵押 | 当前 Aave 结构状态，以及原始分叉交易前后抵押/债务/健康因子及兼容单位差值；实际分叉后健康因子低于1的信号 | 不完整建模未来价格/预言机压力、清算或偿付；base 单位不是美元。 |
 | 质押 / 解除质押 / 奖励 | 候选方法、数量、receiver；控制状态和通用分叉观察 | 不自动验证锁定期、罚没、奖励来源/公式或未来提款。 |
 | 流动性 / V3 仓位变更 | V2/严格 V3 参数、positions/NFT 权限/单位；候选 manager/factory/pool 的 token/fee 关联、当前 tick/range/流动性 | 接口关联不认证官方池，不证明可执行报价、LP/NFT 价值、完整退出或未来费用。 |
-| 跨链发起 / 提款 / 完成候选 | 部分 OP 结构字段；可选维护路线核对两链 bridge/messenger 代码/代理/审查版本/指针/暂停及有限 mintable 代币关系 | 独立快照不证明 relay/proof、cross-domain sender、结算、储备或未来到账；finalize 结构不是证明。 |
+| 跨链发起 / 提款 / 完成候选 | 部分 OP 结构源链参数、通用合约读取和源链分叉观察 | 不再核对维护的两端桥/messenger、counterpart 或两链路线；message/proof/relay、储备、最终性和到账均未验证。 |
 | 领取 / 空投 | 常见 Merkle 结构的 index、account、amount、proof 项数、代码/控制及通用分叉效果 | 未完整验证 root/proof/领取资格或项目身份；proof 字节不会完整发送给 Muse。 |
 | 原生包装 / 通用提款 | deposit() 的原生值，withdraw(uint256) 的数量标为 unverified_protocol_units，保留代码/部分控制和可选变化量 | 不假定一参数 withdraw 是质押退出或原生赎回；身份、单位/比率、偿付与退出仍未知。 |
 | 铸造 / 销毁 | 候选方法、收款方、数量或 ID、代币及 value/变化量 | 数量与 NFT ID 可能仍有歧义；发行权、价格和所有销毁后果检查不完整。 |
@@ -345,10 +353,10 @@ Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一
 | 原始 `eth_sign` | method、account、声明网络/来源和盲签信号；可用上下文 | 仅后端分析；Flask/SDK 可能不提供自动钩子。无法从哈希逆推出原意。实验室没有 raw-sign 按钮。 |
 | Permit / NFT Permit / DAI / ERC-3009 签名 | 实际签入字段、digest/domain、部分 nonce/interface/state；DAI holder/spender/allowed 推导最大值或零；ERC-3009 payer/recipient/amount/时间窗/bytes32 authorizationState | 只支持参考结构，不认证签名/消费/实现。ERC-3009 为单次转移，非持续 allowance；receive 形式有条件性调用者限制。 |
 | Permit2 签名 | 规范通用结构、nonce/allowance 层、owner 绑定和 witness 外层/type/hash | witness 消费方业务约束、自定义变体、签名接受和未来消费仍未知。 |
-| 类型化订单 / 其他 EIP-712 | 规范 Seaport 承诺；role/protocol 为 seaport、版本1.6 及 information() 版本/domain/代码绑定后读取当前 counter/status 和部分零 conduit 资产授权；零接收人提示 | 合约订单 type4、criteria/非零 conduit/自定义订单、签名接受、履约和经济公平仍不完整。 |
+| 类型化订单 / 其他 EIP-712 | 规范 Seaport 签入的 offer/consideration、接收人、数量、时间、counter、conduit、哈希及零接收人提示；可选通用 DOMAIN_SEPARATOR 比较 | 不再读取当前订单 counter/填充/取消或直接 verifier 资产授权；合约订单 type4、criteria/conduit、签名接受、履约和公平价格仍不完整。 |
 | 钱包权限 / 会话 | method/source、白名单公开地址/范围/限制/expiry 与有界嵌套摘要 | 需显式 API 或配合 dApp SDK；无全局 Snap 钩子、不执行 RPC、不采集秘密 session key，不证明账户执行限制。 |
-| UserOperation / 智能账户 | 显式 v0.6/拆分 v0.7-v0.8 结构；role entrypoint/protocol erc4337 的维护版本/代码匹配后读取 keyed nonce/deposit/费用；账户/factory/paymaster 代码 | 无通用 Snap 钩子、bundler/账户/聚合器/session/paymaster 完整验证或执行。 |
-| 添加/切换网络 / 关注资产 | method、声明链和有界白名单字段；URL 仅保留 origin；本页通过显式 SDK 提交切换建议 | 需显式 API/配合 dApp SDK，非全局钩子；后端不连接任意输入 URL，不认证新 provider。 |
+| UserOperation / 智能账户 | 显式 v0.6/拆分 v0.7-v0.8 参数、声明 nonce/费用；sender/EntryPoint/factory/paymaster 代码与 base fee 比较 | 不再提供 EntryPoint 维护绑定和 keyed nonce/deposit/prefund 核对；无通用 Snap 钩子或完整 bundler/账户/session/paymaster 验证与执行。 |
+| 添加/切换网络 / 关注资产 | 显式 API/主动接入 SDK 提交的 method、声明链和有界白名单字段；URL 仅保留 origin | 需显式集成才分析；Public networks 切换按钮不扫描、不调用 Muse。非全局钩子，后端不连接任意输入 URL，不认证新 provider。 |
 | 只读钱包 RPC | method、有界公开 account/address/network 字段与可用来源观察 | 需显式 API/主动选择只读 SDK 分析；不执行原始 RPC，隐私范围仍不完整。 |
 | 未知合约 / 钱包 RPC | target/value/selector/字节数，或 method 和有界白名单参数；通用适用观察 | 交易可能自动到达；任意钱包 RPC 需要手动输入。不从未知方法推断完整含义。 |
 
@@ -404,7 +412,7 @@ curl -sS -X POST http://127.0.0.1:5173/api/security/scan \
 | `GET /api/security/status` | 模型/工具标记和已配置链 ID；不含凭据 |
 | `GET /api/networks` | 公共网络名称、ID 和配置标记；不含 RPC URL 或密钥 |
 | `POST /api/networks/check` | 使用已配置 RPC 只读探测链/区块及可选账户余额/代码；不调用 Muse，不发交易 |
-| `POST /api/security/pair` | 本地网页取得本地配对 token；托管模式已验证网页身份取得独立的地址绑定 Snap token |
+| `POST /api/security/pair` | 本地网页取得本地配对 token；托管模式已验证网页身份取得独立的地址绑定 Snap token，ERC-1271 身份还绑定验证链 |
 | `GET /api/security/pair/status` | 经过身份验证的 Snap 配对/后端健康检查；接受配对 Snap 的 null origin |
 | `POST /api/security/scan` | 验证并分析一个未签名请求 |
 | `POST /api/security/ai/test` | 主动执行固定合成模型连通性检查 |
@@ -416,15 +424,21 @@ curl -sS -X POST http://127.0.0.1:5173/api/security/scan \
 | `POST /api/lab/clear` | 确认后清空本地测试合约钱包余额，要求 `{address, confirm: true}` |
 | `POST /api/lab/begin`、会话读取/结果路由 | 本地钱包测试生命周期；不能代替 Snap 报告 |
 | `POST /api/wallet-auth/challenge` 和 `POST /api/wallet-auth/verify` | 仅托管模式的精确消息 EOA 或支持的已部署合约登录验证 |
-| `GET /api/wallet-auth/status` | 托管 bearer 身份与到期时间；不返回原始凭据 |
-| `POST /api/wallet-auth/reports/delete` | 经确认逻辑删除本人报告，并撤销本人全部凭据；保留其他钱包及额度 |
-| `POST /api/wallet-auth/logout` 和 `POST /api/wallet-auth/revoke` | 托管当前会话退出，以及经网页授权撤销该地址全部网页/Snap 凭据 |
+| `GET /api/wallet-auth/status` | 托管 bearer 地址、可选合约身份链及到期时间；不返回原始凭据 |
+| `POST /api/wallet-auth/reports/delete` | 经确认逻辑删除当前身份范围的报告并撤销对应凭据；保留其他身份及额度 |
+| `POST /api/wallet-auth/logout` 和 `POST /api/wallet-auth/revoke` | 托管当前会话退出，以及经网页授权撤销当前身份地址/链范围的网页/Snap 凭据 |
 
 本地浏览器写操作要求本地 workbench origin，本地 Snap 扫描要求其配对 bearer。本地模式应保留在 loopback。托管模式的扫描、配对和历史需要经过身份验证的网页凭据或绑定钱包的 Snap 凭据；Origin 本身从不证明身份。托管交易/消息发送者必须匹配绑定地址。已验证网页用户可手动提交 permission/UserOperation/RPC 摘要获取建议；这些手动报告按所有者隔离，不执行所请求 RPC，也不新增自动 Snap 钩子。Snap 凭据仅允许交易/消息扫描。旧 demo、rule-engine、workflow、lab 和 monitor 兼容路由仍在仓库中，但在托管服务中禁用。它们不是启用中的签名后监控产品。
 
 ## 托管隐私、上游预算与证据强化
 
-**Sign out all sessions and revoke pairing** 会以原子操作撤销当前已验证地址的全部网页/Snap 凭据和未完成登录挑战，其他钱包不变。恢复使用须重新验证与配对。**Delete my stored reports** 先要求明确确认，只删除该地址拥有的报告，并撤销该地址全部凭据；使用额度不清零。每次托管报告插入/更新都会在同一 SQLite 事务内校验凭据仍有效且归属正确，撤销后的进行中请求不能把报告写回来。已发送给 Meta/RPC/情报服务的请求无法因删除报告而撤回或退款。
+在 POSIX 系统上，启动时会将磁盘数据库及已有 WAL/SHM 附属文件限制为仅所属用户可读写的 `0600`，新建数据库目录使用 `0700`。这些权限也会收紧已有数据库，但不加密数据，不能阻止同一操作系统账户、管理员或未保护备份的访问。
+
+模型输入在发送前受限：序列化证据包最多 **200,000 个 UTF-8 字节**，每次完整模型请求（包括修复请求）最多 **500,000 字节**。超限不会悄悄删减证据后生成看似完整的评估：原始证据保留，该次失败分析不接受分数。超时、供应商失败、拒答/无效输出及有效弃评也都不会产生本地编造的兜底分数。
+
+Vite 禁止直接通过文件路由读取 `.local/`、`.audit-build/`、`.presentation-build/`、`.git/`、环境/凭据文件及数据库文件，包括 `/@fs/` 请求。秘密仍须保存在指定私有文件中；这些拒绝规则是额外防护，不意味着可以把开发服务器公开到互联网。
+
+**Sign out all sessions and revoke pairing** 会以原子操作撤销当前身份范围内的凭据和未完成挑战：EOA 为该地址的全部会话，合约身份则仅限已验证链上的会话。**Delete my stored reports** 先要求确认，只删除同一身份范围的报告并撤销其凭据。其他身份和使用额度保留，不能通过删报告重置付费尝试限额。每次托管报告插入/更新都会在同一 SQLite 事务校验凭据仍有效且归属正确；撤销后的进行中请求不能把报告写回来。已发送给 Meta/RPC/情报服务的请求无法因删除而撤回或退款。
 
 这里的删除是 SQLite **逻辑行删除**，不保证 WAL 页、磁盘、备份或第三方日志中的历史字节被法证擦除。应用不加密数据库。自动保留默认关闭；运营者可在后端 `.local/service.env` 或进程环境配置以下非密钥项：
 
@@ -435,7 +449,7 @@ WALLETSHIELD_SCAN_GLOBAL_DAILY_LIMIT=1000
 WALLETSHIELD_REPORT_RETENTION_DAYS=0
 ```
 
-证据/RPC/分叉扫描预算独立于模型调用预算：托管扫描在**采集之前**原子预留六个范围（每分钟每钱包 8 次、服务端观察 IP 16 次、全局 60 次，另有以上可配置 UTC 日上限）。任一范围耗尽就拒绝扫描，不扣其他范围，不启动采集器。计数持久化，重启不重置；拒绝/未完成检查不产生兜底分数。模型调用仍有独立限额。这是初始容量策略，不是公众规模吞吐或可用性保证；网络连通探测仍有自己的限额。可配置日上限范围：每钱包 1–10,000、每 IP 1–100,000、全局 1–1,000,000。
+证据/RPC/分叉扫描预算独立于模型调用预算：托管扫描在**采集之前**原子预留六个范围（每分钟每身份 8 次、服务端观察 IP 16 次、全局 60 次，另有以上可配置 UTC 日上限）。任一范围耗尽就拒绝扫描，不扣其他范围，不启动采集器。计数持久化，重启不重置；拒绝/未完成检查不产生兜底分数。模型调用仍有独立限额。这是初始容量策略，不是公众规模吞吐或可用性保证；网络连通探测仍有自己的限额。可配置日上限范围：每身份 1–10,000、每 IP 1–100,000、全局 1–1,000,000。
 
 保留天数 `0` 不删除已有数据。显式设置 1–3650 天时，每次启动及之后每分钟最多清理 100 份已过期且有托管所有者映射的报告，积压可能需要多批；年龄按报告创建时间计算。无所有者映射的本地历史、使用额度、其他应用状态和第三方副本不由该策略删除。
 
@@ -445,7 +459,7 @@ Muse 新增接收 `evidence_admissibility`（各维度可由哪些实际观察�
 
 GoPlus 仍需显式开启。它从已识别的外层/路径/Permit2/批量字段中最多选八个代币与八个交易对手，不把桥的远端 token 或 delegatecall 目标直接当作本链代币。每轮最多十八个网络请求、四路并发、单请求 1.8 秒、总共 7.5 秒；响应缓存三十秒（最多 256 项），支持链列表缓存一小时。结果带 `fetchedAt`、`cacheHit`、`cacheAgeMs`、`cacheTtlMs`、`providerAsOf:null`、`freshnessVerified:false`；刚取得不表示知道供应商数据的实际日期。缺失标记、闭源/代理导致的遗漏、未查询/截断候选与未命中均是边界，参见 [GoPlus 官方响应说明](https://docs.gopluslabs.io/reference/response-details)。
 
-规范 V3 single/path、exact-input/exact-output 现有有界的依赖式分叉买卖适配器。原买入保留已有执行字段，衍生卖出按实际输入扣减和取得输出计算。原生币出资需要匹配的运营者 router/wrapped-native 记录；可读取候选池/factory 关联、tick/range 和有效流动性，但不认证官方池、市场报价或未来退出。不透明聚合器、不支持的资金/接收人及未来排序仍有缺口。钱包目录仍为 66 个代表性案例；适配器测试与真实钱包/Snap、在线模型验收分开。
+代币出资的规范 V3 single/path、exact-input/exact-output 保留有界依赖式分叉买卖适配器。原买入保留已有执行字段，衍生卖出按实际输入扣减和取得输出计算。移除部署绑定后，V3 原生币出资往返实验及路由专用 sender-sentinel 接收人别名不再支持；适用时仍可进行原交易通用模拟。候选池/factory 关联、tick/range 和有效流动性仅是观察，不认证官方池、报价或未来退出。不透明聚合器、不支持的资金/接收人及未来排序仍有缺口。钱包目录仍为 66 个代表性案例；移除前的历史验收结果不认证当前缩小后的范围。
 
 自动入口仍取决于钱包实际交付。MetaMask 当前仅显示 Critical 严重级别的消息洞察，并在进入 Sign 后展示；交易洞察有独立入口，参见 [官方入口说明](https://docs.metamask.io/snaps/reference/entry-points/)。权限、会话、UserOperation 等仍需显式 API 或配合的 dApp SDK 接入，不安装全局钱包拦截。托管登录支持 EOA 恢复及支持范围内已部署合约的 ERC-1271 精确登录消息核对；未部署/ERC-6492 和不支持的策略仍不可用。公开上线仍需真实域名/TLS、目标 Snap 发布与分发、浏览器钱包验收、安全备份恢复以及负载/故障测试。
 
@@ -484,7 +498,7 @@ npm run test:asset-cleanup
 | `npm run build` | 重新生成覆盖指南，检查类型，构建前端和 Snap bundle/manifest。 |
 | `npm run test:security` | 在独立端口启动自己的临时 Anvil，验证模拟行为后关闭；不使用当前浏览器测试钱包链，也不调用付费模型。 |
 | `npm run test:extensions` | 启动另一个临时 Anvil，验证账户、仓位及 DAI/ERC-3009 的实际 getter 取数、部分失败和时间边界；仅主动写入测试合约状态，确认采集器不挖块后关闭。不会调用模型或浏览器钱包。 |
-| `npm run test:v3` | 两种 exactInputSingle 元组格式与正常/阻止卖出的四个隔离 V3 测试场景，验证源状态不变，不用主链、钱包 UI 或模型。 |
+| `npm run test:v3` | 隔离的规范代币出资 V3 路线/失败场景、原生币通用执行及部分协议/权限前后状态比较；源状态不变，不写公网链，不调用钱包 UI 或模型。 |
 | `npm run test:asset-cleanup` | 在独立随机端口临时 Anvil 验证清零余额、收到的 NFT、保留仓位/授权、重复清理与重新补充。不会接触常用本地链，也不调用钱包或模型。 |
 | `npm run test:chain` | 在运行中的链 31337 上验证原始本地授权/资金准备流程；需要本地部署，会执行本地测试写入，然后恢复快照。 |
 | `npm run test:lab` | 使用本地节点账户执行当前 66 案例目录，验证交易回执和签名恢复，并写入 `docs/wallet-lab-acceptance.json`；会对运行中的本地链创建/恢复快照。 |

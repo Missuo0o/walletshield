@@ -12,18 +12,22 @@ const legacyText = (value: string): Component => ({ type: NodeType.Text, value }
 
 declare const ethereum:{request:(request:{method:string})=>Promise<unknown>};
 declare const snap:{request:(request:{method:string;params?:unknown})=>Promise<any>};
-async function backendHeaders(){const state=await snap.request({method:'snap_manageState',params:{operation:'get'}});if(!state||!(/^[a-f0-9]{64}$/).test(state.backendToken??''))throw Error('Snap not paired');return {'Content-Type':'application/json',Authorization:`Bearer ${state.backendToken}`,...(typeof state.testSessionId==='string'&&/^[\da-f-]{36}$/.test(state.testSessionId)&&state.testSessionExpiresAt>Date.now()?{'X-WalletShield-Test-Session':state.testSessionId}:{})};}
+const validChain=(value:unknown):value is number=>typeof value==='number'&&Number.isSafeInteger(value)&&value>0;
+class PairingNetworkError extends Error{constructor(){super('This contract-wallet pairing belongs to a different network or its current network could not be verified. Switch to the verified network, or sign in and pair WalletShield again on this network. No risk score was generated.');}}
+async function backendConnection(chainId?:number,checkNetwork=false){const state=await snap.request({method:'snap_manageState',params:{operation:'get'}});if(!state||!(/^[a-f0-9]{64}$/).test(state.backendToken??''))throw Error('Snap not paired');if(state.chainId!==undefined&&(!validChain(state.chainId)||checkNetwork&&state.chainId!==chainId))throw new PairingNetworkError();return {boundChainId:state.chainId as number|undefined,headers:{'Content-Type':'application/json',Authorization:`Bearer ${state.backendToken}`,...(typeof state.testSessionId==='string'&&/^[\da-f-]{36}$/.test(state.testSessionId)&&state.testSessionExpiresAt>Date.now()?{'X-WalletShield-Test-Session':state.testSessionId}:{})}};}
+async function backendHeaders(){return (await backendConnection()).headers;}
 export const onRpcRequest:OnRpcRequestHandler=async({origin,request})=>{
   if(!(RUNTIME.allowedOrigins as readonly string[]).includes(origin))throw Error('Unsupported origin or method');
   if(request.method==='walletshield_status'){const headers=await backendHeaders();return pairingStatus(headers.Authorization);}
   if(request.method==='walletshield_test_session'){
     const p=request.params as {id?:unknown}|undefined;if(!p||typeof p.id!=='string'||!/^[\da-f-]{36}$/.test(p.id))throw Error('Invalid test session');
     const state=await snap.request({method:'snap_manageState',params:{operation:'get'}});if(!state?.backendToken)throw Error('Snap not paired');
-    await snap.request({method:'snap_manageState',params:{operation:'update',newState:{backendToken:state.backendToken,testSessionId:p.id,testSessionExpiresAt:Date.now()+10*60*1000}}});return {configured:true};
+    if(state.chainId!==undefined&&!validChain(state.chainId))throw Error('Invalid pairing network');
+    await snap.request({method:'snap_manageState',params:{operation:'update',newState:{backendToken:state.backendToken,...(state.chainId!==undefined?{chainId:state.chainId}:{}),testSessionId:p.id,testSessionExpiresAt:Date.now()+10*60*1000}}});return {configured:true};
   }
   if(request.method!=='walletshield_configure')throw Error('Unsupported origin or method');
   const params=request.params as {token?:unknown}|undefined;if(!params||typeof params.token!=='string'||!(/^[a-f0-9]{64}$/).test(params.token))throw Error('Invalid pairing');
-  const status=await pairingStatus(`Bearer ${params.token}`);await snap.request({method:'snap_manageState',params:{operation:'update',newState:{backendToken:params.token}}});return {configured:true,...status};
+  const status=await pairingStatus(`Bearer ${params.token}`);await snap.request({method:'snap_manageState',params:{operation:'update',newState:{backendToken:params.token,...(status.chainId!==undefined?{chainId:status.chainId}:{})}}});return {configured:true,...status};
 };
 
 type Result = { operation?:string|{category:string;label:string;fields:Record<string,unknown>};missingData?:string[];score?: number | null; scoreSource?: string; ai?: { status: string; message: string;result?:{dimensions?:{dimension:string;assessment:string;reason:string;evidence_ids:string[]}[];evidence_confidence?:string;assessment?:'low'|'review'|'high'|'unknown';summary:string;suggested_action:string;missing_data?:string[];reasons:{text:string;evidence_ids:string[]}[]} }; id: string; source: 'rpc'; level: 'low' | 'review' | 'high' | 'unknown'; title: string; summary: string; complete: boolean; checks: { title: string; detail: string; status: string }[] };
@@ -33,7 +37,7 @@ const dimensionNames:Record<string,string>={authority:'Authority',exposure:'Expo
 function dimensionLines(result:Result){return (result.ai?.result?.dimensions??[]).map(d=>`${dimensionNames[d.dimension]??d.dimension}: ${d.assessment==='not_applicable'?'Not applicable':assessmentLabel[d.assessment as keyof typeof assessmentLabel]??'Unknown'}. ${d.reason}`);}
 function displayedChecks(checks:Result['checks']){const order:Record<string,number>={risk:0,warning:1,unknown:2,pass:3};return checks.map((check,index)=>({check,index})).sort((a,b)=>(order[a.check.status]??2)-(order[b.check.status]??2)||a.index-b.index).slice(0,24).map(v=>v.check);}
 const API = `${RUNTIME.apiBase}/security/scan`;
-async function pairingStatus(authorization:string){const response=await fetch(`${RUNTIME.apiBase}/security/pair/status`,{headers:{Authorization:authorization},signal:AbortSignal.timeout(4000)});if(!response.ok)throw Error('Backend pairing rejected');const value=await response.json();if(value?.paired!==true)throw Error('Invalid backend status');return {paired:true,...(typeof value.address==='string'?{address:value.address}:{}),expiresAt:value.expiresAt??null};}
+async function pairingStatus(authorization:string){const response=await fetch(`${RUNTIME.apiBase}/security/pair/status`,{headers:{Authorization:authorization},signal:AbortSignal.timeout(4000)});if(!response.ok)throw Error('Backend pairing rejected');const value=await response.json();if(value?.paired!==true||value.chainId!==undefined&&!validChain(value.chainId))throw Error('Invalid backend status');if(value.chainId!==undefined){const observed=await providerContext(typeof ethereum==='undefined'?undefined:ethereum);if(observed?.chainId!==value.chainId)throw new PairingNetworkError();}return {paired:true,...(typeof value.address==='string'?{address:value.address}:{}),expiresAt:value.expiresAt??null,...(value.chainId!==undefined?{chainId:value.chainId as number}:{})};}
 function validResult(value: unknown): value is Result {
   if (!value || typeof value !== 'object') return false;
   const r = value as Partial<Result>;
@@ -63,7 +67,7 @@ export const onTransaction: OnTransactionHandler = async ({ transaction, chainId
     const authorizationList=normalizeAuthorizationList(raw.authorizationList);
     const type=typeof raw.type==='number'&&Number.isSafeInteger(raw.type)&&raw.type>=0?`0x${raw.type.toString(16)}`:typeof raw.type==='string'&&/^0x[\da-f]{1,64}$/i.test(raw.type)?raw.type:undefined;
     try {
-      response = await fetch(API, { method: 'POST', headers: await backendHeaders(), signal: controller.signal,
+      response = await fetch(API, { method: 'POST', headers: (await backendConnection(numericChain,true)).headers, signal: controller.signal,
         body: JSON.stringify({ kind: 'transaction', chainId: numericChain, transaction: { from: transaction.from, to: transaction.to ?? null, data: transaction.data ?? '0x', value: transaction.value ?? '0x0',...feeFields,...(type?{type}:{}),...(authorizationList?{authorizationList}:{}),...(unsupportedFields.length?{unsupportedFields}:{}) }, ...(transactionOrigin ? { origin: transactionOrigin } : {}) }) });
     } finally { clearTimeout(timer); }
     if (!response.ok) throw new Error('API_FAILED');
@@ -86,7 +90,8 @@ export const onTransaction: OnTransactionHandler = async ({ transaction, chainId
         Text({children:DATA_BOUNDARY}),Text({ children: ADVICE_ONLY })] }),
       ...(result.level === 'high' || result.level === 'unknown' ? { severity: 'critical' as const } : {})
     };
-  } catch {
+  } catch(error) {
+    if(error instanceof PairingNetworkError)return {severity:'critical',content:Box({children:[Heading({children:'WalletShield · Reconnect on this network'}),Text({children:error.message})]})};
     return { severity: 'critical', content: Box({ children: [Heading({ children: 'WalletShield · Unable to assess' }),
       Text({ children: 'The service is unavailable, the network is not configured, or the request could not be processed. An unfinished check does not establish safety.' }),
       Text({ children: 'The security check did not complete. Verify the operation and decide in the wallet whether to reject it.' })] }) };
@@ -96,9 +101,13 @@ export const onSignature: OnSignatureHandler = async ({ signature, signatureOrig
   try {
     // This hook does not provide the active wallet chain. A typed domain's
     // claimed chain must not be presented as independently verified context.
-    const chainId = 0;
     const observed=await providerContext(typeof ethereum==='undefined'?undefined:ethereum);
-    const response = await fetch(API, { method: 'POST', headers: await backendHeaders(), signal: AbortSignal.timeout(85000),
+    const connection=await backendConnection(observed?.chainId,true);
+    // A contract-wallet login is a chain-scoped identity. Its verified chain is
+    // a query/authentication scope, not proof of an origin-bound signing chain.
+    // EOA identities retain unknown signing-chain context (zero).
+    const chainId=connection.boundChainId??0;
+    const response = await fetch(API, { method: 'POST', headers: connection.headers, signal: AbortSignal.timeout(85000),
       body: JSON.stringify({ kind: 'signature', chainId, signature: { from: signature.from, method: signature.signatureMethod, data: signature.data,...(observed?{providerContext:observed}:{}) }, ...(signatureOrigin ? { origin: signatureOrigin } : {}) }) });
     if (!response.ok) throw new Error('API_FAILED');
     const result: unknown = await response.json();
@@ -114,13 +123,13 @@ export const onSignature: OnSignatureHandler = async ({ signature, signatureOrig
       ...(missing.total?[legacyHeading(`Unfinished checks (${missing.total})`),...missing.items.map(legacyText),...(missing.total>6?[legacyText('Open this report in the workbench for all missing checks and evidence.')]:[])]:[]),
       ...(result.checks.length>24?[legacyText(`${result.checks.length} evidence items; showing up to 24, prioritizing risks and unknowns. Open the workbench report for all evidence.`)]:[]),...displayedChecks(result.checks).flatMap(check => [legacyHeading(check.title), legacyText(check.detail)]),
       legacyText(DATA_BOUNDARY),legacyText(`Report: ${result.id}. ${ADVICE_ONLY}`)]) };
-  } catch { return { severity: 'critical', content: legacyPanel([legacyHeading('WalletShield · Unable to assess'), legacyText('The signature check did not complete. A message may authorize future spending; verify its purpose.')]) }; }
+  } catch(error) {if(error instanceof PairingNetworkError)return {severity:'critical',content:legacyPanel([legacyHeading('WalletShield · Reconnect on this network'),legacyText(error.message)])};return { severity: 'critical', content: legacyPanel([legacyHeading('WalletShield · Unable to assess'), legacyText('The signature check did not complete. A message may authorize future spending; verify its purpose.')]) }; }
 };
 export const onHomePage: OnHomePageHandler = async () => ({ content: Box({ children: [
   Heading({ children: 'WalletShield 0.4.1' }),Text({children:'Pre-sign checks include transfers as well as permissions and message signatures.'}),
   Heading({children:'Automatic entry and partial coverage'}),Text({children:ENTRY_BOUNDARY}),
   Text({children:'Analysis paths cover native/token/NFT transfers, approvals and revocations, selected swaps, and personal/login/Permit signatures.'}),
-  Text({children:'Selected lending, vault and authority checks can compare state before and after an isolated execution. Identity, reference-price and bridge-route evidence needs maintained operator configuration. Missing reads and unsupported protocol behavior remain explicit; a successful scenario is not future safety.'}),
+  Text({children:'Selected lending, vault and authority checks can compare state before and after an isolated execution. Protocol identity, market valuation and destination-chain settlement are not established by these observations. Missing reads and unsupported protocol behavior remain explicit; a successful scenario is not future safety.'}),
   Heading({children:'Currently requires explicit submission'}),Text({children:`${ENTRY_LABELS.manual}: permissions/sessions, smart accounts, network configuration, read-only and other wallet RPCs. This Snap does not intercept every operation.`}),
   Text({children:'Unrecognized requests stay unknown. Non-EVM chains, other wallet integrations, device/key compromise and exchange internals are not covered.'}),
   Text({children:'Scores are not loss probabilities. A saved key does not prove model connectivity. If AI fails, evidence and unknowns remain without a score.'}),

@@ -3,7 +3,6 @@ import type {SecurityConfig} from './config.js';
 import type {Evidence,Operation,SecurityRequest} from './types.js';
 import {evidence} from './evidence.js';
 import {pinnedRpc} from './trusted-rpc.js';
-import {findTrustedDeployment,verifyTrustedDeployment} from './registry.js';
 const zero='0x0000000000000000000000000000000000000000',curveN=0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;
 const quantity=(value:unknown):value is Hex=>typeof value==='string'&&/^0x[\da-f]{1,64}$/i.test(value);
 type Tuple=NonNullable<Extract<SecurityRequest,{kind:'transaction'}>['transaction']['authorizationList']>[number];
@@ -56,8 +55,8 @@ export async function delegationEvidence(request:SecurityRequest,_op:Operation,c
  }
  if(lastEligible.size)out.push(evidence('delegation_sequence','pass','Conditional last-eligible delegation candidates summarized','These candidates result only from this bounded snapshot comparison. They are not confirmed account changes and do not establish implementation or transaction safety.','rpc',{...snapshot,conditional:true,confirmedChanges:false,candidates:[...lastEligible.entries()].map(([authority,index])=>({authority,tupleIndex:index,delegate:list[index].address,action:list[index].address.toLowerCase()===zero?'clear_delegation':'set_delegation'}))}));
  const delegates=[...new Set(list.map(tuple=>tuple.address.toLowerCase()).filter(at=>at!==zero))];
- await Promise.all(delegates.map(async(at,index)=>{try{const code=await pinned.code(at),record=findTrustedDeployment(config,request.chainId,at),binding=record?await verifyTrustedDeployment(pinned,record).catch(()=>null):null;
-  out.push(evidence(`delegation_target_${index}`,code==='0x'?'warning':'pass','Selected delegate code observed','Code/hash or an operator-maintained binding does not audit delegate authority. Empty code can include precompile behavior; a delegate designator is not recursively followed because EIP-7702 resolves only one hop.','rpc',{...snapshot,delegate:at,hasCode:code!=='0x',...(code!=='0x'?{codeHash:keccak256(code)}:{}),delegateIsDesignator:/^0xef0100[\da-f]{40}$/i.test(code),resolutionHopsChecked:1,implementationPolicyVerified:false,registryMatched:binding?.matched??false,...(record?{configuredProtocol:record.protocol,configuredVersion:record.version}:{} )}));
+ await Promise.all(delegates.map(async(at,index)=>{try{const code=await pinned.code(at);
+  out.push(evidence(`delegation_target_${index}`,code==='0x'?'warning':'pass','Selected delegate code observed','Code presence/hash does not audit delegate authority. Empty code can include precompile behavior; a delegate designator is not recursively followed because EIP-7702 resolves only one hop.','rpc',{...snapshot,delegate:at,hasCode:code!=='0x',...(code!=='0x'?{codeHash:keccak256(code)}:{}),delegateIsDesignator:/^0xef0100[\da-f]{40}$/i.test(code),resolutionHopsChecked:1,implementationPolicyVerified:false,identityVerified:false}));
  }catch{out.push(evidence(`delegation_target_${index}`,'unknown','Selected delegate code unavailable','No empty implementation or trusted code is inferred from a failed read.','rpc',{...snapshot,delegate:at}));}}));
  return out;
 }

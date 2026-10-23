@@ -1,7 +1,7 @@
 import type {ServiceConfig} from '../server/service-config.js';
 import {PairingLimitError,type WalletAuth,type WalletPrincipal} from '../server/wallet-auth.js';
 import type { FastifyInstance } from 'fastify';
-import type { Store } from '../server/store.js';
+import {walletIdentityKey,type Store} from '../server/store.js';
 import { requestSchema, COVERAGE, type SecurityReport, type AIState } from './types.js';
 import { decodeRequest } from './decode.js';
 import { assess } from './rules.js';
@@ -43,7 +43,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
   });
   app.get('/api/security/pair/status',async(req,reply)=>{
     reply.header('Cache-Control','no-store');
-    if(hosted){const principal=auth!.authenticate(req);if(!principal||principal.kind!=='snap')return reply.code(401).send({error:'The Snap pairing credential has expired or been revoked; pair again.'});return {paired:true,address:principal.address,expiresAt:principal.expiresAt,mode:'hosted'};}
+    if(hosted){const principal=auth!.authenticate(req);if(!principal||principal.kind!=='snap')return reply.code(401).send({error:'The Snap pairing credential has expired or been revoked; pair again.'});return {paired:true,address:principal.address,expiresAt:principal.expiresAt,...(principal.chainId!==undefined?{chainId:principal.chainId}:{}),mode:'hosted'};}
     if(!await localSnapToken(req.headers.authorization))return reply.code(401).send({error:'The backend did not accept this Snap pairing.'});
     return {paired:true,expiresAt:null,mode:'local'};
   });
@@ -92,7 +92,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
   });
   }
   app.get('/api/security/status',async()=>{
-    const c=await getConfig();return {version:'0.4.1',scoringPolicy:'muse-evidence-v3-structured-facts',aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,sourceVerification:!!c.sourceVerification,registry:{configuredDeployments:c.trustedDeployments?.length??0,configuredPriceFeeds:c.priceFeeds?.length??0,invalid:!!c.registryError},monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
+    const c=await getConfig();return {version:'0.4.1',scoringPolicy:'muse-evidence-v3-structured-facts',aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,sourceVerification:!!c.sourceVerification,monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
   });
   if(!hosted){
   app.get('/api/security/examples',async()=>securityExamples.map(({id,name,request})=>({id,name,request})));
@@ -101,7 +101,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     catch {return reply.code(503).send({error:'The guide is temporarily unavailable.'});}
   });
   }
-  app.get('/api/security/records',async(req,reply)=>{if(!hosted)return store.securityList();const principal=auth!.authenticate(req);return principal?store.authSecurityList(principal.address):reply.code(401).send({error:'Verify your wallet identity first.'});});
+  app.get('/api/security/records',async(req,reply)=>{if(!hosted)return store.securityList();const principal=auth!.authenticate(req);return principal?store.authSecurityList(principal.address,principal.chainId):reply.code(401).send({error:'Verify your wallet identity first.'});});
   app.get<{Params:{id:string}}>('/api/security/records/:id',async(req,reply)=>{const principal=hosted?auth!.authenticate(req):null;if(hosted&&(!principal||!auth!.ownsReport(req.params.id,principal)))return reply.code(404).send({error:'Report not found.'});return store.securityGet(req.params.id)??reply.code(404).send({error:'Report not found.'});});
   app.get<{Params:{id:string}}>('/api/security/records/:id/evidence',async(req,reply)=>{
     const principal=hosted?auth!.authenticate(req):null;if(hosted&&(!principal||!auth!.ownsReport(req.params.id,principal)))return reply.code(404).send({error:'Report not found.'});
@@ -124,8 +124,9 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     if(parsed.data.kind==='transaction'){const unsupported=executionLimitations(parsed.data.transaction);if(unsupported.length)parsed.data.transaction.unsupportedFields=unsupported;}
     if(parsed.data.kind!=='transaction'&&parsed.data.kind!=='signature'){const sanitized=sanitizeRpcParams(parsed.data.params);parsed.data.params=sanitized.params as typeof parsed.data.params;inputRedacted=sanitized.removed;inputTruncated=sanitized.truncated;}
     if(hosted&&(parsed.data.chainId===31337||parsed.data.kind==='signature'&&Number(decodeRequest(parsed.data).fields.domainChainId)===31337))return reply.code(400).send({error:'Hosted mode does not connect to local lab chain 31337.'});
+    if(principal?.chainId!==undefined&&parsed.data.chainId!==principal.chainId)return reply.code(403).send({error:'This contract-wallet identity is bound to its verified chain. Sign in and pair again on the request network.'});
     if(principal){const sender=parsed.data.kind==='transaction'?parsed.data.transaction.from:parsed.data.kind==='signature'?parsed.data.signature.from:undefined;if(sender?sender.toLowerCase()!==principal.address:principal.kind==='snap')return reply.code(403).send({error:'The request account differs from the bound wallet; switch identity and pair again.'});}
-    const key=principal?.address??'local',now=Date.now(),times=recent.get(key)??[];while(times.length&&now-times[0]>60000)times.shift();
+    const key=principal?walletIdentityKey(principal.address,principal.chainId):'local',now=Date.now(),times=recent.get(key)??[];while(times.length&&now-times[0]>60000)times.shift();
     if(busy.has(key)||busy.size>=(options.access?.service.maxScans??1)||times.length>=8)return reply.code(429).send({error:'Too many scans; retry later. This request was not analyzed.'});
     if(recent.size>=10000&&!recent.has(key)){for(const [k,v] of recent)if(!v.length||now-v.at(-1)!>60000)recent.delete(k);if(recent.size>=10000)return reply.code(429).send({error:'The service is busy; retry later.'});}
     busy.add(key);times.push(now);recent.set(key,times);

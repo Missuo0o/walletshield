@@ -72,6 +72,21 @@ test('unrelated negative, advice and conditional clauses cannot suppress a later
  ])assert.throws(()=>validateAI(withText(text,'summary'),report(),'fixture'),/Unsupported certainty claim/,text);
 });
 
+test('source matching cannot be promoted to a completed security audit in any displayed model field',()=>{
+ const r=report();r.checks.push(evidence('registry_source_0','pass','Source match','Matching source is not an audit.','sourcify',{address:token,runtimeMatch:'exact_match',sourceCodeAudit:false}));
+ assert.equal(claimSupport(r).securityAudit,false);
+ for(const slot of ['summary','suggested_action','missing_data','reason','dimension'])for(const text of [
+  'The contract has passed a security audit.', 'The source code has been independently audited.',
+  'A security audit has completed.', 'The audit is successful.', 'The protocol is audited.',
+  '该合约已经通过安全审计。', '合约已经审计。'
+ ])assert.throws(()=>validateAI(withText(text,slot),r,'fixture'),/Unsupported certainty claim/,`${slot}: ${text}`);
+ for(const text of [
+  'The contract has not passed a security audit.', 'The source code has not been independently audited.',
+  'There is no evidence that the contract has passed a security audit.',
+  'Verify whether the source code has been independently audited.', 'The security audit is unverified.'
+ ])assert.equal(validateAI(withText(text,'summary'),r,'fixture').score,29,text);
+});
+
 test('honest uncertainty, negatives, questions and conditional advice are preserved in every prose field',()=>{
  const text=[
   'The spender is not the official protocol.', 'The recipient is not trusted.', 'This transaction is not guaranteed safe.',
