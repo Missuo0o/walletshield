@@ -13,7 +13,7 @@ const abi=parseAbi([
 ]);
 const isAddress=(v:unknown):v is `0x${string}`=>typeof v==='string'&&/^0x[\da-f]{40}$/i.test(v);
 const limitations:Record<string,string>={
- swap_v3:'Common V3 parameters were decoded. Dependent V3 buy/sell testing is unavailable; slippage, liquidity, MEV, and future sellability remain unknown.',
+ swap_v3:'Common V3 parameters were decoded. Dependent fork buy/sell experiments support selected canonical token-input exactInputSingle requests with the sender as recipient. Check the separate round_trip evidence for whether an experiment ran and its observed result; support alone does not establish completion. Multi-hop, exact-output, native-funded, router-balance and other-recipient experiments remain unsupported. Protocol/pool identity, fair pricing, liquidity, MEV, and future sellability remain unverified.',
  liquidity:'Pool identity, authentic reserves, LP pricing, impermanent loss, and exit conditions require a protocol-specific adapter.',
  liquidity_v3:'Position parameter and selected interface reads do not authenticate the manager or pool. Current tick/liquidity, market prices, slippage economics, complete accounting and future collection remain unverified.',
  withdrawal:'withdraw(uint256) is shared by wrapped-coin and other protocols. Its quantity units, authentic wrapper identity, redemption ratio, exit conditions and native proceeds are not established by the method name.',

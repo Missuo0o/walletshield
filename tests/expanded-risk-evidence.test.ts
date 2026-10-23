@@ -5,6 +5,9 @@ import {decodeRequest} from '../src/security/decode.js';
 import {simulateRequest,type ForkFactory} from '../src/security/simulation.js';
 import {INTELLIGENCE_LIMITS,intelligenceEvidence,intelligenceScope} from '../src/security/intelligence.js';
 import {batchEvidence} from '../src/security/batch-evidence.js';
+import {protocolEvidence} from '../src/security/protocols.js';
+import {assess} from '../src/security/rules.js';
+import {evidencePacket} from '../src/security/ai.js';
 import type {SecurityConfig} from '../src/security/config.js';
 import type {SecurityRequest} from '../src/security/types.js';
 
@@ -45,6 +48,14 @@ test('both canonical V3 exactInputSingle variants replay the original buy and us
   assert.equal(roundTrip.status,'warning');assert.equal(roundTrip.data?.variant,'v3_single');assert.equal(roundTrip.data?.roundTripReturnPercent,90);assert.equal(roundTrip.data?.declaredInputRaw,'100');assert.equal(roundTrip.data?.observedInputDebitRaw,'60');assert.equal(roundTrip.data?.ratioInputRaw,'60');assert.equal(roundTrip.data?.deadlinePresent,deadline);assert.equal(roundTrip.data?.originalPriceLimit,'123');assert.equal(roundTrip.data?.blockTimestampSeconds,'1900000000');assert.equal(fixture.closed(),1);
   assert.equal(fixture.sent.length,4);for(const buy of fixture.sent.slice(0,2))for(const key of ['data','gas','nonce','maxFeePerGas','maxPriorityFeePerGas','value'] as const)assert.equal(buy[key],request.transaction[key]);
   for(const dependent of fixture.sent.slice(2)){assert.equal(dependent.nonce,undefined);assert.equal(dependent.maxFeePerGas,'0x64');assert.equal(dependent.maxPriorityFeePerGas,'0xa');assert.equal(dependent.gas,'0xb71b00');}
+  const protocol=await protocolEvidence(request,decodeRequest(request),config);
+  const packet=evidencePacket(assess(request,[...checks,...protocol]));
+  assert.equal(packet.checks.find(check=>check.id==='round_trip')?.data?.returned,'54');
+  const semantics=packet.checks.find(check=>check.id==='protocol_semantics')!;
+  assert.equal(semantics.status,'unknown','A completed reverse experiment does not establish all protocol semantics.');
+  assert.match(semantics.detail,/selected canonical token-input exactInputSingle/);
+  assert.match(semantics.detail,/separate round_trip evidence/);
+  assert.doesNotMatch(semantics.detail,/Dependent V3 buy\/sell testing is unavailable/);
  }
 });
 
@@ -54,6 +65,10 @@ test('failed V3 reverse selling is a warning, zero acquired balance is adverse, 
  for(const different of [true,false]){
   const unsupported=v3Request(true);if(different)unsupported.transaction.data=encodeFunctionData({abi:v3Abi(true),functionName:'exactInputSingle',args:[{tokenIn:input,tokenOut:output,fee:3000,recipient:other,deadline:2000000000n,amountIn:100n,amountOutMinimum:0n,sqrtPriceLimitX96:0n}]});else unsupported.transaction.value='0x1';
   const child=forkFixture(true),checks=await simulateRequest(unsupported,decodeRequest(unsupported),config,child.factory);assert.equal(checks.find(check=>check.id==='round_trip')?.status,'unknown');assert.equal(child.sent.length,1,'Unsupported experiments must not synthesize approval/sell.');
+  const protocol=await protocolEvidence(unsupported,decodeRequest(unsupported),config);
+  const packet=evidencePacket(assess(unsupported,[...checks,...protocol]));
+  assert.equal(packet.checks.find(check=>check.id==='round_trip')?.status,'unknown');
+  assert.match(packet.checks.find(check=>check.id==='protocol_semantics')!.detail,/native-funded, router-balance and other-recipient experiments remain unsupported/);
  }
 });
 

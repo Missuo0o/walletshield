@@ -314,7 +314,7 @@ Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一
 | NFT operator 授权 / 撤销 | 集合、operator、布尔值及可读取的现有 operator 状态；控制/信誉/分叉证据 | 不完整枚举当前/未来持有资产，也不证明 operator 会诚实行事。 |
 | 链上 Permit2 结构 allowance | 代币、spender、`uint160` 数量、expiration 和可用代币事实 | 结构不证明官方 Permit2 身份；独立读取用户对候选 Permit2 合约的底层 ERC-20 授权，以及其内部对最终 spender 的 amount/expiration/nonce。可读状态不证明部署身份、domain 语义或未来用途。 |
 | V2 结构兑换 | 路径、输入量、最低输出、收款方、deadline；支持时，在分叉执行买入 → 授权所得代币 → 反向卖出，记录返回数量/gas、变化量及可选代币情报 | 限定路径结构且要求相同收款方；卖出失败有多种原因；往返损失含费用/价格冲击，不是纯税率。 |
-| V3 结构兑换 | 代币或解码路径、fee、收款方、输入/输出限制、价格限制和部分 deadline；通用分叉事实 | 没有 V3 专属连续买卖测试、完整池/tick/报价验证或 MEV 模型。 |
+| V3 结构兑换 | 代币或解码路径、fee、收款方、输入/输出限制、价格限制和部分 deadline；通用分叉事实 | 部分标准、代币出资且本人收款的 `exactInputSingle` 支持依赖式分叉买卖；是否执行及结果以 `round_trip` 证据为准。多跳、exact-output、原生币/路由余额出资及其他收款人往返仍不支持，完整池/tick/报价验证与 MEV 分析仍不完整。 |
 | ERC-4626 结构金库 | 动作、assets/shares、receiver/owner；`asset`、`totalAssets`、`totalSupply`、动作 preview/max；可读取的底层资产余额/decimals/allowance 和份额单位 | 底层资产与份额单位分别处理；接口输出不证明身份、估值、偿付能力或未来赎回。 |
 | 借贷 / 抵押 | 资产、数量、受益人、利率模式或抵押开关；Aave 结构的抵押/债务/可借额度/LTV/阈值/健康因子和储备配置 | 仅当前状态；没有完整的操作后清算或价格/预言机压力模型。 |
 | 质押 / 解除质押 / 奖励 | 候选方法、数量、receiver；控制状态和通用分叉观察 | 不自动验证锁定期、罚没、奖励来源/公式或未来提款。 |
