@@ -90,6 +90,6 @@ test('missing or mismatched headers omit hash/time without discarding pinned pos
 });
 test('mint economics and unrelated operations remain explicit instead of using a fabricated position ID',async()=>{
  const req=request('mint',[{token0,token1,fee:3000,tickLower:-120,tickUpper:180,amount0Desired:100n,amount1Desired:200n,amount0Min:90n,amount1Min:180n,recipient,deadline:2000n}]),rpc=fixture(),checks=await positionEvidence(req,operation(req),config,rpc.fetcher);
- assert.equal(checks[0].status,'unknown');assert.equal(checks[0].source,'coverage');assert.equal(checks[0].data?.tokenId,undefined);assert.match(checks[0].detail,/no existing position ID/);assert.ok(!rpc.calls.some(c=>c.method==='eth_call'));
+ assert.equal(checks[0].status,'unknown');assert.equal(checks[0].source,'coverage');assert.equal(checks[0].data?.tokenId,undefined);assert.match(checks[0].detail,/no existing position ID/);assert.ok(!rpc.calls.some(c=>['positions','ownerOf','getApproved'].includes(c.name??'')),'Mint pool lookup must not invent an existing position ID.');assert.ok(checks.some(check=>check.id==='position_pool'&&check.status==='unknown'));
  const unrelated={...operation(req),category:'native_transfer'} as Operation;assert.deepEqual(await positionEvidence(req,unrelated,config,async()=>{throw Error('Must not query');}),[]);
 });

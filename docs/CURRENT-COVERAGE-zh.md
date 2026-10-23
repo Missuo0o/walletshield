@@ -9,15 +9,29 @@ WalletShield 对单个未签名 EVM 请求提供**签名前风险提示**。按�
 当前检查使用钱包提供的未签名请求、来源 origin/网络元数据，以及成功取得的 RPC、情报和模拟证据。Muse 评价可观察请求信号，包括支持范围内的来源、消息和请求不一致。链/provider/执行上下文指技术观察。历史报告与验收文件保留原始记录，不被删除或改写。
 
 
+## 当前证据与接入新增能力
+
+当前 Muse 回复使用 `walletshield-facts-v1`：精确主体/字段/值/来源/链/区块/时间/范围，并在理由和维度中引用 `fact_ids`；历史回复继续可读。后端验证观察复制和相关性，不证明每个外部响应或自然语言句子真实。数字仍只由 Muse 给出，没有固定权重、下限或兜底。
+
+可选 `.local/registry.json` 配置经运营者审查的部署/代码/实现绑定、参考价格 feed 和已审查 OP 桥路线。`ENABLE_SOURCE_VERIFICATION=1` 独立开启有界 Sourcify 匹配观察；GoPlus 另行选择启用。默认不虚构官方部署或美元锚定；价格是参考，不是可执行报价或确定损失。
+
+新增有界证据包括 Seaport 承诺项目/当前状态、Permit2 witness 外层承诺、版本绑定 UserOperation 状态、EIP-7702 元组密码学/有条件状态、原始分叉交易前后部分权限/金库/借贷状态、扩展 V3 路线与候选池状态。dApp 包装器须主动接入，不是全局钱包拦截；托管 ERC-1271 只验证本次登录，不验证未来资产签名。
+
+Wallet and network 页面显示 registry 数量、源码核对开关及有界只读 RPC 能力观察：固定区块调用、一次历史余额和固定 trace 探测。成功不是完整 archive/trace 保证。registry 与参考价格列表为空时相应增强仍未启用；必须先维护独立审查的网络/地址/代码记录。本页网络切换建议只通过本页显式 SDK 触发。
+
+`npm run evaluate:ai` 默认运行固定哈希的合成校验器检查，不请求模型/RPC，不代表在线 Muse 准确率。付费评估必须显式指定 `--live --confirm-paid`、案例和调用预算，不会自动运行。
+
+完整[证据、配置、工具字段、SDK、评估与剩余边界说明](RELIABILITY-AND-INTEGRATION-zh.md)。
+
 ## 先区分入口
 
 | 入口 | 已实现行为 | 边界 |
 | --- | --- | --- |
 | MetaMask 交易洞察 | 配对 Snap 转交未签名 EVM 交易并显示后端报告 | 钱包必须实际交付请求；在钩子前失败或拒绝，不会自动得到评估。 |
 | MetaMask 消息洞察 | 配对 Snap 转交支持的 personal/typed 消息 | 签名前尚无生成的资产签名可验证或消费；provider 链快照不等于绑定请求的网络。 |
-| 开发者明确调用 API | 支持 permission/session/UserOperation/network/read-only 摘要分析 | 是手动输入，不是 Snap 全局自动拦截，也不执行所提交 RPC。 |
+| 显式 API 或配合 dApp SDK | 支持 permission/session/UserOperation/network/read-only 摘要分析 | dApp 必须主动接入；不是 Snap 全局拦截，后端不执行原始 RPC。 |
 | 公网连通检查 | 验证配置的 RPC 链/区块及可选账户状态 | 不产生风险分数，也不构造资产交易。 |
-| 托管登录和 Snap 配对 | EOA 控制权证明、地址绑定凭据、按所有者隔离报告 | 登录与资产授权分开；不支持合约钱包/ERC-1271 登录。 |
+| 托管登录和 Snap 配对 | EOA 或支持的已部署合约登录证明、地址绑定凭据、按所有者隔离报告 | 登录与资产授权分开；合约登录须经过可信 RPC 的有界 ERC-1271 核对。 |
 
 ## 已实现的代表路径
 
@@ -32,18 +46,18 @@ WalletShield 对单个未签名 EVM 请求提供**签名前风险提示**。按�
 | 链上 Permit2 结构 approve | token/spender/uint160 上限/expiration；**分别**读取底层 ERC-20 owner→Permit2 授权和 Permit2 内部 owner/token/最终 spender 的 amount/expiration/nonce | 候选部署/代码/domain 真伪和未来消费 |
 | Permit/NFT Permit/DAI/ERC-3009/常见 Permit2 签名 | 实际签入的类型图、统一解释的无符号数量、digest/domain hash，标准部分 nonce/domain/interface/allowance 与条件性余额敞口 | 其他自定义/witness 变体、完整权限语义、签名接受与消费 |
 | SIWE 登录类与 personal 消息 | 有界消息/字段、来源/账户/domain/URI/时间检查，远程 nonce 未验证声明 | 远端 nonce 签发/防重放存储、任意服务端解释、签名/会话接受 |
-| 订单/挂单/其他 typed 消息 | 实际签入的类型图、digest/domain、有界金融字段与部分状态读取 | 完整 offer/consideration、履约/取消、自定义/witness 权限与实际接受 |
-| V2/V3 结构兑换 | 路径/数量/限制/接收者/deadline 候选、通用分叉效果；部分 V2 与标准 V3 exactInputSingle 买入→仅授权所得数量→反向卖出实验 | V3 多跳/exact-output/原生币出资往返、任意路由/聚合器、可信价格/报价、MEV 与未来卖出 |
-| ERC-4626 金库与 Aave 结构借贷 | 可读的当前 preview/max/totals/底层/份额，或抵押/债务/LTV/健康因子 | 真实协议身份、完整操作后清算、预言机/价格压力、未来偿付和退出 |
-| V3 集中流动性仓位 | 严格 mint/increase/decrease/collect 参数，既有 positions/owner/approval/manager 代码与代币单位/调用者余额 | 不认证池/当前 tick/报价、NFT 估值、完整费用/退出经济性或未来收益 |
+| 订单/挂单/其他 typed 消息 | 规范 Seaport 承诺项目/接收人/数量/时间/counter/hash；当前填充/取消状态，条件性直接 verifier 授权 | 不覆盖全部格式、criteria/conduit、真实签名接受、履约或公平价格。 |
+| V2/V3 结构兑换 | 支持的路径/数量/限制和分叉买卖；规范 V3 single/path、exact-in/exact-out，及配置绑定的原生资金路径 | 非全部路由/资金/接收人；损耗包含价差/费用，未来可卖、MEV 和可执行价格仍未知。 |
+| ERC-4626 金库与 Aave 结构借贷 | 当前接口及原始分叉交易前后份额/底层、preview/限制或债务/抵押/健康因子，兼容单位差值 | 协议/预言机真实性、未来偿付/退出、完整压力清算仍不完整。 |
+| V3 集中流动性仓位 | 支持的仓位参数/所有权/单位；候选 pool/factory/token/fee、tick/range 与 active liquidity 关联 | 不认证官方池、可执行报价、NFT 估值、完整退出/费用经济性或未来收益。 |
 | 质押/流动性/封装/mint/burn/claim | 部分候选方法、数量/接收者/限制、控制权与通用分叉观察 | 锁定/罚没/收益规则、LP 估值、封装保证、铸造资格或完整 Merkle proof |
-| 部分 OP 结构桥阶段 | 发起/提款/完成候选参数、声称消息发送/接收者、数量/gas 和源链观察 | portal/messenger/proof、目标身份/消息状态/到账、验证者/托管和未来中继/最终性 |
+| 部分 OP 结构桥阶段 | 参数及可选维护路线两链 bridge/messenger 代码/版本/双向指针/暂停与有限代币关系 | 独立快照不证明 message/proof/relay、储备、最终性、托管或未来到账。 |
 | 控制权/角色/升级/部署与 Safe 结构控制 | 管理和 owner/module/guard/fallback/threshold/hash 候选参数；固定区块 owner/threshold/选定 module/代码与可选分叉效果 | 真实实现、完整权限图、存储/代码/策略审计、签名有效性和隐藏/动态权限 |
 | batch/Safe 执行/聚合器/未知调用 | 有界标准编码 multicall/Safe/MultiSend 子结构、CALL/delegatecall/目标/值/selector 和通用分叉观察 | 不支持封装/opaque commands、子 sender/owner/存储上下文、签名/执行证明和隐藏/非标准资产 |
 
 准确的 30 个配置定义在 `src/security/coverage.ts`。没有可执行代表性钱包实验室案例的 5 个配置是 raw `eth_sign`、permission/session、UserOperation、网络配置与只读 RPC。后端支持摘要分析不能描述成钱包自动防护。
 
-**EIP-7702 尚未端到端覆盖。** 当前能观察已有委托标记，并读取同一区块下的一跳委托目标代码/hash；这不等于验证新 authorization list、审计委托实现或证明实际权限。不支持的授权/交易类型字段会明确保留缺口，不会被移除来制造模拟成功。ERC-1271 签名接受及 ERC-4337 账户/bundler/paymaster 执行也仍不完整。
+**EIP-7702 仍是有条件观察，不是端到端验证。** 已实现实际元组恢复/链/nonce 范围、外层 sender nonce、顺序有条件资格和一跳 delegate 代码。完整 set-code envelope、初始化/存储/module 策略及未来执行未认证。托管 ERC-1271 登录与资产签名接受分开；完整 ERC-4337 账户/bundler/paymaster 执行仍不完整。
 
 ## 新增候选适配器
 
@@ -101,9 +115,9 @@ Muse 新增接收 `evidence_admissibility`（各维度可由哪些实际观察�
 
 GoPlus 仍需显式开启。它从已识别的外层/路径/Permit2/批量字段中最多选八个代币与八个交易对手，不把桥的远端 token 或 delegatecall 目标直接当作本链代币。每轮最多十八个网络请求、四路并发、单请求 1.8 秒、总共 7.5 秒；响应缓存三十秒（最多 256 项），支持链列表缓存一小时。结果带 `fetchedAt`、`cacheHit`、`cacheAgeMs`、`cacheTtlMs`、`providerAsOf:null`、`freshnessVerified:false`；刚取得不表示知道供应商数据的实际日期。缺失标记、闭源/代理导致的遗漏、未查询/截断候选与未命中均是边界，参见 [GoPlus 官方响应说明](https://docs.gopluslabs.io/reference/response-details)。
 
-部分标准 V3 `exactInputSingle`（有/无 deadline、代币出资）现在支持依赖式分叉买卖实验：原样重放买入，测量新取得输出与实际输入扣减，只授权新取得数量，再按原 fee tier 和存在时的原 deadline 生成反向卖出。实验卖出的最低输出/价格限制为零，使用新的本地 nonce/默认 gas；部分成交按实际输入扣减计算比例。原生币出资、路由余额出资、多跳、exact-output、其他收款人和不透明聚合器仍不支持。卖出成功一次不保证未来可卖；失败一次也不单独证明蜜罐。 新增 `npm run test:v3` 使用临时节点测试四个场景（两种元组格式 × 正常/阻止卖出），并核对源区块/hash/nonce/余额均不变。它们是简化适配器测试，不认证官方池、不证明 MetaMask/Snap 交付或在线模型准确率；钱包目录仍为 66 个案例。
+规范 V3 single/path、exact-input/exact-output 现有有界的依赖式分叉买卖适配器。原买入保留已有执行字段，衍生卖出按实际输入扣减和取得输出计算。原生币出资需要匹配的运营者 router/wrapped-native 记录；可读取候选池/factory 关联、tick/range 和有效流动性，但不认证官方池、市场报价或未来退出。不透明聚合器、不支持的资金/接收人及未来排序仍有缺口。钱包目录仍为 66 个代表性案例；适配器测试与真实钱包/Snap、在线模型验收分开。
 
-自动入口仍取决于钱包实际交付。MetaMask 当前仅显示 Critical 严重级别的消息洞察，并在进入 Sign 后展示；交易洞察有独立入口，参见 [官方入口说明](https://docs.metamask.io/snaps/reference/entry-points/)。权限、会话、UserOperation 和其他钱包 RPC 仍需显式 API 提交，不是通用钱包拦截。托管登录仍仅支持 EOA，不支持 ERC-1271 认证。公开上线仍需真实域名/TLS、目标 Snap 发布与分发、浏览器钱包验收、安全备份恢复以及负载/故障测试。
+自动入口仍取决于钱包实际交付。MetaMask 当前仅显示 Critical 严重级别的消息洞察，并在进入 Sign 后展示；交易洞察有独立入口，参见 [官方入口说明](https://docs.metamask.io/snaps/reference/entry-points/)。权限、会话、UserOperation 等仍需显式 API 或配合的 dApp SDK 接入，不安装全局钱包拦截。托管登录支持 EOA 恢复及支持范围内已部署合约的 ERC-1271 精确登录消息核对；未部署/ERC-6492 和不支持的策略仍不可用。公开上线仍需真实域名/TLS、目标 Snap 发布与分发、浏览器钱包验收、安全备份恢复以及负载/故障测试。
 
 ## 依赖状态
 

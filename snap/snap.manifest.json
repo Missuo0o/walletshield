@@ -3,7 +3,7 @@
   "description": "WalletShield development Snap: EVM transaction and message evidence with optional AI risk analysis.",
   "proposedName": "WalletShield Local",
   "source": {
-    "shasum": "54cpB9r+MEt/CTXy9y3F0fsjtCmL8NToC/oHIPerguY=",
+    "shasum": "fbIzBcXLIwJB4OTEmz4C8EdM8rg5cGFJLo5LIZ0RTe0=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",

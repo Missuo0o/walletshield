@@ -1,9 +1,10 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
+import {registrySchema,type TrustedDeployment,type PriceFeed,type BridgeRoute} from './registry.js';
 export const META_MODEL = 'muse-wonder-1.0';
 export const META_RESPONSES_URL = 'https://api.meta.ai/v1/responses';
-export type SecurityConfig = { apiKey: string; model: string; aiEnabled: boolean; aiDailyLimit?:number; lookups: boolean; goPlusToken: string; rpc: Record<number,string>; forkEnabled?:boolean; monitorEnabled?:boolean; snapToken?:string };
+export type SecurityConfig = { apiKey: string; model: string; aiEnabled: boolean; aiDailyLimit?:number; lookups: boolean; goPlusToken: string; rpc: Record<number,string>; forkEnabled?:boolean; monitorEnabled?:boolean; snapToken?:string;trustedDeployments?:TrustedDeployment[];priceFeeds?:PriceFeed[];bridgeRoutes?:BridgeRoute[];registryError?:boolean;sourceVerification?:boolean };
 
 async function readEnv(path: string) {
   const values: Record<string,string> = {};
@@ -49,6 +50,9 @@ export async function loadSecurityConfig(options: {root?: string; env?: NodeJS.P
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
   const snapToken = (await readFile(tokenPath,'utf8')).trim();
   if (!/^[a-f0-9]{64}$/.test(snapToken)) throw Error('Invalid local pairing configuration');
+  let registry:{deployments:TrustedDeployment[];priceFeeds:PriceFeed[];bridgeRoutes:BridgeRoute[]}={deployments:[],priceFeeds:[],bridgeRoutes:[]},registryError=false;
+  try{const raw=await readFile(resolve(root,'.local/registry.json'));if(raw.byteLength>200000)throw Error('Registry too large');registry=registrySchema.parse(JSON.parse(raw.toString('utf8')));}
+  catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')registryError=true;}
   return {
     apiKey: getMeta('MODEL_API_KEY').trim(), model: META_MODEL,
     aiEnabled: (getMeta('ENABLE_META_AI') || getMeta('ENABLE_AI') || '1') !== '0',
@@ -57,5 +61,7 @@ export async function loadSecurityConfig(options: {root?: string; env?: NodeJS.P
     forkEnabled: get('ENABLE_FORK_SIMULATION') === '1',
     monitorEnabled: false, // v0.4.1 remains pre-sign advice only.
     snapToken,
+    trustedDeployments:registry.deployments,priceFeeds:registry.priceFeeds,bridgeRoutes:registry.bridgeRoutes,registryError,
+    sourceVerification:get('ENABLE_SOURCE_VERIFICATION')==='1',
   };
 }

@@ -26,6 +26,7 @@
     "test:extensions": "node --import tsx scripts/test-extensions.ts",
     "test:asset-cleanup": "node --import tsx scripts/test-asset-cleanup.ts",
     "test:v3": "node --import tsx --test tests/v3-isolated-execution.integration.ts",
+    "evaluate:ai": "node --import tsx scripts/evaluate-ai.ts",
     "docs:coverage": "node --import tsx scripts/coverage-guide.ts",
     "runtime:configure": "node scripts/configure-runtime.mjs",
     "build:hosted": "node scripts/service.mjs build",

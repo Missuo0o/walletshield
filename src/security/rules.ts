@@ -6,6 +6,7 @@ import { evidence } from './providers.js';
 import { decodeRequest } from './decode.js';
 import { planRequest } from './routing.js';
 import {loginEvidence} from './siwe.js';
+import {executionLimitations} from './transaction-fields.js';
 export function assess(request:SecurityRequest, collected:Evidence[], source:'rpc'|'demo'='rpc'):SecurityReport {
   const op:Operation=decodeRequest(request);
   const checks:Evidence[]=[];
@@ -28,6 +29,9 @@ export function assess(request:SecurityRequest, collected:Evidence[], source:'rp
     op.tokenStandard=token.standard;
     op.label=token.standard==='erc20'?'Delegated ERC-20 transfer':'Delegated single-NFT transfer';
   }
+  // A token revocation in the call body does not remove independent account
+  // authority changes carried by the outer set-code authorization list.
+  if(request.kind==='transaction'&&request.transaction.authorizationList?.length)op.addsPermission=true;
   add('operation',op.decoded?'pass':'unknown',op.label,op.decoded?'Common parameters were decoded; an ABI shape does not authenticate the target protocol.':'This request is not fully understood and cannot be marked as checked successfully.');
   if(op.addsPermission) add('permission_scope',op.category==='operator_approval'||op.fields.unlimited===true?'risk':'warning','Asset authority is requested',op.category==='operator_approval'?'The operator can manage the relevant NFTs in this collection.':'The authority may permit future asset movement; finite limits and gasless signatures can still carry risk.');
   if(op.rawSigning) add('raw_signing','risk','Raw signing risk','Raw data does not establish signing purpose; asset authority or replay risk may be involved.');
@@ -41,7 +45,7 @@ export function assess(request:SecurityRequest, collected:Evidence[], source:'rp
   if(op.category==='control_change')add('control_authority','risk','Contract control may change','Independently verify the new controller, role and implementation; only selected control methods are interpreted.');
   if(request.kind==='transaction'){
     const tx=request.transaction,price=tx.maxFeePerGas??tx.gasPrice;
-    if(tx.unsupportedFields?.length)add('unsupported_transaction_fields','unknown','Unsupported execution fields',`Unparsed fields: ${tx.unsupportedFields.join(', ')}. A substitute transaction omitting these fields cannot prove execution.`);
+    const unsupported=executionLimitations(tx);if(unsupported.length)add('unsupported_transaction_fields','unknown','Unsupported execution fields',`Unparsed fields: ${unsupported.join(', ')}. A substitute transaction omitting these fields cannot prove execution.`);
     if(tx.maxPriorityFeePerGas&&tx.maxFeePerGas&&BigInt(tx.maxPriorityFeePerGas)>BigInt(tx.maxFeePerGas))add('fee_bounds','warning','Priority fee exceeds the fee cap','Fee parameters are inconsistent and may prevent execution; review them in the wallet.');
     if(tx.gas&&price){const maximum=BigInt(tx.gas)*BigInt(price);const balance=collected.find(c=>c.id==='chain_context')?.data?.nativeBalanceWei;
       checks.push(evidence('fee_budget',typeof balance==='string'&&/^\d+$/.test(balance)&&maximum+BigInt(tx.value??'0x0')>BigInt(balance)?'warning':'pass','Maximum execution fee budget','Gas limit multiplied by the price cap is a maximum execution budget, not actual fees. Some L2 surcharges and market pricing are unverified.','rules/0.4.0',{maximumExecutionFeeWei:String(maximum)}));

@@ -3,21 +3,27 @@ import {evidenceQuality} from './quality.js';
 import {assessmentScope} from './assessment-scope.js';
 import {readBoundedText} from './evidence.js';
 import {adverseIdentityEvidence,claimSupport,evidenceAdmissibility,tokenIntelligence,validateCertaintyClaims,validateDimensionEvidence} from './ai-claims.js';
+import {FACT_SCHEMA_VERSION,modelFactCandidates,modelFactSchema,validateModelFacts} from './model-facts.js';
+import {executionLimitations} from './transaction-fields.js';
 import { META_MODEL, META_RESPONSES_URL, type SecurityConfig } from './config.js';
 import { AI_DIMENSIONS, type SecurityReport, type AIResult, type AIState } from './types.js';
 const citedIds=z.array(z.string().min(1).max(150)).min(1).max(8);
 const output=z.object({
-  dimensions:z.array(z.object({dimension:z.enum(AI_DIMENSIONS),assessment:z.enum(['low','review','high','unknown','not_applicable']),reason:z.string().min(1).max(500),evidence_ids:citedIds}).strict()).length(AI_DIMENSIONS.length),evidence_confidence:z.enum(['limited','moderate','strong']),
+  fact_schema_version:z.literal(FACT_SCHEMA_VERSION).optional(),facts:z.array(modelFactSchema).max(32).optional(),
+  dimensions:z.array(z.object({dimension:z.enum(AI_DIMENSIONS),assessment:z.enum(['low','review','high','unknown','not_applicable']),reason:z.string().min(1).max(500),evidence_ids:citedIds,fact_ids:z.array(z.string().max(50)).max(8).optional()}).strict()).length(AI_DIMENSIONS.length),evidence_confidence:z.enum(['limited','moderate','strong']),
   score:z.number().int().min(0).max(100).nullable(),assessment:z.enum(['low','review','high','unknown']),summary:z.string().min(1).max(1600),
-  reasons:z.array(z.object({text:z.string().min(1).max(500),evidence_ids:citedIds}).strict()).min(1).max(12),
+  reasons:z.array(z.object({text:z.string().min(1).max(500),evidence_ids:citedIds,fact_ids:z.array(z.string().max(50)).max(8).optional()}).strict()).min(1).max(12),
   missing_data:z.array(z.string().min(1).max(300)).max(20),suggested_action:z.string().min(1).max(1000),honeypot:z.enum(['unknown','risk_indicator','no_known_indicator'])
 }).strict();
 const citationSchema={type:'array',minItems:1,maxItems:8,items:{type:'string',minLength:1,maxLength:150}};
 export const MODEL_RESPONSE_LIMITS={successBytes:150000,errorBytes:16000} as const;
-const schema={type:'object',additionalProperties:false,required:['score','assessment','summary','reasons','missing_data','suggested_action','honeypot','dimensions','evidence_confidence'],properties:{
-  evidence_confidence:{type:'string',enum:['limited','moderate','strong']},dimensions:{type:'array',minItems:AI_DIMENSIONS.length,maxItems:AI_DIMENSIONS.length,items:{type:'object',additionalProperties:false,required:['dimension','assessment','reason','evidence_ids'],properties:{dimension:{type:'string',enum:AI_DIMENSIONS},assessment:{type:'string',enum:['low','review','high','unknown','not_applicable']},reason:{type:'string',minLength:1,maxLength:500},evidence_ids:citationSchema}}},
+const factIdsSchema={type:'array',minItems:0,maxItems:8,items:{type:'string',maxLength:50}};
+const factJsonSchema=z.toJSONSchema(modelFactSchema);delete factJsonSchema.$schema;
+const schema={type:'object',additionalProperties:false,required:['fact_schema_version','facts','score','assessment','summary','reasons','missing_data','suggested_action','honeypot','dimensions','evidence_confidence'],properties:{
+  fact_schema_version:{type:'string',const:FACT_SCHEMA_VERSION},facts:{type:'array',maxItems:32,items:factJsonSchema},
+  evidence_confidence:{type:'string',enum:['limited','moderate','strong']},dimensions:{type:'array',minItems:AI_DIMENSIONS.length,maxItems:AI_DIMENSIONS.length,items:{type:'object',additionalProperties:false,required:['dimension','assessment','reason','evidence_ids','fact_ids'],properties:{dimension:{type:'string',enum:AI_DIMENSIONS},assessment:{type:'string',enum:['low','review','high','unknown','not_applicable']},reason:{type:'string',minLength:1,maxLength:500},evidence_ids:citationSchema,fact_ids:factIdsSchema}}},
   score:{type:['integer','null'],minimum:0,maximum:100},assessment:{type:'string',enum:['low','review','high','unknown']},summary:{type:'string',minLength:1,maxLength:1600},
-  reasons:{type:'array',minItems:1,maxItems:12,items:{type:'object',additionalProperties:false,required:['text','evidence_ids'],properties:{text:{type:'string',minLength:1,maxLength:500},evidence_ids:citationSchema}}},
+  reasons:{type:'array',minItems:1,maxItems:12,items:{type:'object',additionalProperties:false,required:['text','evidence_ids','fact_ids'],properties:{text:{type:'string',minLength:1,maxLength:500},evidence_ids:citationSchema,fact_ids:factIdsSchema}}},
   missing_data:{type:'array',maxItems:20,items:{type:'string',minLength:1,maxLength:300}},suggested_action:{type:'string',minLength:1,maxLength:1000},honeypot:{type:'string',enum:['unknown','risk_indicator','no_known_indicator']}
 }};
 function evidenceGaps(report:SecurityReport):string[] {
@@ -41,7 +47,7 @@ function verificationClaims(text:string):{subject:VerificationSubject;direction:
     }
     // Longer negative predicates precede their positive substrings. "Not
     // verified" means unknown; "does not match" asserts an observed mismatch.
-    const predicate=/\b(?:does?\s+not|did\s+not|is\s+not|are\s+not|isn't|aren't|doesn't|don't|didn't)\s+(?:match|equal|correspond)(?:ed|s)?\b|\bnot\s+(?:valid|consistent|matching|matched)\b|\b(?:mismatch(?:ed|es)?|invalid|differs?|unequal)\b|不(?:匹配|一致)|无效|\b(?:not\s+(?:invalid|mismatched)|no\s+mismatch(?:es)?)\b|\b(?:verified|validated|confirmed|valid|matched|matches|consistent)\b|已(?:经)?(?:核对|匹配|校验|验证)|(?:匹配|校验|核对|验证)(?:成功|通过)|一致|匹配/gi;
+    const predicate=/\b(?:does?\s+not|did\s+not|is\s+not|are\s+not|isn't|aren't|doesn't|don't|didn't)\s+(?:match|equal|correspond)(?:ed|s)?\b|\bnot\s+(?:valid|consistent|matching|matched)\b|\b(?:mismatch(?:ed|es)?|invalid|differs?|unequal)\b|不(?:匹配|一致)|无效|\b(?:not\s+(?:invalid|mismatched)|no\s+mismatch(?:es)?)\b|\b(?:verified|validated|confirmed|valid|matched|match(?:es)?|consistent)\b|已(?:经)?(?:核对|匹配|校验|验证)|(?:匹配|校验|核对|验证)(?:成功|通过)|一致|匹配/gi;
     let priorEnd=0,priorSubjects:VerificationSubject[]=[],nonassertiveScope=false;
     const predicates=[...clause.matchAll(predicate)];
     for(let i=0;i<predicates.length;i++) {
@@ -103,6 +109,27 @@ function validateVerificationClaims(data:z.infer<typeof output>,checks:Map<strin
   for(const statement of statements)for(const claim of verificationClaims(statement.text)) {
     const {subject,direction}=claim;
     if(subject.kind==='domain'&&!(report.request.kind==='signature'&&report.request.signature.method.startsWith('eth_signTypedData'))&&!/eip[\s-]?712|domain[ _-]separator|域分隔符/i.test(statement.text))continue;
+    if(subject.kind==='domain'&&report.operation.category==='order_signature'&&/\binformation(?:\(\))?\b|\border[ -]domain\b|订单.{0,8}domain/i.test(statement.text)){
+      const check=checks.get('order_deployment'),data=check?.data;
+      if(!statement.evidence_ids.includes('order_deployment')||check?.source!=='rpc'||typeof data?.runtimeVersion!=='string'||!data.runtimeVersion||data.signedDomainMatchesInformation!==(direction==='pass'))throw Error('Unsupported signature verification claim');
+      continue;
+    }
+    if(subject.kind==='nonce'&&report.operation.category==='order_signature'&&/\border[ -](?:nonce|counter)\b|\b(?:nonce|counter)\s+of\s+(?:the\s+)?order\b|订单.{0,8}(?:nonce|计数)/i.test(statement.text)){
+      const check=checks.get('order_counter'),data=check?.data;
+      if(subject.index!==undefined||!statement.evidence_ids.includes('order_counter')||check?.source!=='rpc'||check.status==='unknown'||data?.deploymentMatched!==true||typeof data.nonce!=='string'||typeof data.declaredNonce!=='string'||!/^\d+$/.test(data.nonce)||!/^\d+$/.test(data.declaredNonce)||data.matches!==(BigInt(data.nonce)===BigInt(data.declaredNonce))||data.matches!==(direction==='pass'))throw Error('Unsupported signature verification claim');
+      continue;
+    }
+    if(subject.kind==='nonce'&&report.request.kind==='user_operation'){
+      const check=checks.get('userop_nonce'),data=check?.data;
+      if(subject.index!==undefined||!statement.evidence_ids.includes('userop_nonce')||check?.source!=='rpc'||check.status==='unknown'||typeof data?.requestedNonce!=='string'||typeof data.currentNonce!=='string'||!/^\d+$/.test(data.requestedNonce)||!/^\d+$/.test(data.currentNonce)||data.matches!==(BigInt(data.requestedNonce)===BigInt(data.currentNonce))||data.matches!==(direction==='pass'))throw Error('Unsupported signature verification claim');
+      continue;
+    }
+    if(subject.kind==='nonce'&&report.request.kind==='transaction'&&report.request.transaction.authorizationList?.length){
+      const explicit=/\b(?:tuple|delegation|authorization)\b|委托|授权元组/i.test(statement.text),tupleIndex=subject.index??/\btuple\s*(?:index\s*|#\s*)?(\d+)/i.exec(statement.text)?.[1];
+      const relevant=tupleIndex!==undefined?[`delegation_state_${tupleIndex}`]:report.request.transaction.authorizationList.map((_,index)=>`delegation_state_${index}`);
+      if(!explicit||!relevant.length||relevant.some(id=>{const check=checks.get(id),data=check?.data;if(!statement.evidence_ids.includes(id)||check?.source!=='rpc'||check.status==='unknown'||typeof data?.requestedNonce!=='string'||typeof data.expectedNonceAtThisTuple!=='string'||!/^\d+$/.test(data.requestedNonce)||!/^\d+$/.test(data.expectedNonceAtThisTuple))return true;return (BigInt(data.requestedNonce)===BigInt(data.expectedNonceAtThisTuple))!==(direction==='pass');}))throw Error('Unsupported signature verification claim');
+      continue;
+    }
     const relevant=subject.kind==='domain'?['signature_domain']:subject.index!==undefined?[`signature_nonce_${subject.index}`]:[...checks.keys()].filter(id=>/^signature_nonce(?:_\d+)?$/.test(id));
     // Unqualified batch claims apply to every collected entry; a single matching
     // nonce cannot establish that all entries matched. Partial claims name index.
@@ -119,13 +146,13 @@ export function evidencePacket(report:SecurityReport) {
   const fees=transaction?Object.fromEntries(['gas','gasPrice','maxFeePerGas','maxPriorityFeePerGas','nonce'].filter(k=>(transaction as any)[k]!==undefined).map(k=>[k,String(BigInt((transaction as any)[k]))])):undefined;
   const scope=assessmentScope(report),gaps=scope.criticalMissingData;
   return {version:report.version,createdAt:report.createdAt,reportSource:report.source,evidenceComplete:gaps.length===0,chainId:report.request.chainId,origin,feeParameters:fees,
-    quality:evidenceQuality(report),assessment_scope:scope,evidence_admissibility:evidenceAdmissibility(report),claim_support:claimSupport(report),requestSummary,unsupportedTransactionFields:transaction?.unsupportedFields??[],operation:report.operation,checks:report.checks,missing_checks:gaps,
+    quality:evidenceQuality(report),assessment_scope:scope,evidence_admissibility:evidenceAdmissibility(report),claim_support:claimSupport(report),structured_fact_candidates:modelFactCandidates(report),requestSummary,unsupportedTransactionFields:transaction?executionLimitations(transaction):[],operation:report.operation,checks:report.checks,missing_checks:gaps,
     request_data_scope:'Only allowlisted decoded summaries are provided, not full calldata, generated signatures, full RPC parameters or wallet history. A decoded ABI shape is a candidate, not verified protocol identity or complete understanding. Message previews and parameter/batch extraction can be truncated. Demo and demo-fixture sources are synthetic observations, not real-network facts.',
     snapshot_consistency:'Collectors pin their own reads and can observe different blocks. Use each observation’s network, block and time; do not merge different assets or snapshots as if atomic. Fork execution blocks are distinct from upstream state. The quality inventory is not an accuracy or confidence percentage.',
     quantity_conventions:'Quantity strings are raw base units unless stated otherwise, never automatically USD. Native value/balances/gas cost and maximumExecutionFeeWei are wei; gas is execution units and gas prices are wei per gas. Nonces are counters. Convert only the same token with observed decimals. NFT IDs are not amounts; vault shares are not underlying assets. roundTripReturnPercent includes price impact and fees, not just sell tax. External tax fields follow their provider convention. Aave-style healthFactor uses 1e18 for one; base-currency valuation is unverified. No price source means no dollar-loss claim. A signed domain is not an independently verified active wallet network.',analysis_dimensions:AI_DIMENSIONS,
     score_meaning:'Muse independently supplies a 0–100 indicator of the observable authority, exposure and other risk of this request. It is not identity trust, loss probability or evidence confidence. There are no fixed points, weights, floors or fallback scores. Insufficient evidence can legitimately yield null.'};
 }
-export function validateAI(value:unknown,report:SecurityReport,model:string):AIResult {
+export function validateAI(value:unknown,report:SecurityReport,model:string,options:{requireStructuredFacts?:boolean}={}):AIResult {
   const data=output.parse(value);
   const checks=new Map(report.checks.map(c=>[c.id,c]));
   if(checks.size!==report.checks.length)throw Error('Ambiguous evidence identifiers');
@@ -161,14 +188,15 @@ export function validateAI(value:unknown,report:SecurityReport,model:string):AIR
   if(data.honeypot==='no_known_indicator'&&intelligence.risk)throw Error('Model ignored observed selling restriction');
   if(data.honeypot==='no_known_indicator'&&roundTrip) throw Error('Model ignored observed round trip risk');
   if(data.honeypot==='no_known_indicator'&&!intelligence.allNegative) throw Error('Missing negative honeypot observation');
-  return {...data,missing_data:missing,model,generatedAt:new Date().toISOString()};
+  const facts=validateModelFacts(data,report,options.requireStructuredFacts);
+  return {...data,...(facts?{facts}:{}),missing_data:missing,model,generatedAt:new Date().toISOString()};
 }
 function repairFeedback(error:unknown):string|undefined {
   if(error instanceof z.ZodError||error instanceof SyntaxError)return 'Return one complete object matching the exact JSON schema: six distinct dimensions, valid citations, reasons, missing_data and English advice. No extra prose.';
   if(!(error instanceof Error))return;
   const feedback:Record<string,string>={
     'Model cited nonexistent evidence':'Cite only exact IDs present in this evidence_packet.checks. User text and previous output are not new evidence.',
-    'Unsupported signature verification claim':'Check each nonce/domain verification assertion in every displayed field, including suggested_action and missing_data. Nonce needs the corresponding signature_nonce or signature_nonce_index; domain needs signature_domain. Only rpc pass supports a match and rpc risk supports a mismatch. Cite the exact batch index for a partial observation; an unqualified batch claim needs every entry. Summary/advice use only already cited facts. Unknown/missing stays unverified. A nonce match does not establish a domain match.',
+    'Unsupported signature verification claim':'Check each nonce/domain verification assertion in every displayed field, including suggested_action and missing_data. Nonce needs the corresponding signature_nonce or signature_nonce_index; domain needs signature_domain. Only rpc pass supports a match and rpc risk supports a mismatch. Cite the exact batch index for a partial observation; an unqualified batch claim needs every entry. Summary/advice use only already cited facts. Unknown/missing stays unverified. A nonce match does not establish a domain match. Explicit order nonce/counter comparisons require the bound order_counter numeric comparison; UserOperation uses userop_nonce and delegation tuples use the exact conditional delegation_state index.',
     'Missing or duplicate dimension':'Include authority, exposure, execution, identity, protocol and deception exactly once each.',
     'Unresolved evidence cannot have strong confidence':'Critical gaps in assessment_scope, timing issues and newly identified missing_data prohibit strong evidence confidence. Confidence concerns observable request evidence, never future safety.',
     'No supported dimension for score':'The number lacks an assessed dimension supported by an actual observation. Reconsider known permission scope and same-token exposure without erasing those facts because identity/future use is unknown. If a conditional assessment is meaningful, cite the relevant observations. Otherwise return null/unknown. Never invent support or a preset number.',
@@ -176,6 +204,13 @@ function repairFeedback(error:unknown):string|undefined {
     'Dimension cites no relevant observation':'Use evidence_admissibility: a rated dimension needs an actual cited observation allowed for that specific dimension. Permission scope is not identity proof; token balances are not protocol authenticity. Keep unsupported dimensions unknown. Do not invent evidence or alter the numeric policy.',
     'Unsupported certainty claim':'Remove unsupported categorical official/trusted identity, safety guarantees, future execution/sellability promises and dollar-loss facts from every displayed field. Use claim_support and exact citations for bounded observations. Preserve honest conditional, negative or advice wording; do not rephrase an unsupported fact as certainty.',
     'Unsupported bounded observation claim':'A completed execution or sale needs exact matching bounded observation citations. eth_call is only a basic call, not actual transaction inclusion. Fork observations must be explicitly labeled fork/simulation and never become future guarantees.',
+    'Structured facts required':'Return fact_schema_version=walletshield-facts-v1 and facts copied exactly from structured_fact_candidates. Include fact_ids in every reason and dimension. Do not invent observations or modify their subject, field, value, scope or provenance.',
+    'Structured fact version mismatch':'Use exactly fact_schema_version=walletshield-facts-v1 and a facts array from this same evidence packet.',
+    'Ambiguous structured facts':'Select at most 32 distinct exact fact IDs. Duplicate facts are ambiguous.',
+    'Structured fact does not match observation':'Copy a fact exactly from structured_fact_candidates. Its subject, field, value, source, chain, block/hash/time and scope must all match. Metadata is not an official identity or future safety guarantee.',
+    'Structured fact citation mismatch':'Each fact_ids item must name one selected fact whose evidence_id is also cited by that same reason or dimension. Cite facts from this packet, not another request or previous output.',
+    'Structured reason lacks observation':'Each reason needs an exact selected observation fact. Missing/unknown status observations can explain an abstention without inventing a fact.',
+    'Structured dimension lacks relevant fact':'A rated low/review/high dimension needs a selected fact admissible for that dimension. Status/metadata alone cannot substitute for permission, exposure or identity facts. Keep unsupported dimensions unknown.',
     'Abstention must be explicit':'score=null requires assessment=unknown, and assessment=unknown requires score=null. Honest abstention is allowed.',
     'Incomplete evidence cannot be called low risk':'Critical gaps in assessment_scope, timing issues or newly identified missing_data prohibit low. Preserve all request-evidence gaps and independently decide whether conditional scoring is justified or null is needed.',
     'Identity risk requires an observed adverse signal':'identity=high requires observed, relevant adverse identity evidence. Large authority or missing reputation/current-network context alone is not such evidence.',
@@ -206,6 +241,9 @@ export async function scoreWithAI(report:SecurityReport,config:SecurityConfig,fe
         'Successful eth_call is not full asset simulation, and successful transfer does not authenticate its recipient. honeypot is an aggregate across all scoped tokens: risk_indicator needs any request-token-bound token_security or token_security_address is_honeypot=1 / cannot_sell_all=1 or risky round_trip evidence. Admin powers alone do not suffice. no_known_indicator needs every scoped token to have bound is_honeypot=0 and cannot_sell_all=0 with no missing token fields, query/deadline/truncation or batch-scope gaps and no round-trip risk. A primary-token negative cannot erase a secondary-token positive or unknown. intelligence_scope is query inventory, not a token-risk observation. Failed selling can have other causes and is not certain fraud.',
         'Output exactly six dimensions: authority (recipient, scope, duration, revocation), exposure (same-asset balance/fees/loss impact), execution (calls, deltas and hidden behavior), identity (source/target/protocol/account/network consistency), protocol (slippage, exits, liquidation and upgrades), deception (observable source/message/request inconsistencies or impersonation indicators). Each has existing evidence IDs and a concise reason. Use not_applicable or unknown honestly. A low/review/high dimension needs an actual non-unknown observation, not just a tool plan. Do not number or average dimensions.',
         'Use evidence_admissibility to choose observations relevant to each dimension. An ID being real is insufficient: permission scope cannot support identity-low, code presence cannot authenticate a protocol, and a balance cannot prove its official deployment. Unknown/not_applicable dimensions can cite the relevant missing check. The admissibility table is a support constraint, not a risk weight or numeric score.',
+        'Return fact_schema_version=walletshield-facts-v1. Prefer 3–8 minimal relevant facts, at most 32, from structured_fact_candidates.candidates and copy each fact object exactly, without admissible_dimensions. Every reason and dimension includes fact_ids referring to selected facts whose evidence_id is also in its evidence_ids. Each reason needs a fact; each rated dimension needs at least one fact admissible for that dimension. Unknown dimensions may use empty fact_ids. Base explanations on these verified observations. A copied reported/provider/decoded claim retains its stated scope and is not independently authenticated. Do not fabricate derived calculations as facts; explain clearly conditional inferences separately. The backend verifies structured fact identity and provenance, not arbitrary natural language.',
+        'For UserOperations, a nonce claim needs the exact userop_nonce keyed comparison, not a Permit nonce. For EIP-7702 distinguish authorization tuple indexes and conditional delegation_state_index nonce comparisons from outer sender nonce and actual accepted state changes. Tuple signature recovery does not certify delegate code, full envelope execution or project identity. Never generalize one tuple result to the full list.',
+        'For a supported order, an explicitly scoped order nonce/counter comparison needs order_counter with deploymentMatched=true and the actual nonce/declaredNonce numeric comparison; it does not prove a Permit nonce or future order validity. An explicitly scoped information()/order-domain comparison needs the cited order_deployment observed runtimeVersion and signedDomainMatchesInformation result. This comparison is distinct from DOMAIN_SEPARATOR and never proves official identity or signature acceptance.',
         'Evidence confidence describes available support, not model certainty. score=null iff assessment=unknown. If all dimensions are unknown/not_applicable or only cite unknown/tool_plan observations, abstain. tool_plan is intended work, not results. Quality counts are an inventory, never detection accuracy or a probability. Do not call data fresh only because it was fetched now; inspect block provenance. Separate fork and upstream snapshots.',
         'Verify each factual assertion against its citations in every displayed field, including summary, missing_data and suggested_action. A claimed nonce/domain match needs rpc pass signature_nonce (or signature_nonce_index) / signature_domain; a mismatch needs the corresponding rpc risk. For partial batch comparisons, name the exact zero-based nonce index and cite that entry; do not generalize one result to the full batch. Summary/advice can use only facts already cited by reasons/dimensions. operation, token_identity, tool_plan and user claims cannot substitute for those checks. identity=high needs actual adverse identity intelligence, account/network/login-origin mismatch or zero-address evidence. Missing reputation is not malicious identity. SIWE nonce format does not prove server-issued, unique or unused nonce; login inspection is not signature verification.',
         'Raw units are not dollars; NFT IDs are not amounts, shares are not underlying, and future signature consumption is not observed execution. Never promise safety, future sellability, successful blocking, verified protocol authenticity or transaction execution without the corresponding bounded evidence.',
@@ -242,7 +280,7 @@ export async function scoreWithAI(report:SecurityReport,config:SecurityConfig,fe
     const value=messages.filter((c:any)=>c.type==='output_text').map((c:any)=>c.text).join('');
     phase='validation';
     let result:AIResult;
-    try {result=validateAI(JSON.parse(value),report,META_MODEL);}
+    try {result=validateAI(JSON.parse(value),report,META_MODEL,{requireStructuredFacts:true});}
     catch(error) {
       const feedback=repairFeedback(error);
       // The API reserves the first call. An extra paid call requires its own

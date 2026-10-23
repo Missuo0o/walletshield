@@ -5,6 +5,8 @@ import { typedRequest, permitProtocol } from './signatures.js';
 import {parseLoginMessage} from './siwe.js';
 import {decodeAccountOperation} from './account-operations.js';
 import {decodeProtocolOperation} from './protocol-operations.js';
+import {permitWitness} from './witness.js';
+import {decodeSeaportOrder} from './orders.js';
 const abi = parseAbi([
   'function transfer(address to,uint256 amount)',
   'function approve(address spender,uint256 amount)',
@@ -49,6 +51,12 @@ function committedValue(value:unknown,type:string,types:Record<string,any>,depth
 }
 
 export function decodeRequest(request: SecurityRequest): Operation {
+ const op=decodeRequestBody(request);
+ if(request.kind!=='transaction'||!request.transaction.authorizationList?.length)return op;
+ const authorizations=request.transaction.authorizationList,delegates=[...new Set(authorizations.map(item=>item.address))];
+ return {...op,complex:true,addsPermission:true,targets:[...new Set([...op.targets,...delegates])],fields:{...op.fields,authorizationCount:String(authorizations.length),delegationTargets:delegates,authorizationScopes:authorizations.map(item=>`chain=${BigInt(item.chainId)}, nonce=${BigInt(item.nonce)}, delegate=${item.address}`),delegationEligibilityVerified:false}};
+}
+function decodeRequestBody(request: SecurityRequest): Operation {
   if (request.kind === 'wallet_rpc') return rpcSummary(request.method,request.params);
   if (request.kind === 'permission' || request.kind === 'user_operation') return { ...rpcSummary(request.method,request.params),category:request.kind,label:request.kind==='permission'?'Wallet permission / session-key request':'Smart-account / batch operation',decoded:false,complex:true,addsPermission:true };
   if (request.kind === 'signature') return decodeSignature(request);
@@ -85,6 +93,7 @@ export function decodeRequest(request: SecurityRequest): Operation {
 }
 
 function decodeSignature(request: Extract<SecurityRequest,{kind:'signature'}>): Operation {
+  const order=decodeSeaportOrder(request);if(order)return order;
   const { method, data, from } = request.signature;
   if (method === 'eth_sign') return { ...result('raw_signature','Raw data signature', {method}),decoded:false,rawSigning:true };
   if (method === 'personal_sign') {
@@ -129,7 +138,7 @@ function decodeSignature(request: Extract<SecurityRequest,{kind:'signature'}>): 
     if(erc20Permit)fields.unlimited=committed.value===maxUint256.toString();
     return {...result('permit_signature',nftPermit ? 'NFT Permit signature candidate' : 'Token Permit signature candidate',fields,targets),token:addr(domain.verifyingContract)?domain.verifyingContract:undefined,tokenStandard:nftPermit?'erc721':'erc20',addsPermission:nftPermit?committed.spender.toLowerCase()!=='0x0000000000000000000000000000000000000000':BigInt(committed.value)!==0n,decoded:encodingValid && addr(domain.verifyingContract)};
   }
-  if (['PermitSingle','PermitBatch','PermitTransferFrom','PermitBatchTransferFrom'].includes(primary)) {
+  if (['PermitSingle','PermitBatch','PermitTransferFrom','PermitBatchTransferFrom','PermitWitnessTransferFrom','PermitBatchWitnessTransferFrom'].includes(primary)) {
     const details = Array.isArray(committed.details) ? committed.details : Array.isArray(committed.permitted) ? committed.permitted : [committed.details ?? committed.permitted];
     const values = details.slice(0,64).map(obj);
     fields.tokens = values.map(v=>scalar(v.token)); fields.amounts = values.map(v=>scalar(v.amount));
@@ -138,6 +147,7 @@ function decodeSignature(request: Extract<SecurityRequest,{kind:'signature'}>): 
     const allowance=protocol==='permit2_allowance',required=allowance?['sigDeadline']:['nonce','deadline'];
     if (!encodingValid || !protocol?.startsWith('permit2') || !addr(domain.verifyingContract) || !addr(committed.spender) || details.length > 64 || !values.length || required.some(key=>typeof committed[key]!=='string'||!/^\d+$/.test(committed[key])) || values.some(v=>!addr(v.token) || !/^\d+$/.test(scalar(v.amount)) || allowance&&['expiration','nonce'].some(key=>typeof v[key]!=='string'||!/^\d+$/.test(v[key])))) return {...result('typed_signature','Partially understood typed signature',fields),decoded:false,complex:true};
     fields.permitProtocol=protocol;fields.futureConsumptionUnverified=true;fields.recipientCommitted=false;
+    const witness=permitWitness(typed);if(witness){fields.witnessType=witness.type;fields.witnessHash=witness.hash;fields.witnessBusinessVerified=false;fields.recipientCommitted='witness_enforcement_unverified';}
     return {...result('permit2_signature','Permit2 signature candidate',fields,targets),token:values[0].token,addsPermission:values.some(v=>BigInt(v.amount)!==0n)};
   }
   if (/Order|Offer|Listing/i.test(primary)) return {...result('order_signature','Order / listing signature candidate',fields,targets),decoded:false,complex:true,addsPermission:true};

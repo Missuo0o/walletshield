@@ -77,14 +77,14 @@ test('transaction and signature panels show case-specific boundaries, primary fa
  const {onSignature}=await import('../snap/src/index.js');const original=globalThis.fetch,oldSnap=(globalThis as any).snap;(globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
  try{
   const result={...evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'}),id:'scope-check',operation:{category:'lending',label:'借贷候选',fields:{amount:'100',onBehalfOf:scenarios[0].input.transaction.from}},missingData:['头寸未计算','预言机未验证'],ai:{status:'failed',message:'HTTP 429'}};
-  globalThis.fetch=async()=>new Response(JSON.stringify(result));const transaction=JSON.stringify(await invoke());assert.ok(transaction.includes('Scope of this analysis'));assert.ok(transaction.includes('Raw amount: 100'));assert.ok(transaction.includes('post-operation positions'));assert.ok(transaction.includes('Unfinished checks (2)'));
+  globalThis.fetch=async()=>new Response(JSON.stringify(result));const transaction=JSON.stringify(await invoke());assert.ok(transaction.includes('Scope of this analysis'));assert.ok(transaction.includes('Raw amount: 100'));assert.ok(transaction.includes('future prices'));assert.ok(transaction.includes('Base-currency fields are not automatically USD'));assert.ok(transaction.includes('Unfinished checks (2)'));
   const signature={...result,operation:{category:'siwe',label:'登录消息候选',fields:{domainName:'example.test'}}};globalThis.fetch=async()=>new Response(JSON.stringify(signature));const message=JSON.stringify(await onSignature({signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign',data:'hello'}}));assert.ok(message.includes('does not verify a remote nonce store'));assert.ok(message.includes('does not force a block or continuously monitor after signing'));
  }finally{globalThis.fetch=original;(globalThis as any).snap=oldSnap;}
 });
 
 test('Snap home explains expanded partial coverage and manual-only entry points without making external calls',async()=>{
  const {onHomePage}=await import('../snap/src/index.js');const original=globalThis.fetch;
- try{globalThis.fetch=async()=>{throw Error('Home must not contact providers');};const text=JSON.stringify(await onHomePage());for(const phrase of ['include transfers as well as','Lending and vault','Currently requires explicit submission','does not force a block or continuously monitor after signing','A saved key does not prove'])assert.ok(text.includes(phrase),phrase);}finally{globalThis.fetch=original;}
+ try{globalThis.fetch=async()=>{throw Error('Home must not contact providers');};const text=JSON.stringify(await onHomePage());for(const phrase of ['include transfers as well as','Selected lending, vault and authority checks can compare state before and after an isolated execution','Currently requires explicit submission','does not force a block or continuously monitor after signing','A saved key does not prove'])assert.ok(text.includes(phrase),phrase);}finally{globalThis.fetch=original;}
 });
 
 test('large bounded evidence reports remain usable while Snap prioritizes risks and links to full evidence',async()=>{

@@ -4,6 +4,20 @@ This guide describes implemented version 0.4.1 paths and their limits. It is gen
 
 Current checks use the wallet-supplied unsigned request, source origin/network metadata and successfully collected RPC, intelligence and simulation evidence. Muse assesses observable request signals, including supported source/message/request inconsistencies. Chain/provider/execution context means technical observations. Historical reports and acceptance artifacts retain their original recorded data.
 
+## Current evidence and integration additions
+
+Current Muse output uses `walletshield-facts-v1`: exact selected subject/field/value/source/chain/block/time/scope facts, with per-reason and per-dimension `fact_ids`. Historical output remains readable. The backend verifies observation copying and relevance, not the truth of every provider response or free-form sentence. Scores remain Muse-only, with no fixed numeric weights, floors or fallback.
+
+Optional `.local/registry.json` contains operator-reviewed deployment/code/implementation bindings, reference price feeds and reviewed OP bridge routes. `ENABLE_SOURCE_VERIFICATION=1` separately enables bounded Sourcify source-match observations; GoPlus remains a separate opt-in. No official deployment or dollar peg is invented by default. Prices are references, not executable quotes or guaranteed loss.
+
+Bounded additions include Seaport committed items/current state, Permit2 witness outer commitments, version-bound UserOperation state, EIP-7702 tuple cryptography/conditional state, actual fork before/after selected authority/vault/lending observations, expanded V3 route experiments and candidate pool state. An explicit dApp provider wrapper supplies cooperating-app requests; it does not create a global wallet interceptor. Hosted ERC-1271 support validates this login only, not future asset signatures.
+
+The Wallet and network panel reports configured registry counts/source-verification state and bounded read-only RPC capability observations: a fixed pinned call, one historical balance and a fixed trace probe. A successful probe is not a complete archive/trace guarantee. Registry and price enrichment remain inactive with empty lists; populate independently reviewed network/address/code records before relying on those adapters. The page’s network-switch advisory uses the explicit SDK for that page only.
+
+`npm run evaluate:ai` runs a hash-pinned synthetic validator suite with zero model/RPC calls. It does not measure live Muse accuracy. Paid evaluation needs explicit `--live --confirm-paid`, selected cases and a call budget; it is never automatic.
+
+See [evidence, configuration, exact tools/fields, SDK, evaluation and remaining boundaries](RELIABILITY-AND-INTEGRATION.md).
+
 ## 1. Request entry and component responsibilities
 
 | Component | What it does | What it does not establish |
@@ -31,16 +45,22 @@ Pre-sign advice only. You decide in the wallet; this tool does not force a block
 | Signature checks: signatures.ts | Valid type graph/encoding/digest/domainHash; canonical Permit/NFT/DAI, selected ERC-3009 and common Permit2 state reads; generic DOMAIN_SEPARATOR, signer/verifier code and one-hop delegation | No generated signature recovery, ERC-1271 acceptance test or future consumption execution is performed by pre-sign analysis; DAI authority is derived from allowed, while ERC-3009 is a single-transfer authorization. |
 | SIWE envelope inspection: siwe.ts | Supported EIP-4361 header, account, URI origin, version 1, field order, nonce format/length, issued/expiry/not-before times and up to 16 resource origins | Does not verify remote nonce issuance/use, signature, session/audience acceptance or website honesty. |
 | Smart-account candidates: account-operations.ts / account-evidence.ts | Exact Safe-style owner/threshold/module/guard/fallback/hash/execution parameters; independently pinned owners/threshold/selected module and code reads | No authenticated Safe identity, complete guard/module graph, signature acceptance, ERC-1271 or ERC-4337 validation. |
-| Selected protocol candidates: protocol-operations.ts / position-evidence.ts | Generic withdrawal, selected bridge stages and V3 position tuples; existing position/owner/approval/token-unit/balance reads | No verified manager/pool/bridge/wrapper identity, valuation, destination proof or guaranteed exit. |
+| Selected protocol candidates: protocol-operations.ts / position-evidence.ts | Generic withdrawal, selected bridge stages and V3 position tuples; existing position/owner/approval/token-unit/balance reads | Candidate association is distinct from the optional maintained deployment/bridge bindings below; no valuation, destination proof or guaranteed exit. |
 | Structural batch inspection: batch-evidence.ts | Canonical multicall/Safe/MultiSend summaries, bounded child parameters, CALL/delegatecall and unknown/truncation markers | Depth 3, 32 entries, 16384 bytes/body, 32768 recursive bytes. Structure is not verified execution or child authority. |
+| Orders/witness: orders.ts / signatures.ts | Canonical Seaport committed items/counter/status/time and conditional direct approvals; Permit2 witness type/hash envelope | No generated asset signature, fulfillment or custom consumer business enforcement. |
+| UserOperation/delegation: user-operation-evidence.ts / delegation-evidence.ts | Explicit version-bound EntryPoint state, code/deposit/fee; actual tuple recovery and conditional sequence state | No full bundler/account/paymaster or set-code envelope execution proof. |
+| Maintained registry: registry.ts / bridge-evidence.ts | Configured deployment/implementation hashes, reference feeds, optional Sourcify record and reviewed two-chain OP endpoint relationships | Operator maintenance and both trusted RPCs are required; no official-safety, trusted USD-loss, relay/proof or arrival guarantee. |
+| Fork/position state: fork-protocol-state.ts / fork-authority-state.ts / position-evidence.ts | Actual before/after selected authority/vault/lending state and compatible differences; candidate V3 pool/tick/liquidity | Snapshot/candidate observations only; no full authority graph, future solvency, executable quote or NFT value. |
+| Structured observations: model-facts.ts | Exact subject/field/scalar/scope/provenance candidates and selected fact/citation validation | Bounded allowlist, not universal prose truth or a new score algorithm. |
+| dApp provider: integration/provider.ts | Explicit unsigned request analysis before the selected provider call | Cooperating app only; never patches every wallet or globally observes RPCs. |
 | Evidence inventory: quality.ts | Status counts, source groups, observation-time flags, block provenance, mixed upstream blocks, conflicting same-height hashes and authenticated-credential attribution | No risk score, coverage percentage, calibration or cryptographic Snap attestation. |
 | Independent Snap-provider snapshot | Read-only eth_chainId with source and observation time, stored separately in signature.providerContext | Not bound to the initiating dApp or request time. Domain matches do not prove request network; differences are contextual warnings. |
 | Isolated Anvil fork: simulation.ts | Verifies upstream chain/base block hash; executes only on a temporary local fork; records execution block, native deltas/gas, discovered standard assets and bounded calls | Preserves supplied gas/fees/nonce; missing gas uses an explicit default. It does not forge user balances/permissions or broadcast upstream. Hidden/nonstandard assets and future state remain incomplete. |
-| Selected V2/V3 round trip | Replays the original buy, measures newly acquired output and input debit, approves only the new output and derives a reverse sell | V3 supports canonical token-input exactInputSingle forms with the same-account recipient; preserves fee tier and an original deadline. Derived sell uses zero minimum/price limit and new local nonces/default gas. Native-funded/multi-hop/exact-output/opaque V3 routes remain unsupported. Loss includes fees/price impact, not only tax. |
+| Selected V2/V3 round trip | Original buy, acquired output/input debit, bounded derived sale; eight canonical V3 single/path exact-in/exact-out variants and configured bound native funding | Same supported recipient/funding only. Derived sale is an experiment, not the production request; fees/price impact are included and future liquidity/MEV remain unknown. |
 | GoPlus, optional | Supported-chain discovery; normalized website origin, up to eight decoded token candidates and eight explicit counterparties; selected phishing/honeypot/tax/control flags | Off by default. Limits: 18 network requests, four concurrent, 1.8 seconds/request and 7.5 seconds total; responses cache for 30 seconds. Unsupported chains, omitted candidates, absent fields and non-hits are not safety. Provider data age remains unverified. |
 | Rules / router | Tool plan, observable permission/value/expiry/account/domain signals and explicit gaps | Qualitative observations only. No points, score floor, fixed weights or numeric fallback. A selected tool is not a successful observation. |
 | Meta Responses API | Fixed muse-wonder-1.0 model assesses the whitelisted packet and cites actual evidence IDs | A score is an uncalibrated risk indicator, not a loss probability or authenticity certificate. |
-| Hosted EOA authentication | Exact one-use domain/URI/nonce login challenge; recovered signer; hashed web/Snap credentials, owner-scoped reports, wallet-wide revocation, logical deletion, optional retention and persistent evidence/model quotas | Separate from asset-risk analysis. Contract-wallet authentication is unsupported; login does not authorize assets. |
+| Hosted EOA / deployed-contract login | Exact one-use domain/URI/nonce login challenge; recovered signer; hashed web/Snap credentials, owner-scoped reports, wallet-wide revocation, logical deletion, optional retention and persistent evidence/model quotas | Separate from asset-risk analysis. Supported deployed-contract ERC-1271 login validates only the stored login; login does not authorize assets. |
 
 Confirmed-state collectors verify/pin their own reads. The additional pending nonce is explicitly one node’s unpinned view: it can omit private/remote transactions and supplies no original payload, cancellation intent or replacement-fee policy. Their blocks and observation times can differ; the complete report is not one atomic global snapshot. Independent RPC/header/balance/code reads retain successful results when another read fails. Fork execution mines child blocks after its recorded base. Tool selection/availability and successful data collection are recorded separately. The quality inventory flags observations older than five minutes relative to report creation, missing/invalid timestamps and timestamps over 30 seconds ahead. These are freshness diagnostics, not numeric risk thresholds; an observation timestamp does not establish the provider data age. Reads are pinned by block number, not atomically by block hash. Recorded hashes are provenance and do not rule out reorganizations or inconsistent provider replies. Conflicting hashes at one chain/height require a fresh independent check and prevent overall low/strong confidence.
 
@@ -63,6 +83,7 @@ The evidencePacket function in src/security/ai.ts supplies these containers. It 
 | missing_checks | Union of explicit missing data and unknown checks, including incomplete-report state. Missing observations are not successful checks. |
 | assessment_scope | Server-derived observable-request scope and unresolved check/missing-data inventory. It is not a numerical score or a claim that incomplete evidence is complete. |
 | request_data_scope, snapshot_consistency, quantity_conventions | Bounded extraction/provenance, per-collector snapshot differences and exact quantity/unit interpretation. |
+| structured_fact_candidates | Allowlisted exact observations and admissible dimensions, version and omission inventory; current output copies selected facts with fact_ids. |
 | analysis_dimensions, score_meaning | The six required cited dimensions and the independent 0–100-or-null risk-indicator policy. |
 
 Ordinary messages have at most 1,600 preview characters. Generic RPC summaries typically inspect up to five nesting levels, 16 items per array, 40 recognized scalar fields and eight target addresses. Full request data can remain in backend storage even when only a summary reaches the model. Simulation considers bounded logs (up to 256), discovered assets (up to 32) and calls (up to 128); explicit asset and ID reads have their own smaller limits. Truncation is a coverage gap.
@@ -134,26 +155,26 @@ The following fields describe the attempted path. Only successful observations b
 ### 8. Common V3 swap
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Single-pool/path candidates; selected token-input exactInputSingle dependent fork buy/sell experiment.
-- **Fields/evidence supplied when obtained:** tokenIn/tokenOut or decoded path, fee and recipient; amountIn/amountOut, minimum output/maximum input, sqrtPriceLimitX96 and supported deadline; Generic transaction fork deltas, partial controls and bounded token intelligence; canonical deadline/no-deadline exactInputSingle token-input round trip for the same recipient, using actual input debit and acquired output.
-- **Still unknown:** Not all pools, quotes or tick liquidity are checked. V3 native-funded, router-balance input, multi-hop/exact-output and other-recipient round trips, MEV and arbitrary aggregator semantics are incomplete.
-- **Possible extension and its boundary:** Add protocol-specific factory/pool identity, quoter/liquidity reads and additional route/exit scenarios. Future ordering, prices and administrator actions remain scenario estimates.
+- **Current scope:** Eight canonical single/path exact-input/exact-output variants with dependent isolated buy/sell checks.
+- **Fields/evidence supplied when obtained:** Decoded token path, fees, recipient, exact input/output or maximum input, limits and optional deadline; Original buy gas/fees/nonce retained; acquired output and observed input debit; derived reverse sale in an isolated fork for supported same-recipient routes; Native funding only with matching maintained router/wrapped-native bindings and WETH9 association; bounded token/counterparty intelligence.
+- **Still unknown:** A successful scenario is not future sellability, official pool identity, an executable quote or MEV protection. Opaque aggregators, router-balance funding and unsupported recipients/variants remain gaps.
+- **Possible extension and its boundary:** Add trusted quoters, route/liquidity/price and multiple-size/account stress scenarios. Future ordering, prices, upgrades and liquidity remain uncertain.
 
 ### 9. ERC-4626-shaped vault / shares
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Candidate decoding and current interface reads.
-- **Fields/evidence supplied when obtained:** deposit/mint/withdraw/redeem, raw amount, amountKind, receiver and owner; asset, totalAssets, totalSupply and the action-specific preview/max return values; Underlying/share decimals and balances, underlying allowance, code and partial controls where readable.
-- **Still unknown:** A matching function does not authenticate ERC-4626 or a protocol. Returned previews do not establish valuation, solvency, future prices or redeemability.
-- **Possible extension and its boundary:** Add trusted deployments/source, asset prices, donation/rounding scenarios and exit simulation. Future liquidity and asset losses cannot be guaranteed.
+- **Current scope:** Candidate parameters, current state and actual before/after original fork execution.
+- **Fields/evidence supplied when obtained:** deposit/mint/withdraw/redeem, raw amount/kind, receiver and owner; current asset/totals/preview/max and share/underlying units; Pinned fork before/after share and underlying balances, previews/limits/allowance and same-asset/same-unit differences; Separate upstream and child-fork block/hash/time, explicit missing reads and optional maintained deployment/reference prices.
+- **Still unknown:** Interface returns do not authenticate a vault. Observed changes do not prove future valuation, solvency, donation/rounding safety, prices or exits.
+- **Possible extension and its boundary:** Add reviewed protocol-specific economic/rounding and price/liquidity stress scenarios. Future asset losses and redeemability cannot be guaranteed.
 
 ### 10. Lending / collateral
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Aave-shaped current account data; not a full liquidation model.
-- **Fields/evidence supplied when obtained:** asset, amount, onBehalfOf, interestRateMode or useAsCollateral; Current totalCollateralBase, totalDebtBase, availableBorrowsBase, ltv, liquidation threshold and healthFactor; Raw reserve configuration, fixed block, code and optional fork behavior.
-- **Still unknown:** Complete post-operation positions, price impact and liquidation outcomes are not calculated. Oracle and other lending-protocol authenticity are unverified.
-- **Possible extension and its boundary:** Add protocol-specific post-operation health factors, rates/prices and stress scenarios. Future market moves and oracle attacks remain uncertain.
+- **Current scope:** Aave-shaped current and actual fork post-operation account observations.
+- **Fields/evidence supplied when obtained:** Asset, amount, onBehalfOf, rate mode or collateral flag; current collateral/debt/available borrow/LTV/liquidation threshold/health factor; Original transaction fork before/after account returns, conditional raw differences and an observed after-execution health-factor-below-one signal; Pinned phase snapshots, selected underlying units/balance/allowance and independently retained missing data.
+- **Still unknown:** Protocol/oracle authenticity, future prices, stress liquidation outcomes, rates, full positions and future solvency remain unverified. Base-currency fields are not automatically USD.
+- **Possible extension and its boundary:** Add maintained protocol versions, trusted prices/rates and explicit scenario assumptions. Snapshot results cannot predict future market/oracle/administrator actions.
 
 ### 11. Staking / unstaking / reward withdrawal
 
@@ -166,18 +187,18 @@ The following fields describe the attempted path. Only successful observations b
 ### 12. Liquidity / concentrated-liquidity position changes
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Selected V2 router and V3 position-manager candidates; partial current position reads.
-- **Fields/evidence supplied when obtained:** V2 token amounts/minima/LP quantity/recipient/deadline; V3 mint/increase/decrease/collect tuple fields, tokenId, ticks, fee, liquidity units and per-token amount limits; For existing V3 IDs: pinned positions, NFT owner/current approval/caller operator, manager code, token decimals and caller balances when readable; independent partial results retained; Generic fork deltas, partial controls and bounded token/counterparty intelligence candidates.
-- **Still unknown:** Pool/deployment identity, quotes/current tick validity, NFT or LP valuation, impermanent loss, complete fee/exit economics and future liquidity remain unverified. Mint has no existing position ID to inspect.
-- **Possible extension and its boundary:** Add trusted factory/pool/manager identity, pool state, prices, quotes and exit/stress adapters. Future prices and liquidity remain uncertain.
+- **Current scope:** Selected V2/V3 parameters, existing position state and bounded candidate pool association.
+- **Fields/evidence supplied when obtained:** V2 amounts/minima/LP quantity/recipient/deadline; strict V3 mint/increase/decrease/collect fields, tokenId/ticks/fee/liquidity and per-token bounds; Existing position ownership/approval/operator, manager/token units/balances; candidate factory/getPool, reciprocal token/fee/factory, slot0 tick/range and active liquidity when obtained; Fixed block/hash/time; independent partial failures, generic fork effects and bounded intelligence.
+- **Still unknown:** Getter association is not official pool identity, a market quote, correct price, NFT/LP valuation, impermanent-loss or complete exit/fee analysis. New mint has no existing position.
+- **Possible extension and its boundary:** Add maintained factory/pool/manager bindings, quoters, prices and explicit exit/stress scenarios. Future fees, prices and liquidity remain uncertain.
 
 ### 13. Selected bridge initiation / withdrawal / finalization
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Selected OP-shaped parameter decoding and source-chain observations only.
-- **Fields/evidence supplied when obtained:** Supported bridgeETH/bridgeERC20/deposit/withdraw/withdrawTo and finalizeBridgeETH/ERC20 candidates; local/remote token, amount/value, recipient, claimed message sender, minimum gas and extraData byte count; Candidate stage: bridge request, withdrawal request or finalization request; target code/partial controls; Optional source-chain fork effects with destinationVerified=false.
-- **Still unknown:** Messenger/portal authority, proofs, destination deployment identity, message status, target-chain settlement/arrival, validators and custody are unverified. A finalize selector is not proof of a valid finalization.
-- **Possible extension and its boundary:** Add bridge-version-specific source/destination identity, portal/messenger proof/state adapters and destination execution. Future relay, consensus and arrival cannot be guaranteed.
+- **Current scope:** Selected OP-shaped parameters and optional maintained two-chain route comparison.
+- **Fields/evidence supplied when obtained:** Selected initiation/withdrawal/finalization fields: local/remote token, value/amount, recipient, asset sender, gas and extraData length; When configured, two server RPC snapshots and four maintained bridge/messenger bindings; reviewed versions, reciprocal pointers, pauses and limited mintable-token counterpart getters; Separate chain/block/hash/time; exact finalization caller versus local messenger; proof/relay/arrival remain explicitly unverified.
+- **Still unknown:** Route/getter/code matches do not prove message/proof validity, active cross-domain sender, settlement, reserves, custody security or future arrival. Snapshots are not synchronized.
+- **Possible extension and its boundary:** Add version-specific message/proof/portal/finality and destination consuming-call evidence. Future relay/consensus/arrival cannot be guaranteed.
 
 ### 14. Airdrop / reward claim
 
@@ -206,10 +227,10 @@ The following fields describe the attempted path. Only successful observations b
 ### 17. Ownership / role / upgrade / smart-account controls
 
 - **Entry:** Automatic when the wallet supplies a transaction.
-- **Current scope:** Common admin methods and exact Safe-style control candidates; no deployment authentication.
-- **Fields/evidence supplied when obtained:** Ownership/role/upgrade target parameters; Safe-style add/remove/swap owner and threshold, enable/disable module, set/remove guard/fallback handler and approveHash candidates; Verified RPC chain and fixed block; independently retained getOwners (at most 64 retained), getThreshold, selected isModuleEnabled and selected account/authority code; Requested versus observed threshold; removal/granting roles remain distinct. approveHash supplies no recoverable action preimage or verified authorization.
-- **Still unknown:** Complete module/guard/fallback graphs, implementation identity/audit, owner contract policies, linked-list validity, signature acceptance and future execution are unverified. getGuard is internal and no fictional public getter is used.
-- **Possible extension and its boundary:** Add authenticated versions/deployments, supported storage layouts and full authority graphs/code/policy analysis. Generic Safe-shaped calldata does not provide full ERC-4337 or ERC-1271 support.
+- **Current scope:** Selected admin/Safe-shaped parameters, current state and bounded original-fork authority changes.
+- **Fields/evidence supplied when obtained:** Owner/role/upgrade/controller and selected Safe owner/threshold/module/guard/fallback/hash fields; Pinned getOwners (up to64 retained), threshold, selected module/code and actual fork before/after selected authority state; optional maintained code bindings; EIP-7702 authorization tuple recovery, chain/nonce bounds, conditional sequential eligibility and delegate code are separate observations when supplied.
+- **Still unknown:** Full authority graphs, guard/fallback storage, code/policy audits, linked lists, owner contract rules, full set-code execution and future permission behavior remain incomplete. Login-only ERC-1271 does not validate asset signatures.
+- **Possible extension and its boundary:** Add reviewed storage/version/account/module/session adapters and full consuming-call scenarios. Conditional tuple or interface success is not verified future control.
 
 ### 18. Contract deployment
 
@@ -262,34 +283,34 @@ The following fields describe the attempted path. Only successful observations b
 ### 24. Permit2 signature
 
 - **Entry:** Automatic when the wallet supplies a message signature request.
-- **Current scope:** Canonical common types and selected domain/nonce/allowance checks.
-- **Fields/evidence supplied when obtained:** primaryType, signed domain, spender, canonically normalized unsigned token/amount/expiration and submission deadline fields; EIP-712 encoding; selected owner/token/spender allowances/nonces or nonce bitmap, up to 16 allowance entries; Signer-derived owner, contract code, reference address/domain comparison, fixed block and remaining gaps.
-- **Still unknown:** Witness/custom variants, code authentication and future consumption are incomplete. expiration=0 has submission-block semantics; nonce availability or a reference-address match is not safety.
-- **Possible extension and its boundary:** Add deployment/code authentication, additional variants, witness semantics and consuming-transaction simulation. Future third-party spending is not guaranteed.
+- **Current scope:** Canonical common and witness outer envelopes plus selected current nonce/allowance checks.
+- **Fields/evidence supplied when obtained:** Committed token/cap/spender/nonce/deadline, canonical type encoding/digest/domain; allowance expiry and up to16 current entries or nonce bitmap; Signer-derived owner, underlying ERC20 and internal Permit2 allowance layers, signer/verifier code and reference/maintained bindings when configured; Canonical witness type/hash/field names without raw witness strings; consumer enforcement explicitly unknown.
+- **Still unknown:** Custom witness business meaning/enforcement, arbitrary variants, asset-signature acceptance and future consumption remain unverified. expiration=0 has submission-block semantics; a nonce/code/reference match is not safety.
+- **Possible extension and its boundary:** Add independently reviewed consuming-contract witness semantics, versions and transaction scenarios. The unsigned request cannot prove future signature use.
 
 ### 25. Order / listing / other EIP-712 message
 
 - **Entry:** Automatic when the wallet supplies a message signature request.
-- **Current scope:** Encoding and bounded committed financial fields; protocol semantics remain partial.
-- **Fields/evidence supplied when obtained:** primaryType, declared domain, verifyingContract and encoding digest; Recognized committed offerer/recipient/amount/start/end quantities/times and other bounded financial fields; available DOMAIN_SEPARATOR comparison; Available controls, supported nonce observations or explicit unsupported markers.
-- **Still unknown:** Complete Seaport-like offer/consideration, fulfillment, cancellation and custom authority are not interpreted.
-- **Possible extension and its boundary:** Add specific order schemas, status reads and fulfillment simulation. A familiar primaryType alone cannot authenticate an unsupported protocol.
+- **Current scope:** Canonical Seaport OrderComponents commitments and selected state; generic typed messages remain partial.
+- **Fields/evidence supplied when obtained:** Complete bounded canonical offer/consideration items: item type/token/ID-or-criteria/raw start/end amount/recipient, time, counter, conduit, order hash and digest; Current counter/fill/cancellation/time; role/protocol seaport version1.6 plus actual information() version/domain/code binding; direct zero-conduit ERC20/ERC721 state; signed zero-recipient warning; Generic supported type-graph financial fields and optional DOMAIN_SEPARATOR comparison; explicit unsupported/custom markers.
+- **Still unknown:** Contract-order type4, criteria proofs, nonzero conduit/controller/channel routing, all order formats, signature acceptance, execution/fees/rounding and economic fairness remain incomplete. No order is fulfilled or signed.
+- **Possible extension and its boundary:** Add reviewed conduit/criteria/consumer adapters and fulfillment scenarios. A familiar type name or current unfilled state does not guarantee future acceptance.
 
 ### 26. Wallet connection / permission / session key
 
 - **Entry:** Currently requires explicit submission.
-- **Current scope:** Bounded parameter summary; no general automatic Snap hook.
-- **Fields/evidence supplied when obtained:** method, source, whitelisted address/scope/limit/expiry fields; Bounded nested summary and available address/website intelligence.
-- **Still unknown:** Actual granted authority and validator enforcement are unverified. The backend neither reads secret session keys nor grants the requested permission.
-- **Possible extension and its boundary:** Integrate the target wallet/dApp SDK or permission entry and adapt each validator. A prompt change cannot intercept arbitrary wallet RPCs.
+- **Current scope:** Explicit API or dApp provider integration; bounded public scope summary.
+- **Fields/evidence supplied when obtained:** Method, origin and recognized public account/validator/scope/limit/expiry fields; Explicit provider wrapper submits selected requests before forwarding; secret/signature fields omitted with redaction/truncation gaps; Available source/address intelligence; no secret session key is requested or permission granted by analysis.
+- **Still unknown:** Actual granted authority, validator/session enforcement and hidden wallet policy remain unverified. The SDK is opt-in for a cooperating dApp, not a global wallet hook.
+- **Possible extension and its boundary:** Add versioned wallet/account/validator adapters and explicit permission delivery. Prompt changes cannot observe requests never supplied.
 
 ### 27. UserOperation / smart account
 
 - **Entry:** Currently requires explicit submission.
-- **Current scope:** sender/paymaster-style summary; no bundler simulation.
-- **Fields/evidence supplied when obtained:** method, sender, entryPoint, paymaster, factory and nonce when recognized; callData selector/byte count and recognized targets, values and session limits.
-- **Still unknown:** Account modules, signature policy, paymaster charges, bundler validation and complete batch semantics are unknown; some byte-packed addresses remain undecoded.
-- **Possible extension and its boundary:** Add ERC-4337 version/account/bundler/paymaster adapters and simulation. The wallet or dApp must explicitly expose this request entry.
+- **Current scope:** Explicit v0.6/split v0.7-v0.8 extraction and version-bound EntryPoint state; no full bundler simulation.
+- **Fields/evidence supplied when obtained:** sender/EntryPoint/factory/paymaster/keyed nonce, call selector/byte counts and declared gas/fee limits; no raw signature or payload bytes; Matching maintained EntryPoint version/code enables current keyed nonce and payer deposit/declared prefund; sender/factory/paymaster code and current base-fee relations independently retained; Exact network/block/hash/time, explicit incomplete semantics and no factory-derived sender or signature-policy proof.
+- **Still unknown:** Bundler/account/aggregator/module/session validation, sponsorship authorization, token fees, creation derivation, full batch execution and future inclusion remain unknown.
+- **Possible extension and its boundary:** Add supported account/bundler/paymaster simulations and policy adapters with explicit wallet/dApp delivery. Current deposit/code/nonce is not full validity or execution.
 
 ### 28. Add / switch network / display asset
 
@@ -317,7 +338,7 @@ The following fields describe the attempted path. Only successful observations b
 
 ## 5. Muse output, validation, repair and cost
 
-Only Muse supplies a new numeric score. Its output contains score (integer 0–100 or null), assessment, six dimensions, evidence_confidence, summary, cited reasons, missing_data, suggested_action and honeypot. The backend records model/time and valid usage. Dimensions are authority, exposure, execution, identity, protocol and deception; each occurs exactly once, has a qualitative assessment and cites existing evidence IDs. They are not numerical sub-scores and are not averaged.
+Only Muse supplies a new numeric score. Current output additionally requires fact_schema_version=walletshield-facts-v1, exact selected facts and per-reason/dimension fact_ids; historical reports remain readable. Its output contains score (integer 0–100 or null), assessment, six dimensions, evidence_confidence, summary, cited reasons, missing_data, suggested_action and honeypot. The backend records model/time and valid usage. Dimensions are authority, exposure, execution, identity, protocol and deception; each occurs exactly once, has a qualitative assessment and cites existing evidence IDs. They are not numerical sub-scores and are not averaged.
 
 The number is an uncalibrated indicator of this request's evidenced risk. It is not a loss probability, identity-trust score or evidence-confidence percentage. There are no fixed numeric bands, floors, additive points, weights or rule/model-provider fallbacks. Rules can retain a qualitative high-risk signal independently of the number. Historical rule scores remain labeled historical.
 
@@ -361,7 +382,7 @@ Thirty profiles are not thirty complete protocol integrations. Separate these de
 
 See README.md for install/config/start/stop/test/release commands and docs/USER-MANUAL.md for an English walkthrough. The default development Snap uses local file service 8080 and direct API 8787; browser API requests use the webpage's proxy. Hosted builds use one compiled HTTPS origin/npm ID and loopback backend behind the configured HTTPS proxy. Packaging is not publication, registration or production certification.
 
-Pairing verifies backend acceptance before Snap state is saved. A later authenticated health check distinguishes installation from usable pairing. Hosted login uses a five-minute one-use EOA challenge, an eight-hour memory-only web bearer and a distinct address-bound 30-day Snap bearer. Owners can revoke all web and Snap credentials for their address. Snap issuance has persistent atomic caps of 4/address/minute, 12/server-observed-IP/minute and 60/global/minute. At most four active Snap credentials per address and 8192 globally are retained; a successful reload rotates only that owner's earliest-expiring credentials. Denial returns 429/Retry-After without revoking existing credentials or spending issuance buckets. Expiry/rate cleanup is indexed. History clears on identity/provider/account changes, denied reloads and disconnection, discards stale asynchronous responses, and drops a selection no longer present in the current owner list. Report/evidence access and quotas are scoped to the verified address. Capture channel records credential provenance, not cryptographic attestation of Snap execution. Hosted mode does not register local lab/funding/legacy/demo/monitor routes; arbitrary Origin headers never replace authentication.
+Pairing verifies backend acceptance before Snap state is saved. A later authenticated health check distinguishes installation from usable pairing. Hosted login verifies the exact stored five-minute one-use challenge using EOA recovery or bounded deployed-contract ERC-1271 STATICCALL over trusted RPC; unsupported or undeployed accounts fail. It uses an eight-hour memory-only web bearer and a distinct address-bound 30-day Snap bearer. Owners can revoke all web and Snap credentials for their address. Snap issuance has persistent atomic caps of 4/address/minute, 12/server-observed-IP/minute and 60/global/minute. At most four active Snap credentials per address and 8192 globally are retained; a successful reload rotates only that owner's earliest-expiring credentials. Denial returns 429/Retry-After without revoking existing credentials or spending issuance buckets. Expiry/rate cleanup is indexed. History clears on identity/provider/account changes, denied reloads and disconnection, discards stale asynchronous responses, and drops a selection no longer present in the current owner list. Report/evidence access and quotas are scoped to the verified address. Capture channel records credential provenance, not cryptographic attestation of Snap execution. Hosted mode does not register local lab/funding/legacy/demo/monitor routes; arbitrary Origin headers never replace authentication.
 
 A neutral personal_sign message with a unique nonce can exercise the real wallet/Snap entry without gas or asset authority. The page matches its exact request to a paired-snap report. The generated test signature stays in the browser; its unsigned message/report reach the backend. This differs from hosted login, whose explicitly requested authentication signature is sent to verification and not stored. Actual asset transactions remain user-initiated through the wallet/dApp.
 
@@ -388,9 +409,9 @@ Muse now receives `evidence_admissibility` (which real observations can support 
 
 GoPlus remains opt-in. It derives at most eight token and eight counterparty candidates from recognized outer/path/Permit2/batch fields; bridge remote-token fields and delegated-call targets are not blindly relabeled as local tokens. At most 18 network queries run with four-way concurrency, 1.8 seconds per request and 7.5 seconds total. Responses cache for 30 seconds (256 entries); supported-chain discovery caches for one hour. Each result exposes `fetchedAt`, `cacheHit`, `cacheAgeMs`, `cacheTtlMs`, `providerAsOf:null` and `freshnessVerified:false`: a recent fetch is not a known upstream data date. Missing flags, closed-source/proxy omissions, unqueried/truncated candidates and non-hits remain limits. See [GoPlus response details](https://docs.gopluslabs.io/reference/response-details).
 
-Selected canonical V3 `exactInputSingle` deadline/no-deadline token-input forms now have a dependent fork buy/sell experiment. It replays the original buy unchanged, measures acquired output and actual input debit, approves only the acquired output, and derives a reverse sell with the same fee tier and original deadline when present. The experimental sell uses zero minimum output/price limit and new local nonces/default gas. V3 partial fills use observed input debit for the ratio. Native funding, router-balance input, multi-hop, exact-output, other recipients and opaque aggregators remain unsupported. One observed sale is not future sellability; one failed sale is not by itself proof of a honeypot. Run `npm run test:v3` for the new disposable-node V3 adapter integration: four scenarios cover both tuple forms and normal/blocked sales while checking the source block/hash/nonce/balances remain unchanged. These are simplified fixtures, not official pool authentication, MetaMask/Snap delivery or live-model accuracy; the wallet catalog remains 66 cases.
+Canonical V3 single/path exact-input/exact-output variants now have bounded dependent fork buy/sell adapters. The original buy keeps its supplied execution fields; the derived sale uses observed input debit and acquired output. Native funding requires matching maintained router/wrapped-native records. Candidate pool/factory association, tick/range and active liquidity are observed when readable; they are not authenticated pool identity, a market quote or a future exit guarantee. Opaque aggregators, unsupported funding/recipients and future ordering remain gaps. The wallet catalog remains 66 representative cases; adapter tests are separate from real-wallet/Snap and live-model acceptance.
 
-Automatic coverage still requires actual wallet delivery. MetaMask currently displays message insights only at Critical severity and after advancing to Sign; transaction insights have a separate entry point. See the [primary entry-point documentation](https://docs.metamask.io/snaps/reference/entry-points/). Permissions, sessions, UserOperations and other wallet RPCs remain explicit API-only paths, not a general wallet interceptor. Hosted login remains EOA-only; ERC-1271 authentication is unsupported. Public domain/TLS, intended Snap publication/distribution, browser acceptance, secure backup/restore and load/failure testing are still required before a public launch.
+Automatic coverage still requires actual wallet delivery. MetaMask currently displays message insights only at Critical severity and after advancing to Sign; transaction insights have a separate entry point. See the [primary entry-point documentation](https://docs.metamask.io/snaps/reference/entry-points/). Permissions, sessions, UserOperations and other wallet RPCs require explicit API submission or a cooperating dApp integration, not a general wallet interceptor. Hosted login supports EOA recovery and bounded deployed-contract ERC-1271 validation of the exact stored login message only; undeployed/ERC-6492 accounts and unsupported policies remain unavailable. Public domain/TLS, intended Snap publication/distribution, browser acceptance, secure backup/restore and load/failure testing are still required before a public launch.
 
 ## 8. Privacy and evidence flow
 

@@ -72,14 +72,27 @@ export function dimensionsForEvidence(check:Evidence,report:SecurityReport):Dime
   if(matches(id,/^(?:signature_(?:signer_account|verifier_code|delegate_code)|delegated_account|target_delegate_code|account_(?:code|authority_code_\d+)|contract_controls|new_controller)$/))add('authority','protocol');
   if(matches(id,/^(?:basic_call|transaction_nonce|transaction_pending_nonce|transaction_base_fee)$/))add('execution');
   if(id==='transaction_base_fee')add('exposure');
+  if(/^registry_deployment_\d+$/.test(id)&&check.data?.matched===true)add('identity','protocol');
+  if(/^price_reference_\d+$/.test(id)&&check.data?.referenceOnly===true&&typeof check.data?.priceRaw==='string')add('exposure');
+  if(matches(id,/^(?:order_status|order_counter|order_authorization_state|order_time|order_deployment)$/))add('authority','execution','protocol');
+  if(/^order_asset_\d+$/.test(id))add('authority','exposure','protocol');
+  if(matches(id,/^(?:userop_nonce|delegation_sender_nonce|delegation_state_\d+|delegation_sequence)$/))add('authority','execution');
+  if(matches(id,/^(?:userop_deposit|userop_fee)$/))add('exposure','execution');
+  if(matches(id,/^(?:userop_entrypoint|userop_(?:sender|factory|paymaster)_code|delegation_target_\d+)$/))add('authority','protocol','execution');
+  if(/^bridge_(?:source|destination)_(?:bridge|messenger|token)$/.test(id))add('protocol','execution');
  }
  if(check.source==='eip712'){
   if(matches(id,/^(?:typed_structure|signature_scope|signature_validation|signature_protocol)$/))add('authority');
   if(matches(id,/^(?:signature_owner_binding|signature_network_context|signature_provider_difference)$/))add('identity','deception');
+  if(matches(id,/^(?:order_structure|permit2_witness_structure)$/))add('authority','protocol');
+  if(id==='order_offer_owner')add('authority','identity');
+  if(id==='order_zero_recipient')add('authority','exposure','protocol');
  }
  if(check.source==='isolated-fork'){
   if(id==='simulation_execution')add('execution','exposure','authority','protocol');
   if(matches(id,/^(?:round_trip|unexpected_asset_loss|excess_token_spend|excess_native_spend)$/))add('execution','exposure','protocol');
+  if(/^fork_(?:vault|lending)_(?:before|after|change|health)$/.test(id))add('execution','exposure','protocol');
+  if(/^fork_authority_(?:before|after|change)$/.test(id))add('authority','execution','protocol');
  }
  if(check.source==='goplus'&&boundIntelligence(check,report)){
   if(id==='website_reputation'&&bit(check.data?.phishing_site))add('identity','deception');
@@ -94,6 +107,11 @@ export function dimensionsForEvidence(check:Evidence,report:SecurityReport):Dime
  if(check.source==='calldata/batch-v1'&&matches(id,/^(?:batch_structure|batch_child_[\d_]+)$/)){
   add('authority','protocol');if(check.data?.valueWei!==null&&check.data?.valueWei!==undefined)add('exposure');
  }
+ if(check.source==='sourcify'&&/^registry_source_\d+$/.test(id)&&['exact_match','match'].includes(String(check.data?.runtimeMatch)))add('identity','protocol');
+ if(check.source==='request'&&['userop_request','delegation_envelope'].includes(id))add('authority','exposure');
+ if(check.source==='signature'&&/^delegation_signature_\d+$/.test(id))add('authority','identity');
+ if(check.source==='request'&&id==='bridge_finalization_caller')add('authority','protocol');
+ if(check.source==='registry'&&['bridge_route','bridge_token_pair'].includes(id))add('protocol');
  return AI_DIMENSIONS.filter(value=>out.has(value));
 }
 export function evidenceAdmissibility(report:SecurityReport){return report.checks.map(check=>({evidence_id:check.id,dimensions:dimensionsForEvidence(check,report)}));}

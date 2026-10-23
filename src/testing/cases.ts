@@ -77,10 +77,10 @@ export const WALLET_CASES:readonly WalletCase[]=[
 ];
 export const UNAVAILABLE_WALLET_TESTS=[
  {name:'Raw eth_sign',reason:'Flask or the wallet may disable this method. The current Snap SDK does not guarantee an automatic entry point, so no blind-signing button is offered.'},
- {name:'Session keys and wallet permissions',reason:'The backend can summarize parameters, but this Snap has no universal permission-request interception hook.'},
- {name:'ERC-4337 / UserOperation / paymaster',reason:'No dedicated smart-account, bundler and validator test environment is available.'},
- {name:'Network settings and read-only RPC',reason:'Adding a network or connecting an account calls the wallet, but is outside the existing transaction and message insight hooks.'},
- {name:'EIP-7702 delegation',reason:'Full authorizationList, delegation signature and implementation permission checks are not implemented.'},
+ {name:'Session keys and wallet permissions',reason:'The explicit provider SDK can submit public request parameters, but this Snap has no universal permission-request interception hook or complete validator-policy adapter.'},
+ {name:'ERC-4337 / UserOperation / paymaster',reason:'Version-bound EntryPoint state and declared prefund observations have API tests. A dedicated real-wallet/account/bundler/paymaster validation environment is still required.'},
+ {name:'Network settings and read-only RPC',reason:'The public-network page integrates network switching through the explicit SDK. These requests do not enter the existing automatic transaction/message insight hooks; read-only requests are skipped by default.'},
+ {name:'EIP-7702 delegation',reason:'Actual tuple recovery, conditional ordered nonce/code eligibility and delegate observations have API tests. Full set-code execution, implementation policy and an end-to-end wallet lab case remain incomplete.'},
  {name:'Real DeFi, bridge delivery and complex aggregators',reason:'Local interface experiments do not verify real protocol identity, markets, destination chains or all child calls.'},
  {name:'Every method and signature variant within a profile',reason:'Each profile has representative cases. On-chain Permit use, NFT Permits, all order and witness variants, and every protocol method have not been fully tested.'},
  {name:'Non-EVM chains, other wallets, devices and private-key leaks',reason:'Only EVM requests supplied by MetaMask are integrated. Devices and custodial platforms are not inspected.'}

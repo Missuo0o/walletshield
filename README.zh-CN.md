@@ -17,6 +17,20 @@ WalletShield 是一个 EVM 钱包安全原型，包含本地钱包实验室，�
 当前检查使用钱包提供的未签名请求、来源 origin/网络元数据，以及成功取得的 RPC、情报和模拟证据。Muse 评价可观察请求信号，包括支持范围内的来源、消息和请求不一致。链/provider/执行上下文指技术观察。历史报告与验收文件保留原始记录，不被删除或改写。
 
 
+## 当前证据与接入新增能力
+
+当前 Muse 回复使用 `walletshield-facts-v1`：精确主体/字段/值/来源/链/区块/时间/范围，并在理由和维度中引用 `fact_ids`；历史回复继续可读。后端验证观察复制和相关性，不证明每个外部响应或自然语言句子真实。数字仍只由 Muse 给出，没有固定权重、下限或兜底。
+
+可选 `.local/registry.json` 配置经运营者审查的部署/代码/实现绑定、参考价格 feed 和已审查 OP 桥路线。`ENABLE_SOURCE_VERIFICATION=1` 独立开启有界 Sourcify 匹配观察；GoPlus 另行选择启用。默认不虚构官方部署或美元锚定；价格是参考，不是可执行报价或确定损失。
+
+新增有界证据包括 Seaport 承诺项目/当前状态、Permit2 witness 外层承诺、版本绑定 UserOperation 状态、EIP-7702 元组密码学/有条件状态、原始分叉交易前后部分权限/金库/借贷状态、扩展 V3 路线与候选池状态。dApp 包装器须主动接入，不是全局钱包拦截；托管 ERC-1271 只验证本次登录，不验证未来资产签名。
+
+Wallet and network 页面显示 registry 数量、源码核对开关及有界只读 RPC 能力观察：固定区块调用、一次历史余额和固定 trace 探测。成功不是完整 archive/trace 保证。registry 与参考价格列表为空时相应增强仍未启用；必须先维护独立审查的网络/地址/代码记录。本页网络切换建议只通过本页显式 SDK 触发。
+
+`npm run evaluate:ai` 默认运行固定哈希的合成校验器检查，不请求模型/RPC，不代表在线 Muse 准确率。付费评估必须显式指定 `--live --confirm-paid`、案例和调用预算，不会自动运行。
+
+完整[证据、配置、工具字段、SDK、评估与剩余边界说明](docs/RELIABILITY-AND-INTEGRATION-zh.md)。
+
 ## 一次操作会经历什么
 
 ```text
@@ -251,7 +265,7 @@ npm pack --dry-run --ignore-scripts
 托管用户流程：
 
 1. 连接目标账户，选择 **Verify current wallet identity**（设置页中为 **Sign to verify this wallet**）。确认前逐项核对准确登录消息、应用域名、URI、账户、链、nonce 和到期时间。这是用于身份验证的账户控制权证明，不是资产支出权限。
-2. 服务端签发有效期五分钟的一次性 challenge，并验证对其存储消息的 EOA 签名。它不会使用未经检查的 ERC-1271 兜底；目前不支持合约钱包身份验证。登录成功后创建有效期八小时的网页 bearer，只保存在浏览器内存中。刷新、更换 provider/账户或断开连接都会清除内存身份；重新访问记录需再次验证。
+2. 服务端签发有效期五分钟的一次性 challenge，并验证对其存储消息的 EOA 签名。支持的已部署合约可经可信 RPC 使用有界 ERC-1271 STATICCALL，绑定本次存储消息及区块；未部署账户或不支持策略不使用未经检查的兜底。登录成功后创建有效期八小时的网页 bearer，只保存在浏览器内存中。刷新、更换 provider/账户或断开连接都会清除内存身份；重新访问记录需再次验证。
 3. 安装并配对 Snap。服务端签发**不同的**、绑定地址且有效期 30 天的 Snap bearer，通过配对传入 Snap；不会把网页 bearer 交给 Snap。Snap 在存储前验证后端接受该凭据，健康检查会验证绑定地址。配对到期或被撤销后，需要重新登录并配对。持久化原子签发上限为每分钟每地址 4 次、每个服务端观察到的 IP 12 次、全局 60 次；每地址最多保留 4 个活动 Snap 凭据，全局最多 8192 个。成功重配只轮换该地址最早到期的凭据。拒绝签发返回 429/Retry-After，不改变既有配对，也不扣签发计数。
 4. 扫描必须来自已验证地址。历史、单份报告和证据由服务端拥有的地址映射控制访问；知道报告 ID 或伪造 Origin 不能获得访问权。UI 会将 Snap 采集与网页分析分别标注。每钱包预算由该地址的网页/Snap 会话共享。
 5. 选择 **Sign out all sessions and revoke pairing**，以原子操作撤销该地址的全部网页/Snap 凭据及未完成登录挑战，其他钱包不变。切换账户会清除浏览器会话，但不会自动撤销服务端之前签发的凭据。账户/provider/断开或加载失败会清空历史与详情；取消/延迟响应不能恢复前一身份的记录，当前所有者列表不存在的选择会清空。本地模式仍是同机共享历史，托管模式才按所有者隔离。
@@ -299,7 +313,7 @@ DAI 权限来自 allowed 的参考语义推导；ERC-3009 承诺单次精确数�
 
 Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一次短时、只读的 `eth_chainId` 观察。结果作为带时间戳的 `signature.providerContext` 快照保存，与钩子请求的链字段和消息已签名 domain 分开。签名钩子仍不提供与该请求绑定的链，因此 Snap 请求保留 `chainId: 0`；不会把观察到的 provider 链悄悄替代为类型化签名合约读取所用的 domain。对于有效 typed data，证据可比较 domain 与 provider 快照；差异是上下文警告，相同也不证明发起 dApp 的签名网络。失败或超时则保留上下文缺失。`signature.from` 提供钩子请求的签名者；Snap 不会仅为检查而请求选账户权限或新的签名。
 
-签名前证据不含可恢复或提交的已生成签名。匹配 Permit nonce/domain、读取签名者代码或 ERC-1271 相关账户状态，都不等于验证签名有效或未来会被使用。标准权限还可能允许 spender 在编码的上限内决定最终收款方或实际转移金额；匹配结构不会承诺所有后续交易细节。
+普通未签名消息分析没有新生成的消息签名可恢复或提交。提供的 EIP-7702 authorization list 例外：其中已含用于有界恢复的签名元组；raw r/s 不成为模型事实，但存储的外层请求可能包含这些字段。匹配 Permit nonce/domain、读取签名者代码或 ERC-1271 相关账户状态，都不等于验证签名有效或未来会被使用。标准权限还可能允许 spender 在编码的上限内决定最终收款方或实际转移金额；匹配结构不会承诺所有后续交易细节。
 
 ## 各类操作收集的证据
 
@@ -314,33 +328,33 @@ Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一
 | NFT operator 授权 / 撤销 | 集合、operator、布尔值及可读取的现有 operator 状态；控制/信誉/分叉证据 | 不完整枚举当前/未来持有资产，也不证明 operator 会诚实行事。 |
 | 链上 Permit2 结构 allowance | 代币、spender、`uint160` 数量、expiration 和可用代币事实 | 结构不证明官方 Permit2 身份；独立读取用户对候选 Permit2 合约的底层 ERC-20 授权，以及其内部对最终 spender 的 amount/expiration/nonce。可读状态不证明部署身份、domain 语义或未来用途。 |
 | V2 结构兑换 | 路径、输入量、最低输出、收款方、deadline；支持时，在分叉执行买入 → 授权所得代币 → 反向卖出，记录返回数量/gas、变化量及可选代币情报 | 限定路径结构且要求相同收款方；卖出失败有多种原因；往返损失含费用/价格冲击，不是纯税率。 |
-| V3 结构兑换 | 代币或解码路径、fee、收款方、输入/输出限制、价格限制和部分 deadline；通用分叉事实 | 部分标准、代币出资且本人收款的 `exactInputSingle` 支持依赖式分叉买卖；是否执行及结果以 `round_trip` 证据为准。多跳、exact-output、原生币/路由余额出资及其他收款人往返仍不支持，完整池/tick/报价验证与 MEV 分析仍不完整。 |
-| ERC-4626 结构金库 | 动作、assets/shares、receiver/owner；`asset`、`totalAssets`、`totalSupply`、动作 preview/max；可读取的底层资产余额/decimals/allowance 和份额单位 | 底层资产与份额单位分别处理；接口输出不证明身份、估值、偿付能力或未来赎回。 |
-| 借贷 / 抵押 | 资产、数量、受益人、利率模式或抵押开关；Aave 结构的抵押/债务/可借额度/LTV/阈值/健康因子和储备配置 | 仅当前状态；没有完整的操作后清算或价格/预言机压力模型。 |
+| V3 结构兑换 | 八种规范 single/path、exact-in/exact-out；原始分叉买入与按实际输入扣减的衍生卖出；原生资金须有匹配 router/wrapper 绑定 | 不完整覆盖接收人/资金/聚合器、经济报价、MEV 或未来卖出。 |
+| ERC-4626 结构金库 | 当前 asset/totals/preview/max/单位，以及原始分叉交易前后份额/底层余额/限制与兼容单位差值 | 接口不认证身份；不证明完整经济审计、未来价格/偿付或赎回。 |
+| 借贷 / 抵押 | 当前 Aave 结构状态，以及原始分叉交易前后抵押/债务/健康因子及兼容单位差值；实际分叉后健康因子低于1的信号 | 不完整建模未来价格/预言机压力、清算或偿付；base 单位不是美元。 |
 | 质押 / 解除质押 / 奖励 | 候选方法、数量、receiver；控制状态和通用分叉观察 | 不自动验证锁定期、罚没、奖励来源/公式或未来提款。 |
-| 流动性 / V3 仓位变更 | V2 参数及严格 V3 mint/increaseLiquidity/decreaseLiquidity/collect 元组；固定区块的既有 positions、NFT owner/approval/operator、manager 代码及逐代币单位/余额 | 不认证 manager/pool、报价/当前 tick、LP/NFT 估值或完整退出/未来费用；mint 没有既有 position ID。 |
-| 跨链发起 / 提款 / 完成候选 | 部分 OP 结构 deposit/bridgeETH/bridgeERC20/withdraw/withdrawTo/finalizeBridgeETH/ERC20 的阶段、发送/接收者、token/数量/gas/extraData 大小；源链观察 | 不认证 portal/messenger/proof、目标链部署/到账或未来最终性；finalize 结构不是完成证明。 |
+| 流动性 / V3 仓位变更 | V2/严格 V3 参数、positions/NFT 权限/单位；候选 manager/factory/pool 的 token/fee 关联、当前 tick/range/流动性 | 接口关联不认证官方池，不证明可执行报价、LP/NFT 价值、完整退出或未来费用。 |
+| 跨链发起 / 提款 / 完成候选 | 部分 OP 结构字段；可选维护路线核对两链 bridge/messenger 代码/代理/审查版本/指针/暂停及有限 mintable 代币关系 | 独立快照不证明 relay/proof、cross-domain sender、结算、储备或未来到账；finalize 结构不是证明。 |
 | 领取 / 空投 | 常见 Merkle 结构的 index、account、amount、proof 项数、代码/控制及通用分叉效果 | 未完整验证 root/proof/领取资格或项目身份；proof 字节不会完整发送给 Muse。 |
 | 原生包装 / 通用提款 | deposit() 的原生值，withdraw(uint256) 的数量标为 unverified_protocol_units，保留代码/部分控制和可选变化量 | 不假定一参数 withdraw 是质押退出或原生赎回；身份、单位/比率、偿付与退出仍未知。 |
 | 铸造 / 销毁 | 候选方法、收款方、数量或 ID、代币及 value/变化量 | 数量与 NFT ID 可能仍有歧义；发行权、价格和所有销毁后果检查不完整。 |
-| 控制 / 角色 / 升级 / 智能账户 | 管理目标及 Safe 结构 owner/threshold/module/guard/fallback/hash 候选；固定区块独立读取最多 64 个 owner、threshold、选定 module 和账户/权限目标代码 | 不认证 Safe、完整权限图、存储/代码/策略或签名；移除也可能削弱保护，不等于安全。 |
+| 控制 / 角色 / 升级 / 智能账户 | Safe 结构 owner/threshold/module/guard/fallback/hash；当前 owner/threshold/module/code 及支持的原始分叉前后 allowance/NFT/账户权限 | 无完整权限图、已认证 guard/fallback 存储、账户策略/签名/代码审计；移除可能削弱保护。 |
 | 部署 | 发送者、value、初始化选择器/字节数和费用摘要；通用分叉效果 | 没有完整初始化字节码/源码/构造函数审计、验证构建对应关系或 CREATE2 身份证明。 |
 | 批量 / Safe 执行 / 聚合器 | 标准编码 multicall、Safe execTransaction 和 packed MultiSend 子结构；CALL/delegatecall、目标/数量及有限字段，可选分叉 | 深度 3、32 子项、每 body 16384 字节、递归总量 32768 字节；结构不证明子调用者/owner/存储上下文、身份、签名或全部效果。 |
 | SIWE 类登录 | 支持的头部/账户、URI origin、version/顺序、nonce 格式/长度、声明链、issued/expiry/not-before 时间及最多 16 个资源 origin；source/account/domain/URI 和本地时钟检查 | 远程 nonce 签发/使用、audience、生成签名有效性和实际服务端会话均未验证。 |
 | 个人消息 | method、account、origin、最多 1,600 字符预览；实际来源/账户观察与可用情报 | 任意服务器/合约如何解释消息未知；预览可能截断，钱包链可能不可用。 |
 | 原始 `eth_sign` | method、account、声明网络/来源和盲签信号；可用上下文 | 仅后端分析；Flask/SDK 可能不提供自动钩子。无法从哈希逆推出原意。实验室没有 raw-sign 按钮。 |
 | Permit / NFT Permit / DAI / ERC-3009 签名 | 实际签入字段、digest/domain、部分 nonce/interface/state；DAI holder/spender/allowed 推导最大值或零；ERC-3009 payer/recipient/amount/时间窗/bytes32 authorizationState | 只支持参考结构，不认证签名/消费/实现。ERC-3009 为单次转移，非持续 allowance；receive 形式有条件性调用者限制。 |
-| Permit2 签名 | 规范通用 types、token/amount/expiry/spender/deadline；domain、逐代币三方 allowance/nonce 或 nonce bitmap、signer/verifier 代码、参考地址/domain 比较；owner 来自签名者 | 零 expiration 使用提交区块语义。最多 16 项 allowance；witness/自定义变体和代码认证不完整。参考地址/接口/nonce 匹配不证明身份或未来支出安全。 |
-| 类型化订单 / 其他 EIP-712 | 编码 digest、primary type/domain/verifier；有界的已识别且实际纳入签名的财务字段、可用的 DOMAIN_SEPARATOR 比较与控制状态 | 没有完整 Seaport 类 consideration、履约、取消或自定义权限语义。 |
-| 钱包权限 / 会话 | method、source、白名单内的地址/范围/限制/expiry 和有界嵌套摘要 | **需要手动提交**；没有通用 Snap 钩子，不执行，也不证明 validator 强制执行限制；不采集秘密 session key。 |
-| UserOperation / 智能账户 | sender、entry point、paymaster、factory、nonce、calldata 选择器/大小及识别出的 limits/value | **需要手动提交**；没有 bundler/账户模块/paymaster 模拟，也不完整解释子调用语义。 |
-| 添加/切换网络 / 关注资产 | method、chain ID/name 和识别字段；提供的 RPC/explorer URL 仅保留 origin | **分析需要手动提交**；后端不会连接输入的任意 URL。新网络/provider 真实性未验证。 |
-| 只读钱包 RPC | method 和有界的已识别 account/address/network 字段；可用来源/情报 | **需要手动提交**；不执行原始 RPC；隐私披露范围检查不完整。只读不代表私密。 |
+| Permit2 签名 | 规范通用结构、nonce/allowance 层、owner 绑定和 witness 外层/type/hash | witness 消费方业务约束、自定义变体、签名接受和未来消费仍未知。 |
+| 类型化订单 / 其他 EIP-712 | 规范 Seaport 承诺；role/protocol 为 seaport、版本1.6 及 information() 版本/domain/代码绑定后读取当前 counter/status 和部分零 conduit 资产授权；零接收人提示 | 合约订单 type4、criteria/非零 conduit/自定义订单、签名接受、履约和经济公平仍不完整。 |
+| 钱包权限 / 会话 | method/source、白名单公开地址/范围/限制/expiry 与有界嵌套摘要 | 需显式 API 或配合 dApp SDK；无全局 Snap 钩子、不执行 RPC、不采集秘密 session key，不证明账户执行限制。 |
+| UserOperation / 智能账户 | 显式 v0.6/拆分 v0.7-v0.8 结构；role entrypoint/protocol erc4337 的维护版本/代码匹配后读取 keyed nonce/deposit/费用；账户/factory/paymaster 代码 | 无通用 Snap 钩子、bundler/账户/聚合器/session/paymaster 完整验证或执行。 |
+| 添加/切换网络 / 关注资产 | method、声明链和有界白名单字段；URL 仅保留 origin；本页通过显式 SDK 提交切换建议 | 需显式 API/配合 dApp SDK，非全局钩子；后端不连接任意输入 URL，不认证新 provider。 |
+| 只读钱包 RPC | method、有界公开 account/address/network 字段与可用来源观察 | 需显式 API/主动选择只读 SDK 分析；不执行原始 RPC，隐私范围仍不完整。 |
 | 未知合约 / 钱包 RPC | target/value/selector/字节数，或 method 和有界白名单参数；通用适用观察 | 交易可能自动到达；任意钱包 RPC 需要手动输入。不从未知方法推断完整含义。 |
 
 主要边界：显式资产读取最多八种资产；NFT 每种资产最多读取 16 个 ID；通用 RPC 摘要最多五层嵌套、16 个数组项和 40 个已识别字段。模拟通过有界且已识别的转账日志及已知显式资产发现资产，最多发现 32 种资产，并限制调用树大小。截断与不支持字段是限制，不算成功覆盖。未知资产 decimals 时，原始数字是最小单位数量，不是美元损失。份额与底层资产不能作为同一单位比较。
 
-观察到 EIP-7702 委托标识时，可对交易目标或消息签名者触发一次同区块目标代码/哈希读取。这不会审计被委托实现、递归检查委托、验证 authorization list 或验证 ERC-1271 行为。已确认 nonce 和当前 base-fee 比较不证明待处理替换策略、未来费用足够或交易会被打包。
+EIP-7702 现在分别观察实际元组密码学、声明链/nonce 范围、外层 sender nonce、顺序有条件资格和一跳 delegate 代码。不认证初始化/module/存储策略或完整 set-code 执行；不支持 envelope 保留缺口。托管 ERC-1271 仅核对登录；待处理替换、未来费用/打包及资产签名接受另行判断。
 
 交易包含不支持的 EIP-7702 authorization/type 字段、blob 相关字段、非空 access list、未知交易类型或格式错误的执行数量时，会标记为未完成。模拟器不会悄悄移除这些字段，然后把替代的普通交易作为验证结果。
 
@@ -367,7 +381,7 @@ Snap 请求 `endowment:ethereum-provider`，并在签名 insight 期间尝试一
 | 需要链下服务或独立调查 | 企业/域名身份、交易所内部余额、声称的投资回报、恶意客服对话、设备恶意软件或过去的密钥泄露 | 链上状态不能证明全部链下事实。额外采集需要单独的用户同意、隐私控制和合适集成。 |
 | 无法在签名前凭一次快照证明 | 保证未来价格/流动性、打包/排序/MEV、之后的黑名单/升级决定、未来桥/验证者行为、普遍不存在隐藏资产或任意代码漏洞 | 更多数据和情景测试可减少不确定性，但不能证明尚未发生的事件或普遍安全。签名前 AI 分数始终只是指标。 |
 
-这些是未来扩展方向，不是已启用功能。强制阻止和持续签名后监控仍不在本版本的建议行为范围内。检测质量需要独立标注数据、独立留出集评估及误报/漏报测量；66 个本地案例不能支持任何校准声明。
+这些描述已实现有界适配器之外的进一步扩展，不表示完整协议集成已启用。强制阻止和持续签名后监控仍不在本版本的建议行为范围内。检测质量需要独立标注数据、独立留出集评估及误报/漏报测量；66 个本地案例不能支持任何校准声明。
 
 ## 手动提交与开发者 API
 
@@ -401,7 +415,7 @@ curl -sS -X POST http://127.0.0.1:5173/api/security/scan \
 | `POST /api/lab/prepare` | 准备并校验本地测试资产，网页随后请求钱包显示 |
 | `POST /api/lab/clear` | 确认后清空本地测试合约钱包余额，要求 `{address, confirm: true}` |
 | `POST /api/lab/begin`、会话读取/结果路由 | 本地钱包测试生命周期；不能代替 Snap 报告 |
-| `POST /api/wallet-auth/challenge` 和 `POST /api/wallet-auth/verify` | 仅托管模式的准确消息 EOA 登录 challenge 和验证 |
+| `POST /api/wallet-auth/challenge` 和 `POST /api/wallet-auth/verify` | 仅托管模式的精确消息 EOA 或支持的已部署合约登录验证 |
 | `GET /api/wallet-auth/status` | 托管 bearer 身份与到期时间；不返回原始凭据 |
 | `POST /api/wallet-auth/reports/delete` | 经确认逻辑删除本人报告，并撤销本人全部凭据；保留其他钱包及额度 |
 | `POST /api/wallet-auth/logout` 和 `POST /api/wallet-auth/revoke` | 托管当前会话退出，以及经网页授权撤销该地址全部网页/Snap 凭据 |
@@ -431,9 +445,9 @@ Muse 新增接收 `evidence_admissibility`（各维度可由哪些实际观察�
 
 GoPlus 仍需显式开启。它从已识别的外层/路径/Permit2/批量字段中最多选八个代币与八个交易对手，不把桥的远端 token 或 delegatecall 目标直接当作本链代币。每轮最多十八个网络请求、四路并发、单请求 1.8 秒、总共 7.5 秒；响应缓存三十秒（最多 256 项），支持链列表缓存一小时。结果带 `fetchedAt`、`cacheHit`、`cacheAgeMs`、`cacheTtlMs`、`providerAsOf:null`、`freshnessVerified:false`；刚取得不表示知道供应商数据的实际日期。缺失标记、闭源/代理导致的遗漏、未查询/截断候选与未命中均是边界，参见 [GoPlus 官方响应说明](https://docs.gopluslabs.io/reference/response-details)。
 
-部分标准 V3 `exactInputSingle`（有/无 deadline、代币出资）现在支持依赖式分叉买卖实验：原样重放买入，测量新取得输出与实际输入扣减，只授权新取得数量，再按原 fee tier 和存在时的原 deadline 生成反向卖出。实验卖出的最低输出/价格限制为零，使用新的本地 nonce/默认 gas；部分成交按实际输入扣减计算比例。原生币出资、路由余额出资、多跳、exact-output、其他收款人和不透明聚合器仍不支持。卖出成功一次不保证未来可卖；失败一次也不单独证明蜜罐。 新增 `npm run test:v3` 使用临时节点测试四个场景（两种元组格式 × 正常/阻止卖出），并核对源区块/hash/nonce/余额均不变。它们是简化适配器测试，不认证官方池、不证明 MetaMask/Snap 交付或在线模型准确率；钱包目录仍为 66 个案例。
+规范 V3 single/path、exact-input/exact-output 现有有界的依赖式分叉买卖适配器。原买入保留已有执行字段，衍生卖出按实际输入扣减和取得输出计算。原生币出资需要匹配的运营者 router/wrapped-native 记录；可读取候选池/factory 关联、tick/range 和有效流动性，但不认证官方池、市场报价或未来退出。不透明聚合器、不支持的资金/接收人及未来排序仍有缺口。钱包目录仍为 66 个代表性案例；适配器测试与真实钱包/Snap、在线模型验收分开。
 
-自动入口仍取决于钱包实际交付。MetaMask 当前仅显示 Critical 严重级别的消息洞察，并在进入 Sign 后展示；交易洞察有独立入口，参见 [官方入口说明](https://docs.metamask.io/snaps/reference/entry-points/)。权限、会话、UserOperation 和其他钱包 RPC 仍需显式 API 提交，不是通用钱包拦截。托管登录仍仅支持 EOA，不支持 ERC-1271 认证。公开上线仍需真实域名/TLS、目标 Snap 发布与分发、浏览器钱包验收、安全备份恢复以及负载/故障测试。
+自动入口仍取决于钱包实际交付。MetaMask 当前仅显示 Critical 严重级别的消息洞察，并在进入 Sign 后展示；交易洞察有独立入口，参见 [官方入口说明](https://docs.metamask.io/snaps/reference/entry-points/)。权限、会话、UserOperation 等仍需显式 API 或配合的 dApp SDK 接入，不安装全局钱包拦截。托管登录支持 EOA 恢复及支持范围内已部署合约的 ERC-1271 精确登录消息核对；未部署/ERC-6492 和不支持的策略仍不可用。公开上线仍需真实域名/TLS、目标 Snap 发布与分发、浏览器钱包验收、安全备份恢复以及负载/故障测试。
 
 ## 隐私与数据流
 
@@ -509,10 +523,12 @@ node --import tsx scripts/test-ai-audit.ts
 
 源码入口：[`web/src/main.tsx`](web/src/main.tsx)、[`snap/src/index.ts`](snap/src/index.ts)、[`src/security/api.ts`](src/security/api.ts)、[`src/security/ai.ts`](src/security/ai.ts)、[`src/security/providers.ts`](src/security/providers.ts)、[`src/security/coverage.ts`](src/security/coverage.ts) 和 [`src/testing/cases.ts`](src/testing/cases.ts)。[中文用户手册](docs/USER-MANUAL-zh.md)与[中文覆盖指南](docs/AI-COVERAGE-GUIDE-zh.md)提供操作说明及逐字段覆盖范围；英文原文为[用户手册](docs/USER-MANUAL.md)和[自动生成的详细覆盖指南](docs/AI-COVERAGE-GUIDE.md)。旧截图或验收产物与当前行为不同时，以当前源码和实际报告为准。
 
-当前实现与修复边界见[当前覆盖与可靠性说明](docs/CURRENT-COVERAGE-zh.md)。本轮 352 项离线自动化测试通过，独立临时节点上的资产、交易模拟、扩展证据及四种 V3 场景检查通过，本地构建与隔离的托管构建也通过。本轮没有调用付费 Muse，也没有替用户在真实钱包中确认操作；这些结果不代表真实模型准确率或评分校准。[此前的界面与证据审查](docs/ENGLISH-EVIDENCE-REVIEW-2026-10-22.md)及其他带日期验收文件保留为历史记录。
+当前实现与修复边界见[当前覆盖与可靠性说明](docs/CURRENT-COVERAGE-zh.md)。新增路径的验证与带日期历史验收分开记录；本轮未调用付费 Muse，也未替用户在真实钱包中确认操作，不能据此宣称真实模型准确率或评分校准。[此前的界面与证据审查](docs/ENGLISH-EVIDENCE-REVIEW-2026-10-22.md)及其他带日期验收文件保留为历史记录。
 
 ## 本轮依赖修复状态
 
 更新后的依赖使用 `@fastify/static` 10.1.7，并通过锁文件覆盖将 `tmp` 固定为 0.2.7、受影响的 `bn.js` 5.x 范围升为 5.2.5、低于 11.1.1 的 `uuid` 升为 11.1.1。本轮 `npm audit --omit=dev` 确认生产依赖已无已知告警。完整审计仍有 12 个低危受影响包条目，根源是 `elliptic` 开发/构建工具依赖链，当前上游没有可用修复路径。12 个条目不是 12 种独立根因，也不能声称所有依赖已经零漏洞。
 
 按更新的锁文件执行 `npm ci`；发布前重新运行 `npm audit --omit=dev` 与 `npm audit`。这些是本次审计时点的结果，不是永久承诺，也不能替代项目安全审计、浏览器钱包验收或开发构建环境检查。
+
+[2026-10-22 扩展验证记录](docs/RELIABILITY-ACCEPTANCE-2026-10-22.md)列出本轮离线、临时链检查及尚未进行的验收；它不是识别准确率或安全认证。

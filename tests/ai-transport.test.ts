@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {MODEL_RESPONSE_LIMITS,scoreWithAI} from '../src/security/ai.js';
 import type {SecurityConfig} from '../src/security/config.js';
-import {finitePermitOutput,finitePermitReport} from './fixtures/model.js';
+import {finitePermitOutput,finitePermitReport,structuredModelOutput} from './fixtures/model.js';
 const config:SecurityConfig={apiKey:'synthetic-test-key',model:'muse-wonder-1.0',aiEnabled:true,lookups:false,goPlusToken:'',rpc:{}};
 const envelope=(value:unknown)=>JSON.stringify({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(value)}]}]});
 function streamed(bytes:Uint8Array,status=200,chunk=1024){
@@ -13,9 +13,9 @@ function streamed(bytes:Uint8Array,status=200,chunk=1024){
 }
 
 test('successful Muse JSON is decoded across split UTF-8 bytes without Response.text buffering',async()=>{
- const expected=finitePermitOutput(31),bytes=new TextEncoder().encode(envelope(expected));
+ const report=finitePermitReport(),expected=finitePermitOutput(31),bytes=new TextEncoder().encode(envelope(structuredModelOutput(expected,report)));
  const input=streamed(bytes,200,1);let calls=0;
- const result=await scoreWithAI(finitePermitReport(),config,async()=>{calls++;return input.response;});
+ const result=await scoreWithAI(report,config,async()=>{calls++;return input.response;});
  assert.equal(result.status,'completed');assert.equal(result.result?.score,31);assert.equal(calls,1);
  assert.equal(result.result?.summary,expected.summary);assert.equal(input.state().offset,bytes.length);assert.equal(input.state().cancelled,false);
 });
@@ -50,12 +50,12 @@ test('malformed UTF-8 is canceled safely without a numeric fallback or repair',a
 });
 
 test('one offline repair receives semantic feedback and the same server-owned support packet',async()=>{
- let calls=0,reservations=0,first:any;
- const result=await scoreWithAI(finitePermitReport(),config,async(_url,init)=>{
+ let calls=0,reservations=0,first:any;const report=finitePermitReport();
+ const result=await scoreWithAI(report,config,async(_url,init)=>{
   calls++;const request=JSON.parse(String(init?.body));
-  if(calls===1){first=JSON.parse(request.input);assert.ok(first.evidence_admissibility.length);assert.equal(first.claim_support.officialIdentity,false);const invalid=finitePermitOutput(9);invalid.suggested_action='The token can always be sold.';return new Response(envelope(invalid));}
+  if(calls===1){first=JSON.parse(request.input);assert.ok(first.evidence_admissibility.length);assert.equal(first.claim_support.officialIdentity,false);const invalid=finitePermitOutput(9);invalid.suggested_action='The token can always be sold.';return new Response(envelope(structuredModelOutput(invalid,report)));}
   const repair=JSON.parse(request.input);assert.deepEqual(repair.evidence_packet,first);assert.match(repair.validation_feedback,/future execution\/sellability/);assert.ok(!request.instructions.includes('The token can always be sold.'));
-  return new Response(envelope(finitePermitOutput(9)));
+  return new Response(envelope(structuredModelOutput(finitePermitOutput(9),report)));
  },()=>{reservations++;return true;});
  assert.equal(result.status,'completed');assert.equal(result.result?.score,9);assert.equal(calls,2);assert.equal(reservations,1);
 });

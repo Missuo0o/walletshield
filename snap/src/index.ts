@@ -5,7 +5,7 @@ import { Box, Heading, Text, Divider } from '@metamask/snaps-sdk/jsx';
 import { NodeType, type Component, type Panel } from '@metamask/snaps-sdk';
 import { coverageForCategory, ENTRY_LABELS, ENTRY_BOUNDARY, ADVICE_ONLY, DATA_BOUNDARY } from '../../src/security/coverage';
 import { operationLines, missingLines, adviceLine } from '../../src/security/display';
-import {unsupportedTransactionFields} from '../../src/security/transaction-fields';
+import {unsupportedTransactionFields,normalizeAuthorizationList} from '../../src/security/transaction-fields';
 const legacyPanel = (children: Component[]): Panel => ({ type: NodeType.Panel, children });
 const legacyHeading = (value: string): Component => ({ type: NodeType.Heading, value });
 const legacyText = (value: string): Component => ({ type: NodeType.Text, value });
@@ -60,9 +60,11 @@ export const onTransaction: OnTransactionHandler = async ({ transaction, chainId
     const feeFields:Record<string,string>={};
     for(const key of ['gas','gasPrice','maxFeePerGas','maxPriorityFeePerGas','nonce']){const value=(transaction as unknown as Record<string,unknown>)[key];if(typeof value==='string'&&/^0x[\da-f]{1,64}$/i.test(value))feeFields[key]=value;}
     const raw=transaction as unknown as Record<string,unknown>;const unsupportedFields=unsupportedTransactionFields(raw);
+    const authorizationList=normalizeAuthorizationList(raw.authorizationList);
+    const type=typeof raw.type==='number'&&Number.isSafeInteger(raw.type)&&raw.type>=0?`0x${raw.type.toString(16)}`:typeof raw.type==='string'&&/^0x[\da-f]{1,64}$/i.test(raw.type)?raw.type:undefined;
     try {
       response = await fetch(API, { method: 'POST', headers: await backendHeaders(), signal: controller.signal,
-        body: JSON.stringify({ kind: 'transaction', chainId: numericChain, transaction: { from: transaction.from, to: transaction.to ?? null, data: transaction.data ?? '0x', value: transaction.value ?? '0x0',...feeFields,...(unsupportedFields.length?{unsupportedFields}:{}) }, ...(transactionOrigin ? { origin: transactionOrigin } : {}) }) });
+        body: JSON.stringify({ kind: 'transaction', chainId: numericChain, transaction: { from: transaction.from, to: transaction.to ?? null, data: transaction.data ?? '0x', value: transaction.value ?? '0x0',...feeFields,...(type?{type}:{}),...(authorizationList?{authorizationList}:{}),...(unsupportedFields.length?{unsupportedFields}:{}) }, ...(transactionOrigin ? { origin: transactionOrigin } : {}) }) });
     } finally { clearTimeout(timer); }
     if (!response.ok) throw new Error('API_FAILED');
     const result: unknown = await response.json();
@@ -118,7 +120,7 @@ export const onHomePage: OnHomePageHandler = async () => ({ content: Box({ child
   Heading({ children: 'WalletShield 0.4.1' }),Text({children:'Pre-sign checks include transfers as well as permissions and message signatures.'}),
   Heading({children:'Automatic entry and partial coverage'}),Text({children:ENTRY_BOUNDARY}),
   Text({children:'Analysis paths cover native/token/NFT transfers, approvals and revocations, selected swaps, and personal/login/Permit signatures.'}),
-  Text({children:'Lending and vault checks read selected account/preview data. Staking, liquidity, bridging, claims, deployment and control changes use partial candidate decoding and generic evidence; protocol verification is incomplete.'}),
+  Text({children:'Selected lending, vault and authority checks can compare state before and after an isolated execution. Identity, reference-price and bridge-route evidence needs maintained operator configuration. Missing reads and unsupported protocol behavior remain explicit; a successful scenario is not future safety.'}),
   Heading({children:'Currently requires explicit submission'}),Text({children:`${ENTRY_LABELS.manual}: permissions/sessions, smart accounts, network configuration, read-only and other wallet RPCs. This Snap does not intercept every operation.`}),
   Text({children:'Unrecognized requests stay unknown. Non-EVM chains, other wallet integrations, device/key compromise and exchange internals are not covered.'}),
   Text({children:'Scores are not loss probabilities. A saved key does not prove model connectivity. If AI fails, evidence and unknowns remain without a score.'}),

@@ -9,7 +9,7 @@ export function planRequest(request:SecurityRequest,op:Operation,config?:Securit
   add('rpc_context',true,'Verify network, block, balance, code and token interfaces',config?!!config.rpc[request.chainId||Number(op.fields.domainChainId??op.fields.chainId)]:null);
   add('contract_controls',request.kind==='transaction'||request.kind==='signature'&&!!op.fields.verifyingContract,'Read code hashes, proxy slots, owner and pause state; interfaces do not establish identity');
   add('isolated_simulation',request.kind==='transaction','Execute in an isolated fork and compare recognized asset changes',config?!!config.forkEnabled:null);
-  add('round_trip',['swap','swap_v3'].includes(op.category),'Buy then sell through selected V2 or V3 exactInputSingle routes; unsupported reverse routes remain unknown, with no guarantee of future exits',config?!!config.forkEnabled:null);
+  add('round_trip',['swap','swap_v3'].includes(op.category),'Buy then sell through selected V2 and eight canonical V3 single/path exact-input/output variants; unsupported routes remain unknown, with no guarantee of future exits',config?!!config.forkEnabled:null);
   add('signature_verification',request.kind==='signature','EIP-712 encoding, domain, selected Permit nonces and replay scope');
   add('login_envelope',op.category==='siwe','Inspect supported SIWE fields, URI/source binding and local time conditions; server nonce use and signature acceptance remain unknown');
   add('vault_preview',op.category==='vault','Read ERC-4626 underlying asset, shares, previews and limits');
@@ -19,6 +19,14 @@ export function planRequest(request:SecurityRequest,op:Operation,config?:Securit
   add('position_context',op.category==='liquidity_v3','Read selected position ownership/liquidity interfaces and token units at a pinned block; no valuation or pool authentication');
   add('protocol_limits',['swap_v3','liquidity','liquidity_v3','withdrawal','staking','bridge','claim','mint_burn','control_change','account_control','account_execution','batch'].includes(op.category),'Retain unverified route, lockup, destination and internal-authority semantics');
   add('wallet_rpc_summary',['permission','user_operation','wallet_rpc'].includes(request.kind),'Extract allowlisted permission, session, smart-account and RPC fields without execution');
+  add('maintained_deployment_binding',true,'Compare configured chain/address/runtime and optional proxy implementation hashes; not a safety whitelist',config?!!config.trustedDeployments?.length:null);
+  add('reference_price',true,'Read configured positive description-matched bounded-age USD reference feeds; no executable quote or guaranteed dollar loss',config?!!config.priceFeeds?.length:null);
+  add('source_verification',true,'Optional bounded cached source-match lookup on a fixed public service; not an audit or current-code comparison',config?!!config.sourceVerification:null);
+  add('canonical_order',op.category==='order_signature','Decode bounded signed Seaport items; observed counters/fill/cancel and zero-conduit approvals require separately verified semantics');
+  add('permit2_witness',typeof op.fields.witnessType==='string','Retain committed witness type/hash, caps and nonce; custom consumer enforcement remains unverified');
+  add('entrypoint_state',request.kind==='user_operation','Read supported version/code-bound EntryPoint keyed nonce, payer deposit, declared prefund and fee relations');
+  add('delegation_authorizations',request.kind==='transaction'&&!!request.transaction.authorizationList?.length,'Recover EIP-7702 tuple authority, compare chain/nonce/code and conditional sequential eligibility; full set-code execution remains separate');
+  add('bridge_route',op.category==='bridge','Compare a maintained reviewed OP bridge/messenger route across two independently verified chain snapshots; no arrival or relay proof',config?!!config.bridgeRoutes?.length:null);
   add('external_intelligence',true,'Address, website, token and honeypot intelligence',config?config.lookups:null);
   add('ai_assessment',true,'Muse assesses obtained evidence and gaps; failures never fabricate a score',config?!!config.apiKey&&config.aiEnabled:null);
   return evidence('tool_plan','pass','Evidence collection plan','This is the tool plan, not successful observations. Check each result and failure. Unrecognized requests still enter analysis and are not safe by default.','router/0.4.0',{category:op.category,tools});

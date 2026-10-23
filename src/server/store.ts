@@ -18,10 +18,11 @@ export function createStore(path: string) {
   db.exec('CREATE TABLE IF NOT EXISTS lab_sessions(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,payload TEXT NOT NULL)');
   db.exec('CREATE TABLE IF NOT EXISTS wallet_auth_challenges(id TEXT PRIMARY KEY,address TEXT NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS wallet_auth_tokens(token_hash TEXT PRIMARY KEY,address TEXT NOT NULL,kind TEXT NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_address ON wallet_auth_tokens(address,kind); CREATE TABLE IF NOT EXISTS wallet_report_owners(report_id TEXT PRIMARY KEY,address TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_report_owners_address ON wallet_report_owners(address); CREATE TABLE IF NOT EXISTS wallet_ai_attempts(address TEXT NOT NULL,day TEXT NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(address,day)); CREATE TABLE IF NOT EXISTS wallet_auth_rates(rate_key TEXT NOT NULL,bucket INTEGER NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(rate_key,bucket));');
   db.exec('CREATE INDEX IF NOT EXISTS wallet_auth_challenges_expiry ON wallet_auth_challenges(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_expiry ON wallet_auth_tokens(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_owner_expiry ON wallet_auth_tokens(address,kind,expires_at,token_hash); CREATE INDEX IF NOT EXISTS wallet_auth_rates_bucket ON wallet_auth_rates(bucket);');
+  db.exec('CREATE TABLE IF NOT EXISTS wallet_auth_verifications(id TEXT PRIMARY KEY,address TEXT NOT NULL,expires_at TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_auth_verifications_expiry ON wallet_auth_verifications(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_verifications_address ON wallet_auth_verifications(address);');
   db.exec('CREATE INDEX IF NOT EXISTS security_reports_created ON security_reports(created_at,id); CREATE TABLE IF NOT EXISTS evidence_scan_budgets(scope TEXT NOT NULL,bucket TEXT NOT NULL,expires_at TEXT NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(scope,bucket)); CREATE INDEX IF NOT EXISTS evidence_scan_budgets_expiry ON evidence_scan_budgets(expires_at);');
-  function pruneAuth(now:string){db.prepare('DELETE FROM wallet_auth_challenges WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_tokens WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_rates WHERE bucket<?').run(Math.floor(Date.parse(now)/60000)-2);}
+  function pruneAuth(now:string){db.prepare('DELETE FROM wallet_auth_challenges WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_verifications WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_tokens WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_rates WHERE bucket<?').run(Math.floor(Date.parse(now)/60000)-2);}
   function activeWeb(address:string,id:string,now:string){return Boolean(db.prepare("SELECT 1 FROM wallet_auth_tokens WHERE token_hash=? AND address=? AND kind='web' AND expires_at>?").get(id,address,now));}
-  function revokeOwner(address:string){const changes=db.prepare('DELETE FROM wallet_auth_tokens WHERE address=?').run(address).changes;db.prepare('DELETE FROM wallet_auth_challenges WHERE address=?').run(address);return Number(changes);}
+  function revokeOwner(address:string){const changes=db.prepare('DELETE FROM wallet_auth_tokens WHERE address=?').run(address).changes;db.prepare('DELETE FROM wallet_auth_challenges WHERE address=?').run(address);db.prepare('DELETE FROM wallet_auth_verifications WHERE address=?').run(address);return Number(changes);}
   return {
     authPrune:pruneAuth,
     /** Reserve all issuance budgets and rotate only this owner's oldest Snap
@@ -42,9 +43,19 @@ export function createStore(path: string) {
         db.exec('COMMIT');return true;
       }catch(error){db.exec('ROLLBACK');throw error;}
     },
-    authChallengeSave(challenge:WalletAuthChallenge,maxPending=256):boolean {return db.prepare('INSERT INTO wallet_auth_challenges SELECT ?,?,?,? WHERE (SELECT count(*) FROM wallet_auth_challenges)<?').run(challenge.id,challenge.address,challenge.expiresAt,JSON.stringify(challenge),maxPending).changes===1;},
-    // DELETE RETURNING consumes the challenge atomically before signature work.
-    authChallengeConsume(id:string,now:string):WalletAuthChallenge|null{const row=db.prepare('DELETE FROM wallet_auth_challenges WHERE id=? RETURNING expires_at,payload').get(id);return row&&String(row.expires_at)>now?JSON.parse(row.payload as string):null;},
+    authChallengeSave(challenge:WalletAuthChallenge,maxPending=256):boolean {return db.prepare('INSERT INTO wallet_auth_challenges SELECT ?,?,?,? WHERE (SELECT count(*) FROM wallet_auth_challenges)+(SELECT count(*) FROM wallet_auth_verifications)<?').run(challenge.id,challenge.address,challenge.expiresAt,JSON.stringify(challenge),maxPending).changes===1;},
+    // Move the one-use challenge to a bounded expiring verification ticket.
+    // Revocation can delete that ticket while asynchronous signature work runs.
+    authChallengeConsume(id:string,now:string):WalletAuthChallenge|null{
+      db.exec('BEGIN IMMEDIATE');try{const row=db.prepare('DELETE FROM wallet_auth_challenges WHERE id=? RETURNING address,expires_at,payload').get(id);if(!row||String(row.expires_at)<=now){db.exec('COMMIT');return null;}db.prepare('INSERT INTO wallet_auth_verifications VALUES(?,?,?)').run(id,row.address,row.expires_at);db.exec('COMMIT');return JSON.parse(row.payload as string);}catch(error){db.exec('ROLLBACK');throw error;}
+    },
+    authVerificationDiscard(id:string){db.prepare('DELETE FROM wallet_auth_verifications WHERE id=?').run(id);},
+    /** Consume the exact still-active ticket and issue the web credential under
+     * one write lock. A revoke/delete in another process cannot resurrect login. */
+    authIssueWeb(token:WalletAuthToken,challengeId:string,now:string):boolean{
+      if(token.kind!=='web'||token.expiresAt<=now)return false;
+      db.exec('BEGIN IMMEDIATE');try{const ticket=db.prepare('DELETE FROM wallet_auth_verifications WHERE id=? AND address=? AND expires_at>? RETURNING id').get(challengeId,token.address,now);if(!ticket){db.exec('COMMIT');return false;}db.prepare('INSERT INTO wallet_auth_tokens VALUES(?,?,?,?,?)').run(token.id,token.address,token.kind,token.expiresAt,JSON.stringify(token));db.exec('COMMIT');return true;}catch(error){db.exec('ROLLBACK');throw error;}
+    },
     authTokenSave(token:WalletAuthToken){db.prepare('INSERT INTO wallet_auth_tokens VALUES(?,?,?,?,?)').run(token.id,token.address,token.kind,token.expiresAt,JSON.stringify(token));},
     authTokenGet(id:string,now:string):WalletAuthToken|null{const row=db.prepare('SELECT payload FROM wallet_auth_tokens WHERE token_hash=? AND expires_at>?').get(id,now);return row?JSON.parse(row.payload as string):null;},
     authTokenRevoke(id:string){db.prepare('DELETE FROM wallet_auth_tokens WHERE token_hash=?').run(id);},

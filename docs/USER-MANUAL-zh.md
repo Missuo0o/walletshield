@@ -11,6 +11,20 @@
 当前检查使用钱包提供的未签名请求、来源 origin/网络元数据，以及成功取得的 RPC、情报和模拟证据。Muse 评价可观察请求信号，包括支持范围内的来源、消息和请求不一致。链/provider/执行上下文指技术观察。历史报告与验收文件保留原始记录，不被删除或改写。
 
 
+## 当前证据与接入新增能力
+
+当前 Muse 回复使用 `walletshield-facts-v1`：精确主体/字段/值/来源/链/区块/时间/范围，并在理由和维度中引用 `fact_ids`；历史回复继续可读。后端验证观察复制和相关性，不证明每个外部响应或自然语言句子真实。数字仍只由 Muse 给出，没有固定权重、下限或兜底。
+
+可选 `.local/registry.json` 配置经运营者审查的部署/代码/实现绑定、参考价格 feed 和已审查 OP 桥路线。`ENABLE_SOURCE_VERIFICATION=1` 独立开启有界 Sourcify 匹配观察；GoPlus 另行选择启用。默认不虚构官方部署或美元锚定；价格是参考，不是可执行报价或确定损失。
+
+新增有界证据包括 Seaport 承诺项目/当前状态、Permit2 witness 外层承诺、版本绑定 UserOperation 状态、EIP-7702 元组密码学/有条件状态、原始分叉交易前后部分权限/金库/借贷状态、扩展 V3 路线与候选池状态。dApp 包装器须主动接入，不是全局钱包拦截；托管 ERC-1271 只验证本次登录，不验证未来资产签名。
+
+Wallet and network 页面显示 registry 数量、源码核对开关及有界只读 RPC 能力观察：固定区块调用、一次历史余额和固定 trace 探测。成功不是完整 archive/trace 保证。registry 与参考价格列表为空时相应增强仍未启用；必须先维护独立审查的网络/地址/代码记录。本页网络切换建议只通过本页显式 SDK 触发。
+
+`npm run evaluate:ai` 默认运行固定哈希的合成校验器检查，不请求模型/RPC，不代表在线 Muse 准确率。付费评估必须显式指定 `--live --confirm-paid`、案例和调用预算，不会自动运行。
+
+完整[证据、配置、工具字段、SDK、评估与剩余边界说明](RELIABILITY-AND-INTEGRATION-zh.md)。
+
 ## 1. 选择使用流程
 
 | 目标 | 页面或流程 | 成功结果能够说明什么 |
@@ -19,8 +33,8 @@
 | 检查已配置的公网连接 | **Public networks** → **Check RPC and account state** | 后端连到了一个报告预期链 ID 的端点，并观察到区块及可选账户状态；不生成风险分数。 |
 | 验证消息洞察实际送达 | **Public networks** → **Test the wallet signing insight** | 唯一的未签名测试消息匹配到使用已配对 Snap 凭据提交的后端报告；这一步可能调用 Muse。 |
 | 评估自己的转账、授权、Permit 或兑换 | 在对应外部 dApp 发起请求，再阅读钱包洞察 | 仅评估这个请求及成功收集到的证据；是否提供相应钩子由钱包决定。 |
-| 读取托管私有历史，或配对托管 Snap | 验证当前钱包身份，再安装和配对 | EOA 登录签名证明你控制该地址以访问服务，不授予资产操作权。 |
-| 检查没有钩子的权限、会话、UserOperation 或其他 RPC | 显式提交未签名的开发者 API 请求 | 后端分析有边界的摘要，不执行请求中所描述的钱包 RPC。 |
+| 读取托管私有历史，或配对托管 Snap | 验证当前钱包身份，再安装和配对 | EOA 或支持的已部署合约对已保存的一次性登录消息完成核对，只授权访问服务，不授予资产操作权。 |
+| 检查没有钩子的权限、会话、UserOperation 或其他 RPC | 显式 API 或配合的 dApp SDK 提交公开未签名摘要 | 后端分析有边界的摘要，不执行请求中所描述的钱包 RPC。 |
 
 同一个账户地址可以用于不同网络，但余额和合约属于各自的链。本地 TEST-USD、LAB 代币和测试 NFT 没有真实价值，切换到公网不会把它们变成公网资产。
 
@@ -164,11 +178,11 @@ Snap 优先展示最多 24 条证据、6 行主要参数和 6 条缺失检查摘
 | --- | --- | --- |
 | ERC-20 授权 | 合约、spender、`amountOrTokenId`；标准/余额/allowance 读取及可选分叉与情报 | 与 NFT 共用 selector、欺骗性标准、spender 身份及未来使用 |
 | V2 兑换 | 路径、输入、最小输出、接收方/截止时间；选定分叉上的买入→授权取得的代币→反向卖出，以及 gas/变化量 | 路由有限；损耗包含价格影响和费用；卖出失败可能有多种原因 |
-| 金库/借贷 | 动作、数量/接收方/owner，或资产/利率模式；preview/max/totals，或当前债务/抵押/LTV/健康因子 | 接口身份、未来偿付、价格及完整操作后清算 |
+| 金库/借贷 | 当前接口和原始分叉交易前后份额/底层余额、preview/限制、债务/抵押/健康因子与兼容差值 | 候选协议身份、未来价格/偿付及完整清算压力仍未知。 |
 | 标准 Permit | 签入的 owner/spender/value，或 NFT token ID/nonce/deadline；digest/domainHash；nonce/domain/interface/owner 状态 | 不恢复或消费所生成的签名；自定义变体和协议身份仍有缺口 |
 | 链上 Permit2 结构 approve | token/spender/uint160 上限/expiration；分别读取底层 owner→Permit2 ERC-20 授权和内部 owner/token/最终 spender 的 amount/expiry/nonce | 读取不认证合约，每层不可用分别保留未知 |
-| Permit2 签名 | 签名 type/domain、token/amount/expiration/spender；从实际签名者取得 owner；allowance 三元组或 nonce bitmap | 最多 16 项；witness/自定义变体和代码认证不完整 |
-| 会话/UserOperation/RPC | method、白名单地址/限额/到期，或 sender/entry point/paymaster/factory/nonce，以及受限 calldata 摘要 | 需要显式提交；没有通用钩子，不授予权限，也不执行 bundler 请求 |
+| Permit2 签名 | 规范通用结构、nonce/allowance 层、owner 绑定和 witness 外层/type/hash | witness 消费方业务约束、自定义变体、签名接受和未来消费仍未知。 |
+| 会话/UserOperation/RPC | 显式 API/dApp 接入；有界公开范围及版本绑定 UserOperation 代码/keyed nonce/deposit/费用 | 无全局钩子、真实 session 策略强制执行、赞助授权或 bundler 执行。 |
 
 DAI 权限来自 allowed 的参考语义推导；ERC-3009 承诺单次精确数量，Permit2 transfer 为单 nonce 上限，后两者都不是持续 allowance。ERC-3009 当前余额不足会明确记录，不制造较小可消费转移量；空 calldata 的 DELEGATECALL 仍是委托代码执行，不是原生币转账。
 
@@ -180,7 +194,7 @@ SIWE 风格文本按照受限的 EIP-4361 格式检查：账户/头部、必填 
 
 签名钩子没有与请求绑定的链信息，因此请求保留 `chainId: 0`。短时 `eth_chainId` 钱包提供者快照单独记为带时间戳的 `signature.providerContext`；它不绑定发起 dApp 或签名时刻，也不会悄悄替代签名 domain 来进行合约读取。匹配不能证明请求网络，不匹配则作为上下文证据。
 
-独立、固定区块的 RPC/header/balance/code 读取，在其他读取失败时保留成功观察。已确认 nonce 和提供费用/当前 base fee 的比较属于可观察检查，不保证待处理交易替换或未来打包。可识别的 EIP-7702 委托指示代码可产生一跳委托代码/哈希读取；递归委托、authorization list 校验、代码审计和 ERC-1271 行为仍不支持。一般有效类型消息即使 nonce 语义不支持，也可进行 DOMAIN_SEPARATOR 比较。
+独立、固定区块的 RPC/header/balance/code 读取，在其他读取失败时保留成功观察。已确认 nonce 和提供费用/当前 base fee 的比较属于可观察检查，不保证待处理交易替换或未来打包。可识别的 EIP-7702 委托指示代码可产生一跳委托代码/哈希读取；实际元组密码学和有条件状态已有有界适配器；递归策略审计、完整 envelope 执行与资产 ERC-1271 接受仍不完整。一般有效类型消息即使 nonce 语义不支持，也可进行 DOMAIN_SEPARATOR 比较。
 
 基础调用和分叉执行保留请求提供的 gas、费用与 nonce。缺少 gas limit 时使用并记录模拟默认值。不支持的 EIP-7702/blob/access-list/type，或格式错误的执行字段会明确记录为缺口，不把简化替代过程当作等价执行。分叉写入只作用于临时本地进程，不写入上游公网。不同采集器可能使用不同的已验证区块；执行会在记录的分叉基点之后挖出子区块。
 
@@ -203,7 +217,7 @@ SIWE 风格文本按照受限的 EIP-4361 格式检查：账户/头部、必填 
 
 ## 9. 托管身份与发布运行
 
-托管用户先连接账户，点击 **Verify current wallet identity** 或 **Sign to verify this wallet**。核对完整 domain、URI、地址、chain、nonce 和 expiry。后端针对已保存的一次性消息验证 EOA 签名；不支持合约钱包或未经检查的 ERC-1271 认证。挑战 5 分钟后过期。成功登录创建有效 8 小时、仅保存在内存中的网页 bearer 凭据。刷新、更换提供者/账户或断开连接会清除浏览器身份；再次访问私有记录需要重新验证。
+托管用户先连接账户，点击 **Verify current wallet identity** 或 **Sign to verify this wallet**。核对完整 domain、URI、地址、chain、nonce 和 expiry。后端针对已保存的一次性消息验证 EOA 签名，或通过可信 RPC 对支持的已部署合约进行有界 ERC-1271 STATICCALL；仅核对该登录，不支持的策略/未部署账户失败。挑战 5 分钟后过期。成功登录创建有效 8 小时、仅保存在内存中的网页 bearer 凭据。刷新、更换提供者/账户或断开连接会清除浏览器身份；再次访问私有记录需要重新验证。
 
 配对创建另一个绑定地址、有效 30 天的 Snap bearer，不会把网页 bearer 传给 Snap。后端 SQLite 保存 bearer 哈希、有效期、撤销状态和报告归属。历史、报告 ID 和证据按已验证地址隔离；Origin 从不作为认证。托管交易/消息发送者必须匹配该地址。网页用户可显式提交受支持的手动摘要；Snap 凭据只接受交易和消息扫描。历史/详情随身份变化和加载失败清空，取消或过时响应被丢弃，当前所有者列表中消失的选择会变成空。本地模式仍为同机共享工作台历史，托管模式才按所有者隔离。
 
@@ -246,9 +260,9 @@ Muse 新增接收 `evidence_admissibility`（各维度可由哪些实际观察�
 
 GoPlus 仍需显式开启。它从已识别的外层/路径/Permit2/批量字段中最多选八个代币与八个交易对手，不把桥的远端 token 或 delegatecall 目标直接当作本链代币。每轮最多十八个网络请求、四路并发、单请求 1.8 秒、总共 7.5 秒；响应缓存三十秒（最多 256 项），支持链列表缓存一小时。结果带 `fetchedAt`、`cacheHit`、`cacheAgeMs`、`cacheTtlMs`、`providerAsOf:null`、`freshnessVerified:false`；刚取得不表示知道供应商数据的实际日期。缺失标记、闭源/代理导致的遗漏、未查询/截断候选与未命中均是边界，参见 [GoPlus 官方响应说明](https://docs.gopluslabs.io/reference/response-details)。
 
-部分标准 V3 `exactInputSingle`（有/无 deadline、代币出资）现在支持依赖式分叉买卖实验：原样重放买入，测量新取得输出与实际输入扣减，只授权新取得数量，再按原 fee tier 和存在时的原 deadline 生成反向卖出。实验卖出的最低输出/价格限制为零，使用新的本地 nonce/默认 gas；部分成交按实际输入扣减计算比例。原生币出资、路由余额出资、多跳、exact-output、其他收款人和不透明聚合器仍不支持。卖出成功一次不保证未来可卖；失败一次也不单独证明蜜罐。 新增 `npm run test:v3` 使用临时节点测试四个场景（两种元组格式 × 正常/阻止卖出），并核对源区块/hash/nonce/余额均不变。它们是简化适配器测试，不认证官方池、不证明 MetaMask/Snap 交付或在线模型准确率；钱包目录仍为 66 个案例。
+规范 V3 single/path、exact-input/exact-output 现有有界的依赖式分叉买卖适配器。原买入保留已有执行字段，衍生卖出按实际输入扣减和取得输出计算。原生币出资需要匹配的运营者 router/wrapped-native 记录；可读取候选池/factory 关联、tick/range 和有效流动性，但不认证官方池、市场报价或未来退出。不透明聚合器、不支持的资金/接收人及未来排序仍有缺口。钱包目录仍为 66 个代表性案例；适配器测试与真实钱包/Snap、在线模型验收分开。
 
-自动入口仍取决于钱包实际交付。MetaMask 当前仅显示 Critical 严重级别的消息洞察，并在进入 Sign 后展示；交易洞察有独立入口，参见 [官方入口说明](https://docs.metamask.io/snaps/reference/entry-points/)。权限、会话、UserOperation 和其他钱包 RPC 仍需显式 API 提交，不是通用钱包拦截。托管登录仍仅支持 EOA，不支持 ERC-1271 认证。公开上线仍需真实域名/TLS、目标 Snap 发布与分发、浏览器钱包验收、安全备份恢复以及负载/故障测试。
+自动入口仍取决于钱包实际交付。MetaMask 当前仅显示 Critical 严重级别的消息洞察，并在进入 Sign 后展示；交易洞察有独立入口，参见 [官方入口说明](https://docs.metamask.io/snaps/reference/entry-points/)。权限、会话、UserOperation 等仍需显式 API 或配合的 dApp SDK 接入，不安装全局钱包拦截。托管登录支持 EOA 恢复及支持范围内已部署合约的 ERC-1271 精确登录消息核对；未部署/ERC-6492 和不支持的策略仍不可用。公开上线仍需真实域名/TLS、目标 Snap 发布与分发、浏览器钱包验收、安全备份恢复以及负载/故障测试。
 
 ## 10. 隐私与故障排查
 
@@ -264,7 +278,7 @@ GoPlus 仍需显式开启。它从已识别的外层/路径/Permit2/批量字段
 | 本地案例回滚 | 确认链 31337、最新部署、余额和案例前提；链重启后重新准备资产。 |
 | RPC 已配置但没有数据 | 检查真实端点可达性、链 ID、服务额度和历史状态支持。 |
 | 没有 AI 数字 | 查看 `ai.status` 和消息：模型禁用/未配置、额度、失败、拒答、无效输出和诚实弃评都可以合理地保留无分数。 |
-| 无法访问托管记录 | 重新验证正确的 EOA；刷新会清除仅内存中的会话。配对令牌和网页令牌职责不同。 |
+| 无法访问托管记录 | 重新验证正确的钱包；刷新会清除仅内存中的会话。配对令牌和网页令牌职责不同。 |
 | 旧报告似乎不一致 | 对比时间、版本、来源与链重置情况；历史文字和结果会保留。 |
 
 运行 `npm test`、`npm run typecheck` 和 `npm run build` 进行离线/静态回归检查。`npm run test:security` 会启动自己的隔离测试节点。`test:chain` 和 `test:lab` 需要运行中的本地部署，并对其快照/恢复；运行时让浏览器保持空闲。这些测试使用节点账户，不验证浏览器 Snap 送达。完整验收需要手动发起钱包请求、匹配到 Snap 报告、看到证据，并单独记录钱包结果。任何自动化测试数量都不证明普遍检测能力或已经适合公开生产使用。

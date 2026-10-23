@@ -1,14 +1,15 @@
-import {finitePermitOutput,finitePermitReport,modelDimensions} from './fixtures/model.js';
+import {finitePermitOutput,finitePermitReport,modelDimensions,structuredFixtureFetcher} from './fixtures/model.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { assess } from '../src/security/rules.js';
 import { evidence } from '../src/security/providers.js';
-import { evidencePacket, scoreWithAI, validateAI } from '../src/security/ai.js';
+import { evidencePacket, scoreWithAI as actualScoreWithAI, validateAI } from '../src/security/ai.js';
 import { securityExamples, demoEvidence } from '../src/security/examples.js';
 import { buildApp } from '../src/server/app.js';
 import { createStore } from '../src/server/store.js';
 import type { SecurityConfig } from '../src/security/config.js';
 const config:SecurityConfig={apiKey:'test-key',model:'muse-wonder-1.0',aiEnabled:true,lookups:false,goPlusToken:'',rpc:{}};
+const scoreWithAI:typeof actualScoreWithAI=(report,config,fetcher=fetch,reserve)=>actualScoreWithAI(report,config,structuredFixtureFetcher(report,fetcher),reserve);
 const example=(id:string)=>structuredClone(securityExamples.find(e=>e.id===id)!.request);
 const headers={origin:'http://127.0.0.1:5173'};
 function output(score:number|null){return {...modelDimensions(),score,assessment:score===null?'unknown':'review',summary:'The model judges this evidence without preset score bands.',reasons:[{text:'The permission scope needs verification; evidence remains incomplete.',evidence_ids:['permission_scope']}],missing_data:[],suggested_action:'Verify the permission scope and purpose.',honeypot:'unknown'};}

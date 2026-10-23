@@ -4,9 +4,10 @@ import {getAddress,recoverMessageAddress} from 'viem';
 import {z} from 'zod';
 import type {Store,WalletAuthToken,EvidenceScanLimits} from './store.js';
 import type {SecurityReport} from '../security/types.js';
+import {verifyContractLogin,CONTRACT_AUTH_LIMITS,type ContractAuthSnapshot} from './contract-auth.js';
 
 export type WalletPrincipal={address:string;id:string;kind:'web'|'snap';expiresAt:string};
-export type WalletAuthOptions={origin:string;enabled:boolean;now?:()=>number;retentionDays?:number};
+export type WalletAuthOptions={origin:string;enabled:boolean;now?:()=>number;retentionDays?:number;rpc?:()=>Promise<Record<number,string>>;contractFetch?:typeof fetch};
 export const WALLET_AUTH_LIMITS={challengePerMinute:6,challengePerAddress:3,verifyPerMinute:12,globalPerMinute:120,maxPending:256} as const;
 export const SNAP_PAIRING_LIMITS={addressPerMinute:4,ipPerMinute:12,globalPerMinute:60,maxPerAddress:4,maxGlobal:8192} as const;
 export const EVIDENCE_SCAN_LIMITS:EvidenceScanLimits={walletPerMinute:8,ipPerMinute:16,globalPerMinute:60,walletPerDay:100,ipPerDay:300,globalPerDay:1000};
@@ -14,13 +15,14 @@ export class PairingLimitError extends Error{constructor(){super('Snap pairing c
 const CHALLENGE_TTL=5*60*1000,WEB_TTL=8*60*60*1000,SNAP_TTL=30*24*60*60*1000;
 const addressSchema=z.string().regex(/^0x[\da-f]{40}$/i).refine(v=>!/^0x0{40}$/i.test(v));
 const challengeSchema=z.object({address:addressSchema,chainId:z.number().int().positive().max(Number.MAX_SAFE_INTEGER)}).strict();
-const verifySchema=z.object({id:z.string().uuid(),signature:z.string().regex(/^0x(?:[\da-f]{128}|[\da-f]{130})$/i)}).strict();
+const verifySchema=z.object({id:z.string().uuid(),signature:z.string().max(2+CONTRACT_AUTH_LIMITS.signatureBytes*2).regex(/^0x(?:[\da-f]{2})*$/i)}).strict();
 const emptySchema=z.object({}).strict();
 const deletionSchema=z.object({confirm:z.literal(true)}).strict();
 const digest=(token:string)=>createHash('sha256').update(token).digest('hex');
 
 /** Hosted authentication is opt-in. Browser origin checks are CSRF protection;
- * only an authenticated bearer establishes a principal. No RPC is performed. */
+ * only an authenticated bearer establishes a principal. EOA recovery is local;
+ * optional contract login uses only the injected server-configured RPC. */
 export function registerWalletAuth(app:FastifyInstance,store:Store,options:WalletAuthOptions){
  const url=new URL(options.origin);
  if(url.origin!==options.origin||url.username||url.password||url.search||url.hash||!['https:','http:'].includes(url.protocol)||url.protocol==='http:'&&!['localhost','127.0.0.1','[::1]'].includes(url.hostname))throw Error('Invalid wallet authentication origin');
@@ -46,10 +48,10 @@ export function registerWalletAuth(app:FastifyInstance,store:Store,options:Walle
   if(!options.enabled||!principal||!/^0x[\da-f]{40}$/.test(principal.address)||!/^[a-f0-9]{64}$/.test(principal.id))return false;
   const record=store.authTokenGet(principal.id,iso());return !!record&&record.address===principal.address&&record.kind===principal.kind&&record.expiresAt===principal.expiresAt;
  }
- function issue(address:string,kind:'web'|'snap'){
-  const token=randomBytes(32).toString('hex'),createdAt=iso(),expiresAt=new Date(now()+(kind==='web'?WEB_TTL:SNAP_TTL)).toISOString();
-  const record:WalletAuthToken={id:digest(token),address:address.toLowerCase(),kind,createdAt,expiresAt};
-  store.authPrune(createdAt);store.authTokenSave(record);return {token,expiresAt};
+ function issueWeb(address:string,challengeId:string){
+  const token=randomBytes(32).toString('hex'),createdAt=iso(),expiresAt=new Date(now()+WEB_TTL).toISOString();
+  const record:WalletAuthToken={id:digest(token),address:address.toLowerCase(),kind:'web',createdAt,expiresAt};
+  store.authPrune(createdAt);return store.authIssueWeb(record,challengeId,createdAt)?{token,expiresAt}:null;
  }
  function issueSnap(principal:WalletPrincipal,ip='internal'){
   if(!active(principal)||principal.kind!=='web')throw Error('Wallet authentication required');
@@ -80,19 +82,21 @@ export function registerWalletAuth(app:FastifyInstance,store:Store,options:Walle
   if(!store.authChallengeSave({id,address,chainId:parsed.data.chainId,origin:options.origin,message,createdAt,expiresAt},WALLET_AUTH_LIMITS.maxPending))return reply.code(429).send(invalid);
   return {id,message,expiresAt};
  });
- app.post('/api/wallet-auth/verify',{bodyLimit:2048},async(req,reply)=>{
+ app.post('/api/wallet-auth/verify',{bodyLimit:20000},async(req,reply)=>{
   reply.header('Cache-Control','no-store');if(!options.enabled)return reply.code(404).send(unavailable);
   if(!browserOrigin(req))return reply.code(403).send(invalid);
   if(!rate(req,'verify'))return reply.code(429).send(invalid);
   const parsed=verifySchema.safeParse(req.body);if(!parsed.success)return reply.code(400).send(invalid);
   const challenge=store.authChallengeConsume(parsed.data.id,iso());if(!challenge||challenge.origin!==options.origin)return reply.code(401).send(invalid);
   try{
-   // Recover the exact stored message. No client message, supplied address,
-   // EIP-1271, RPC, or unchecked signature fallback is accepted.
-   const recovered=await recoverMessageAddress({message:challenge.message,signature:parsed.data.signature as `0x${string}`});
-   if(recovered.toLowerCase()!==challenge.address||Date.parse(challenge.expiresAt)<=now())return reply.code(401).send(invalid);
-   const issued=issue(challenge.address,'web');return {...issued,address:challenge.address,kind:'web'};
-  }catch{return reply.code(401).send(invalid);}
+   // EOA recovery comes first and includes EOAs with delegation code. Contract
+   // validation is a separate fail-closed path, never unchecked EOA fallback.
+   let eoa=false,verification:ContractAuthSnapshot|null=null;
+   if(/^0x(?:[\da-f]{128}|[\da-f]{130})$/i.test(parsed.data.signature))try{eoa=(await recoverMessageAddress({message:challenge.message,signature:parsed.data.signature as `0x${string}`})).toLowerCase()===challenge.address;}catch{/* Actual contract signatures can have another encoding. */}
+   if(!eoa&&options.rpc)verification=await verifyContractLogin(challenge,parsed.data.signature as `0x${string}`,await options.rpc(),now,options.contractFetch);
+   if(!eoa&&!verification||Date.parse(challenge.expiresAt)<=now())return reply.code(401).send({error:'Wallet authentication could not be completed. Contract-wallet login requires a supported signature, trusted network RPC and current ERC-1271 validation.'});
+   const issued=issueWeb(challenge.address,challenge.id);if(!issued)return reply.code(401).send(invalid);return {...issued,address:challenge.address,kind:'web',authentication:eoa?'eoa':'erc1271',...(verification?{verification}:{})};
+  }catch{return reply.code(401).send(invalid);}finally{store.authVerificationDiscard(challenge.id);}
  });
  app.get('/api/wallet-auth/status',async(req,reply)=>{
   reply.header('Cache-Control','no-store');if(!options.enabled)return reply.code(404).send(unavailable);

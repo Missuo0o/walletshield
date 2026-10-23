@@ -56,7 +56,7 @@ test('failed vault interfaces and wrong networks remain unknown instead of guess
  const wrong=rpcFixture({},true);const checks=await protocolEvidence(request,decodeRequest(request),config,wrong.fetcher);assert.ok(checks.some(c=>c.status==='unknown'));assert.equal(wrong.calls.length,1);
 });
 test('lending reads pre-operation health factor and distinguishes liquidation signal from a future guarantee',async()=>{
- const request=example('lending');const checks=await protocolEvidence(request,decodeRequest(request),config,rpcFixture().fetcher);assert.equal(checks.find(c=>c.id==='lending_context')?.data?.healthFactor,'900000000000000000');assert.ok(checks.some(c=>c.id==='liquidation_risk'&&c.status==='risk'));assert.match(checks.find(c=>c.id==='lending_context')!.detail,/does not calculate post-operation/);assert.equal(assess(request,checks).level,'high');
+ const request=example('lending');const checks=await protocolEvidence(request,decodeRequest(request),config,rpcFixture().fetcher);const context=checks.find(c=>c.id==='lending_context')!;assert.equal(context.data?.healthFactor,'900000000000000000');assert.equal(context.source,'rpc');assert.ok(checks.some(c=>c.id==='liquidation_risk'&&c.status==='risk'));assert.match(context.detail,/current observation, not a post-operation calculation/);assert.match(context.detail,/Separate fork-state evidence/);assert.ok(!checks.some(c=>c.id.startsWith('fork_lending_')),'Upstream-only collection must not fabricate post-fork observations');assert.equal(assess(request,checks).level,'high');
 });
 test('generic RPC requests are summarized, never sent to an execution or external endpoint',async()=>{
  let calls=0;for(const id of ['send-calls','network','unknown-rpc','permission','user-operation']){const r=example(id);const checks=await protocolEvidence(r,decodeRequest(r),config,async()=>{calls++;throw Error('Forbidden');});assert.ok(checks.some(c=>c.id==='rpc_semantics'&&c.status==='unknown'));}assert.equal(calls,0);
@@ -78,9 +78,8 @@ test('coverage descriptions distinguish automatic wallet hooks from manual reque
  for(const id of ['permit','permit2','message'])assert.equal(coverageForCategory(decodeRequest(example(id)).category).entry,'signature',id);
  for(const id of ['permission','user-operation','network'])assert.equal(coverageForCategory(decodeRequest(example(id)).category).entry,'manual',id);
  assert.equal(coverageForCategory('unimplemented-future-protocol').id,'unknown');
- assert.match(coverageForCategory('swap_v3').uncertain,/multi-hop\/exact-output/);
- assert.match(coverageForCategory('swap_v3').scope,/exactInputSingle/);
- assert.match(coverageForCategory('bridge').uncertain,/destination/i);assert.match(coverageForCategory('bridge').uncertain,/proof|arrival|settlement/i);
+ const v3=coverageForCategory('swap_v3');assert.match(v3.scope,/single\/path exact-input\/exact-output/);assert.match(v3.data.join(' '),/observed input debit/);assert.match(v3.data.join(' '),/Native funding only.*maintained/);assert.match(v3.uncertain,/Opaque aggregators/);assert.match(v3.uncertain,/future sellability|future.*liquidity/);
+ const bridge=coverageForCategory('bridge');assert.match(bridge.data.join(' '),/two server RPC snapshots/);assert.match(bridge.uncertain,/proof validity/);assert.match(bridge.uncertain,/active cross-domain sender/);assert.match(bridge.uncertain,/arrival/);
 });
 test('wallet display bounds facts and preserves exact raw units and total missing count without showing raw calldata',()=>{
  const lines=operationLines({fields:{recipient:from,amount:'900719925474099300000',data:'DO_NOT_SHOW',messagePreview:'DO_NOT_SHOW',tokens:Array(10).fill(to),deadline:'2',method:'long'.repeat(100),action:'deposit',owner:to}});

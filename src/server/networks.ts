@@ -2,19 +2,20 @@ import type {FastifyInstance,FastifyRequest} from 'fastify';
 import {z} from 'zod';
 import {formatEther} from 'viem';
 import type {SecurityConfig} from '../security/config.js';
+import {readBoundedText} from '../security/evidence.js';
 const names:Record<number,{name:string;testnet:boolean}>={1:{name:'Ethereum Mainnet',testnet:false},11155111:{name:'Sepolia',testnet:true},10:{name:'Optimism',testnet:false},56:{name:'BNB Smart Chain',testnet:false},137:{name:'Polygon',testnet:false},8453:{name:'Base',testnet:false},42161:{name:'Arbitrum One',testnet:false}};
 export function networkList(config:SecurityConfig){return [...new Set([11155111,1,...Object.keys(config.rpc).map(Number).filter(id=>id!==31337)])].map(chainId=>({chainId,name:names[chainId]?.name??`EVM ${chainId}`,testnet:names[chainId]?.testnet??null,configured:!!config.rpc[chainId]}));}
 const quantity=(v:unknown):v is string=>typeof v==='string'&&/^0x[\da-f]{1,64}$/i.test(v);
-export type NetworkSnapshot={chainId:number;network:string;checkedAt:string;blockNumber:string;blockHash:string;blockTime:string;latencyMs:number;account?:{address:string;balanceWei:string;balanceEth:string;hasCode:boolean;delegatedCode:boolean}};
+export type NetworkSnapshot={chainId:number;network:string;checkedAt:string;blockNumber:string;blockHash:string;blockTime:string;latencyMs:number;account?:{address:string;balanceWei:string;balanceEth:string;hasCode:boolean;delegatedCode:boolean};capabilities?:{pinnedCall:'observed'|'unavailable';historicalState:'observed'|'unavailable';historicalBlock:string;callTrace:'observed'|'unavailable';scope:string}};
 export type NetworkProbe=(url:string,chainId:number,address?:string)=>Promise<NetworkSnapshot>;
 /** Read-only trusted endpoint. Never exposes URL/key, accepts arbitrary RPC
  * methods, signs, estimates, submits transactions or calls a model. */
 export async function probeNetwork(url:string,chainId:number,address?:string,fetcher:typeof fetch=fetch):Promise<NetworkSnapshot>{
  const start=Date.now(),signal=AbortSignal.timeout(8000);let id=0;
  async function rpc(method:string,params:unknown[]){
-  const requestId=++id,response=await fetcher(url,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({jsonrpc:'2.0',id:requestId,method,params})});
-  if(!response.ok)throw Error('unavailable');const text=await response.text();if(text.length>1000000)throw Error('invalid_response');const body=JSON.parse(text);
-  if(body.id!==requestId||body.error||body.result===undefined)throw Error('invalid_response');return body.result;
+  const requestId=++id,response=await fetcher(url,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},signal:AbortSignal.any([signal,AbortSignal.timeout(2000)]),body:JSON.stringify({jsonrpc:'2.0',id:requestId,method,params})});
+  if(!response.ok)throw Error('unavailable');const body=JSON.parse(await readBoundedText(response,350000));
+  if(body.jsonrpc!=='2.0'||body.id!==requestId||body.error||body.result===undefined)throw Error('invalid_response');return body.result;
  }
  const observed=await rpc('eth_chainId',[]);if(!quantity(observed)||BigInt(observed)!==BigInt(chainId))throw Error('wrong_chain');
  const block=await rpc('eth_getBlockByNumber',['latest',false]);
@@ -25,12 +26,19 @@ export async function probeNetwork(url:string,chainId:number,address?:string,fet
   if(!quantity(balance)||typeof code!=='string'||!/^0x(?:[\da-f]{2})*$/i.test(code))throw Error('invalid_response');
   result.account={address,balanceWei:String(BigInt(balance)),balanceEth:formatEther(BigInt(balance)),hasCode:code!=='0x',delegatedCode:code.toLowerCase().startsWith('0xef0100')};
  }
+ // Fixed read-only probes; neither callers nor wallets supply a URL, tracer,
+ // method, target, calldata or block. One result is not a general RPC guarantee.
+ const historical=BigInt(block.number)>128n?BigInt(block.number)-128n:0n,zero='0x0000000000000000000000000000000000000000';
+ const call={from:zero,to:zero,data:'0x',gas:'0x5208',value:'0x0'};
+ const probes=await Promise.allSettled([rpc('eth_call',[call,block.number]),rpc('eth_getBalance',[zero,`0x${historical.toString(16)}`]),rpc('debug_traceCall',[call,block.number,{tracer:'callTracer',timeout:'1s',reexec:0}])]);
+ const probeSucceeded=(index:number,valid:(value:unknown)=>boolean)=>{const probe=probes[index];return probe.status==='fulfilled'&&valid(probe.value);};
+ result.capabilities={pinnedCall:probeSucceeded(0,value=>typeof value==='string'&&/^0x(?:[\da-f]{2})*$/i.test(value))?'observed':'unavailable',historicalState:probeSucceeded(1,quantity)?'observed':'unavailable',historicalBlock:String(historical),callTrace:probeSucceeded(2,value=>!!value&&typeof value==='object'&&String((value as any).type).toUpperCase()==='CALL'&&String((value as any).to).toLowerCase()===zero&&!('error' in (value as any)))?'observed':'unavailable',scope:'Fixed zero-value probes only. Historical balance at one height does not establish full archive retention; one trace does not prove complete asset coverage. Unavailable may mean unsupported, disabled, rate-limited or timed out.'};
  result.latencyMs=Date.now()-start;return result;
 }
 export function registerNetworks(app:FastifyInstance,getConfig:()=>Promise<SecurityConfig>,probe:NetworkProbe=probeNetwork,policy:{origins?:string[];authorize?:(req:FastifyRequest,address?:string)=>boolean}={}){
  const local=(origin:string|undefined)=>(policy.origins??['http://127.0.0.1:5173','http://localhost:5173']).includes(origin??'');
  app.addHook('onRequest',async(req,reply)=>{if(req.url.startsWith('/api/networks')&&req.headers.origin&&!local(req.headers.origin))return reply.code(403).send({error:'Use the configured workbench origin to check networks.'});});
- app.get('/api/networks',async()=>({networks:networkList(await getConfig()),scope:'read-only',snapBackend:'local',note:'Configuration means an endpoint exists, not that it is reachable. Verify wallet connection and Snap analysis separately.'}));
+ app.get('/api/networks',async()=>{const config=await getConfig();return {networks:networkList(config),evidenceConfiguration:{deploymentRecords:config.trustedDeployments?.length??0,priceFeeds:config.priceFeeds?.length??0,bridgeRoutes:config.bridgeRoutes?.length??0,sourceVerification:!!config.sourceVerification,registryInvalid:!!config.registryError},scope:'read-only',note:'Configuration means an endpoint exists, not that it is reachable. Verify wallet connection and Snap analysis separately.'};});
  let active=false;const recent:number[]=[];const cache=new Map<string,{expires:number;value:NetworkSnapshot}>();
  app.post('/api/networks/check',async(req,reply)=>{
   if(!local(req.headers.origin))return reply.code(403).send({error:'Network reads require the configured workbench origin.'});

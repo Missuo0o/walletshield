@@ -53,7 +53,7 @@ test('both canonical V3 exactInputSingle variants replay the original buy and us
   assert.equal(packet.checks.find(check=>check.id==='round_trip')?.data?.returned,'54');
   const semantics=packet.checks.find(check=>check.id==='protocol_semantics')!;
   assert.equal(semantics.status,'unknown','A completed reverse experiment does not establish all protocol semantics.');
-  assert.match(semantics.detail,/selected canonical token-input exactInputSingle/);
+  assert.match(semantics.detail,/canonical V3 single\/multi-hop exact-input and exact-output/);
   assert.match(semantics.detail,/separate round_trip evidence/);
   assert.doesNotMatch(semantics.detail,/Dependent V3 buy\/sell testing is unavailable/);
  }
@@ -68,7 +68,7 @@ test('failed V3 reverse selling is a warning, zero acquired balance is adverse, 
   const protocol=await protocolEvidence(unsupported,decodeRequest(unsupported),config);
   const packet=evidencePacket(assess(unsupported,[...checks,...protocol]));
   assert.equal(packet.checks.find(check=>check.id==='round_trip')?.status,'unknown');
-  assert.match(packet.checks.find(check=>check.id==='protocol_semantics')!.detail,/native-funded, router-balance and other-recipient experiments remain unsupported/);
+  assert.match(packet.checks.find(check=>check.id==='protocol_semantics')!.detail,/Unverified native funding or recipient aliases, router-balance input/);
  }
 });
 

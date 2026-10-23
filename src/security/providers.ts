@@ -11,11 +11,17 @@ import { protocolEvidence } from './protocols.js';
 import {accountEvidence} from './account-evidence.js';
 import {batchEvidence} from './batch-evidence.js';
 import {positionEvidence} from './position-evidence.js';
+import {registryEvidence} from './registry.js';
+import {orderEvidence} from './orders.js';
+import {userOperationEvidence} from './user-operation-evidence.js';
+import {delegationEvidence} from './delegation-evidence.js';
+import {bridgeEvidence} from './bridge-evidence.js';
+import {executionLimitations} from './transaction-fields.js';
 export { evidence } from './evidence.js';
 export type Collector = (request:SecurityRequest, op:Operation) => Promise<Evidence[]>;
 export function collector(config:SecurityConfig, fetcher:typeof fetch = fetch):Collector {
   return async(request,op)=>{
-    const tasks=[basicCollector(config,fetcher)(request,op),simulateRequest(request,op,config),signatureChainEvidence(request,config),protocolEvidence(request,op,config,fetcher),assetEvidence(request,op,config),accountEvidence(request,op,config,fetcher),Promise.resolve(batchEvidence(request,op)),positionEvidence(request,op,config,fetcher),intelligenceEvidence(request,op,config,fetcher)];
+    const tasks=[basicCollector(config,fetcher)(request,op),simulateRequest(request,op,config),signatureChainEvidence(request,config),protocolEvidence(request,op,config,fetcher),assetEvidence(request,op,config),accountEvidence(request,op,config,fetcher),Promise.resolve(batchEvidence(request,op)),positionEvidence(request,op,config,fetcher),intelligenceEvidence(request,op,config,fetcher),registryEvidence(request,op,config,fetcher),orderEvidence(request,op,config,fetcher),userOperationEvidence(request,op,config,fetcher),delegationEvidence(request,op,config,fetcher),bridgeEvidence(request,op,config,fetcher)];
     // Leave time for the API to retain completed tools before its overall budget.
     const results=await Promise.allSettled(tasks.map(async(task,index)=>{
       let timer:ReturnType<typeof setTimeout>|undefined;
@@ -59,7 +65,7 @@ function basicCollector(config:SecurityConfig, fetcher:typeof fetch):Collector {
           try{const delegateCode=await client.getCode({address:delegate,blockNumber:block}).then(validateAccountCode);collected.push(evidence('target_delegate_code',delegateCode&&delegateCode!=='0x'?'warning':'unknown','Delegation target code observed','Only one delegation target is read. Its bytecode is not audited; recursive delegation, authority, and future changes remain unverified.','rpc',{...snapshot,target:to,delegate,hasCode:!!delegateCode&&delegateCode!=='0x',...(delegateCode&&delegateCode!=='0x'?{codeHash:keccak256(delegateCode)}:{}),identityVerified:false}));}catch{collected.push(evidence('target_delegate_code','unknown','Delegation target code unavailable','The designation is retained, but delegated implementation code could not be read.','rpc',{...snapshot,target:to,delegate}));}
         }
         if(request.kind==='transaction') {
-          const tx=request.transaction;
+          const tx=request.transaction,unsupported=executionLimitations(tx);
           const nonce=nonceResult.status==='fulfilled'?nonceResult.value:undefined,declared=tx.nonce===undefined?undefined:BigInt(tx.nonce);
           const pending=pendingResult.status==='fulfilled'?pendingResult.value:undefined;
           collected.push(evidence('transaction_nonce',nonce===undefined?'unknown':declared!==undefined&&declared!==BigInt(nonce)?'warning':'pass','Transaction nonce compared with confirmed state','The confirmed account nonce at this block is an observation. A lower supplied nonce is already consumed under ordinary account semantics; a higher one may require predecessors. Pending-count observations are separate; replacement policy and future inclusion remain unverified.','rpc',{...snapshot,account:tx.from,confirmedNonce:nonce===undefined?null:String(nonce),declaredNonce:declared===undefined?null:String(declared),relation:nonce===undefined||declared===undefined?null:declared<BigInt(nonce)?'below_confirmed':declared>BigInt(nonce)?'above_confirmed':'matches_confirmed',pendingNonceChecked:pending!==undefined}));
@@ -69,11 +75,11 @@ function basicCollector(config:SecurityConfig, fetcher:typeof fetch):Collector {
           collected.push(evidence('transaction_base_fee',baseFee===undefined||baseFee===null||fee===undefined?'unknown':BigInt(fee)<baseFee?'warning':'pass','Supplied fee compared with the observed base fee','A supplied gas price or maximum fee below this block base fee cannot cover that base fee. Matching it does not establish sufficient priority fee, funding, or future inclusion; the next block base fee may differ.','rpc',{...snapshot,baseFeePerGasWei:baseFee===undefined||baseFee===null?null:String(baseFee),suppliedFeeCapWei:fee===undefined?null:String(BigInt(fee)),feeSource:tx.maxFeePerGas!==undefined?'maxFeePerGas':tx.gasPrice!==undefined?'gasPrice':null,futureBaseFeeKnown:false}));
           if(balance!==undefined && BigInt(tx.value??'0x0')>balance) collected.push(evidence('native_balance','risk','Transfer value exceeds the native balance','The declared value alone exceeds the current native balance, before gas.','rpc',snapshot));
           try {
-            if(tx.unsupportedFields?.length)throw Error('Unsupported execution fields');
+            if(unsupported.length)throw Error('Unsupported execution fields');
             const executionFields=Object.fromEntries((['gas','gasPrice','maxFeePerGas','maxPriorityFeePerGas','nonce'] as const).filter(key=>tx[key]!==undefined).map(key=>[key,tx[key]]));
             await client.request({method:'eth_call',params:[{from:tx.from as `0x${string}`,...(tx.to?{to:tx.to as `0x${string}`} :{}),data:tx.data as `0x${string}`,value:(tx.value??'0x0') as `0x${string}`,...executionFields},`0x${block.toString(16)}`]});
             collected.push(evidence('basic_call','pass','Basic call did not revert','Only eth_call was performed with supplied execution fields. Inclusion, nonce submission validity, complete asset changes, sellability, and future execution were not verified.','rpc',snapshot));
-          } catch { collected.push(evidence('basic_call','unknown',tx.unsupportedFields?.length?'Basic call cannot preserve this execution envelope':'Basic call failed',tx.unsupportedFields?.length?'Unsupported execution fields are not removed to check a substitute request.':'Balance, allowance, routing, or contract restrictions may explain failure. This alone does not establish a honeypot.','rpc',{...snapshot,...(tx.unsupportedFields?.length?{unsupportedFields:tx.unsupportedFields}:{})})); }
+          } catch { collected.push(evidence('basic_call','unknown',unsupported.length?'Basic call cannot preserve this execution envelope':'Basic call failed',unsupported.length?'Unsupported execution fields are not removed to check a substitute request.':'Balance, allowance, routing, or contract restrictions may explain failure. This alone does not establish a honeypot.','rpc',{...snapshot,...(unsupported.length?{unsupportedFields:unsupported}:{})})); }
         }
 
       } catch { collected.push(evidence('chain_context','unknown','Chain-state query failed','The RPC was unavailable, timed out, or reported a different chain ID.','rpc')); }

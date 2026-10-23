@@ -17,6 +17,8 @@ import { timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {matchLabReport} from '../testing/sessions.js';
+import {sanitizeRpcParams} from './rpc-redaction.js';
+import {executionLimitations} from './transaction-fields.js';
 export type SecurityOptions={access?:{service:ServiceConfig;auth:WalletAuth};config?:()=>Promise<SecurityConfig>;collect?:Collector;score?:(report:SecurityReport,config:SecurityConfig)=>Promise<AIState>};
 export function registerSecurity(app:FastifyInstance,store:Store,options:SecurityOptions={}) {
   const hosted=options.access?.service.mode==='hosted',auth=options.access?.auth;
@@ -90,7 +92,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
   });
   }
   app.get('/api/security/status',async()=>{
-    const c=await getConfig();return {version:'0.4.1',scoringPolicy:'muse-evidence-v2-dimensions',aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
+    const c=await getConfig();return {version:'0.4.1',scoringPolicy:'muse-evidence-v3-structured-facts',aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,sourceVerification:!!c.sourceVerification,registry:{configuredDeployments:c.trustedDeployments?.length??0,configuredPriceFeeds:c.priceFeeds?.length??0,invalid:!!c.registryError},monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
   });
   if(!hosted){
   app.get('/api/security/examples',async()=>securityExamples.map(({id,name,request})=>({id,name,request})));
@@ -118,6 +120,9 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     if(hosted){principal=auth!.authenticate(req)??undefined;if(!principal)return reply.code(401).send({error:'Authenticate your wallet or pair the Snap again.'});fromSnap=principal.kind==='snap';}
     else if(!local(req.headers.origin)){if(!await localSnapToken(req.headers.authorization))return reply.code(403).send({error:'Reload and pair the Snap in Wallet setup. An unauthenticated opaque origin cannot scan.'});fromSnap=true;}
     const parsed=requestSchema.safeParse(req.body);if(!parsed.success)return reply.code(400).send({error:'Invalid request. Only unsigned wallet requests are accepted, not client scores, intelligence or RPC overrides.'});
+    let inputRedacted=false,inputTruncated=false;
+    if(parsed.data.kind==='transaction'){const unsupported=executionLimitations(parsed.data.transaction);if(unsupported.length)parsed.data.transaction.unsupportedFields=unsupported;}
+    if(parsed.data.kind!=='transaction'&&parsed.data.kind!=='signature'){const sanitized=sanitizeRpcParams(parsed.data.params);parsed.data.params=sanitized.params as typeof parsed.data.params;inputRedacted=sanitized.removed;inputTruncated=sanitized.truncated;}
     if(hosted&&(parsed.data.chainId===31337||parsed.data.kind==='signature'&&Number(decodeRequest(parsed.data).fields.domainChainId)===31337))return reply.code(400).send({error:'Hosted mode does not connect to local lab chain 31337.'});
     if(principal){const sender=parsed.data.kind==='transaction'?parsed.data.transaction.from:parsed.data.kind==='signature'?parsed.data.signature.from:undefined;if(sender?sender.toLowerCase()!==principal.address:principal.kind==='snap')return reply.code(403).send({error:'The request account differs from the bound wallet; switch identity and pair again.'});}
     const key=principal?.address??'local',now=Date.now(),times=recent.get(key)??[];while(times.length&&now-times[0]>60000)times.shift();
@@ -138,6 +143,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
         finally {if(timer)clearTimeout(timer);}
       }
       catch {facts=[evidence('collector','unknown','Evidence collection failed','Evidence queries did not complete.','service')];}
+      if(inputRedacted||inputTruncated)facts.push(evidence('unsigned_input_redaction','unknown','Only bounded public unsigned RPC fields retained',inputTruncated?'Parameter depth or item limits were reached. Remaining state and policy are not verified; no complete-operation claim is made.':'Signature bytes and sensitive credential fields were removed before collection, persistence and model analysis. Signature acceptance and removed policy fields are not verified.','request',{sensitiveFieldsRemoved:inputRedacted,structureTruncated:inputTruncated,signatureValidationPerformed:false}));
       const report=assess(parsed.data,facts);report.capture={channel:fromSnap?'paired-snap':'workbench',...(principal?{wallet:principal.address,pairingId:principal.id}:{})};
       // Store once before model work. The same ID is updated; AI never creates a
       // second wallet-operation record or fabricates a transaction outcome.

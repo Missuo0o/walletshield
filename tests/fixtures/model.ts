@@ -2,7 +2,27 @@ import {AI_DIMENSIONS,type SecurityRequest} from '../../src/security/types.js';
 import {assess} from '../../src/security/rules.js';
 import {evidence} from '../../src/security/evidence.js';
 import {signatureStructure} from '../../src/security/signatures.js';
+import {FACT_SCHEMA_VERSION,modelFactCandidates,type ModelFact} from '../../src/security/model-facts.js';
+import type {SecurityReport} from '../../src/security/types.js';
 export function modelDimensions(id='permission_scope'){return {evidence_confidence:'limited',dimensions:AI_DIMENSIONS.map(dimension=>({dimension,assessment:dimension==='authority'?'review':'unknown',reason:'固定测试输出，仅用于校验证据链。',evidence_ids:[...new Set([id,'operation'])]}))};}
+
+/** Transport fixtures select exact candidate observations; tests of fact
+ * validation deliberately construct and mutate their own structured outputs. */
+export function structuredModelOutput<T extends {reasons:{evidence_ids:string[]}[];dimensions:{dimension:string;evidence_ids:string[]}[]}>(value:T,report:SecurityReport){
+ const candidates=modelFactCandidates(report).candidates,selected=new Map<string,ModelFact>();
+ const reasons=value.reasons.map(reason=>{const candidate=candidates.find(item=>reason.evidence_ids.includes(item.fact.evidence_id)&&item.fact.field!=='status')??candidates.find(item=>reason.evidence_ids.includes(item.fact.evidence_id));if(candidate)selected.set(candidate.fact.id,candidate.fact);return {...reason,fact_ids:candidate?[candidate.fact.id]:[]};});
+ const dimensions=value.dimensions.map(dimension=>{const candidate=candidates.find(item=>dimension.evidence_ids.includes(item.fact.evidence_id)&&item.admissible_dimensions.includes(dimension.dimension as any));if(candidate)selected.set(candidate.fact.id,candidate.fact);return {...dimension,fact_ids:candidate?[candidate.fact.id]:[]};});
+ return {...value,fact_schema_version:FACT_SCHEMA_VERSION,facts:[...selected.values()],reasons,dimensions};
+}
+export function structuredFixtureFetcher(report:SecurityReport,fetcher:typeof fetch):typeof fetch{return async(url,init)=>{
+ const response=await fetcher(url,init);if(!response.ok)return response;
+ let envelope:any;try{envelope=await response.clone().json();}catch{return response;}
+ if(envelope.status!=='completed'||!Array.isArray(envelope.output))return response;
+ for(const message of envelope.output)for(const content of message.content??[])if(content.type==='output_text'){
+  try{const value=JSON.parse(content.text);if(Array.isArray(value.reasons)&&Array.isArray(value.dimensions))content.text=JSON.stringify(structuredModelOutput(value,report));}catch{}
+ }
+ return new Response(JSON.stringify(envelope),{status:response.status,headers:response.headers});
+};}
 
 /** Synthetic evidence at a fixed public chain ID; this fixture performs no RPC. */
 export function finitePermitReport(){
