@@ -4,7 +4,7 @@ import {registerWalletAuth} from './wallet-auth.js';
 import staticFiles from '@fastify/static';
 import {resolve} from 'node:path';
 import { registerSecurity, type SecurityOptions } from '../security/api.js';
-import { registerLab } from '../testing/api.js';
+import { registerLab,type LabOptions } from '../testing/api.js';
 import {registerNetworks,type NetworkProbe} from './networks.js';
 import {loadSecurityConfig} from '../security/config.js';
 import cors from '@fastify/cors';
@@ -16,6 +16,7 @@ import type { AnalysisInput, Context } from '../core/types.js';
 import { collectContext, localStatus } from './chain.js';
 import type { Store } from './store.js';
 import { prepareLocalFunds } from './funding.js';
+import {LocalAssetBusyError,withLocalAssetMutation} from './local-asset-mutation.js';
 import { registerWorkflow, type ReceiptEvidence } from './workflow.js';
 const address = z.string().regex(/^0x[\da-fA-F]{40}$/);
 const hex = z.string().max(20000).regex(/^0x(?:[\da-fA-F]{2})*$/);
@@ -24,7 +25,7 @@ export const inputSchema = z.object({
   transaction: z.object({ from: address, to: address, data: hex, value: z.string().regex(/^0x[\da-fA-F]{1,64}$/).optional() }).strict(),
   origin: z.string().max(512).optional()
 }).strict();
-export async function buildApp(store: Store, options: { context?: (i: AnalysisInput) => Promise<Context>; fund?: typeof prepareLocalFunds; logger?: boolean; receipt?: (hash: `0x${string}`) => Promise<ReceiptEvidence | null>; security?: SecurityOptions; networkProbe?:NetworkProbe; service?:ServiceConfig } = {}) {
+export async function buildApp(store: Store, options: { context?: (i: AnalysisInput) => Promise<Context>; fund?: typeof prepareLocalFunds; logger?: boolean; receipt?: (hash: `0x${string}`) => Promise<ReceiptEvidence | null>; security?: SecurityOptions; networkProbe?:NetworkProbe; service?:ServiceConfig;lab?:LabOptions } = {}) {
   const service=options.service??serviceConfig();
   const app = Fastify({ logger: options.logger ?? false, bodyLimit: 32768, trustProxy:service.mode==='hosted'?'127.0.0.1':false });
   app.addHook('onRequest',async(req,reply)=>{
@@ -41,7 +42,7 @@ export async function buildApp(store: Store, options: { context?: (i: AnalysisIn
   app.addHook('onSend',async(req,reply,payload)=>{reply.header('X-Content-Type-Options','nosniff');reply.header('Referrer-Policy','no-referrer');if(req.url.startsWith('/api/'))reply.header('Cache-Control','no-store');if(service.mode==='hosted'){reply.header('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'");reply.header('X-Frame-Options','DENY');}return payload;});
   const auth=registerWalletAuth(app,store,{origin:service.origin,enabled:service.mode==='hosted'});
   registerSecurity(app, store, {...options.security,access:{service,auth}});
-  if(service.mode==='local')registerLab(app,store);
+  if(service.mode==='local')registerLab(app,store,options.lab);
   registerNetworks(app,options.security?.config??loadSecurityConfig,options.networkProbe,{origins:service.origins,authorize:service.mode==='hosted'?(req,address)=>{const who=auth.authenticate(req);return !!who&&(!address||who.address===address.toLowerCase());}:undefined});
   function save(input: AnalysisInput, context: Context) {
     const record = { ...evaluate(input, context), id: randomUUID(), createdAt: new Date().toISOString(),
@@ -59,16 +60,12 @@ export async function buildApp(store: Store, options: { context?: (i: AnalysisIn
   if(service.mode==='local'){
   app.get('/api/scenarios', async () => scenarios.map(({ context, ...rest }) => rest));
   app.get('/api/local', async () => localStatus());
-  let funding = false;
   app.post('/api/local/fund', async (request, reply) => {
     if (!['http://127.0.0.1:5173', 'http://localhost:5173'].includes(request.headers.origin ?? '')) return reply.code(403).send({ error: 'Prepare test funds from the local workbench.' });
     const parsed = z.object({ address }).strict().safeParse(request.body);
     if (!parsed.success || /^0x0{40}$/i.test(parsed.data.address)) return reply.code(400).send({ error: 'Provide a valid nonzero wallet address.' });
-    if (funding) return reply.code(409).send({ error: 'Another test-funding request is active. Retry shortly.' });
-    funding = true;
-    try { return await (options.fund ?? prepareLocalFunds)(parsed.data.address); }
-    catch { return reply.code(503).send({ error: 'Test funding did not complete. Run the launcher again to update the local contracts, then retry. Check on-chain balances for the actual result.' }); }
-    finally { funding = false; }
+    try { return await withLocalAssetMutation(()=>(options.fund ?? prepareLocalFunds)(parsed.data.address)); }
+    catch(e) { return reply.code(e instanceof LocalAssetBusyError?409:503).send({ error:e instanceof LocalAssetBusyError?e.message:'Test funding did not complete. Run the launcher again to update the local contracts, then retry. Check on-chain balances for the actual result.' }); }
   });
   app.post<{ Params: { id: string } }>('/api/demo/:id', async (request, reply) => {
     const scenario = scenarios.find(s => s.id === request.params.id);

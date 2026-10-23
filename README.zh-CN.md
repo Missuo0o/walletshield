@@ -183,7 +183,9 @@ curl -sS -X POST http://127.0.0.1:5173/api/security/ai/test \
 
 建议从无限额授权开始，阅读 insight 后取消，再比较有限额授权和撤销授权。其他代表案例包括原生币和代币转账、NFT、V2/V3 结构兑换、金库存入/赎回、借贷、质押、流动性、桥接存入、领取、包装、铸造/销毁、控制变更、部署、批量调用、SIWE、Permit、Permit2 和类型化订单。
 
-测试资产是**没有真实价值**的本地测试合约资产。准备操作会将余额补足至至少 10 测试 ETH、5,000 TEST-USD，以及 LAB-USD、LAB-Q、LAB-BLOCK 各 5,000；已有更高余额会保留。它还会准备一个当前 ERC-721 测试 NFT，以及 ERC-1155 ID 1 和 2 各至少十个。WLAB 需要通过包装操作取得。切换到链 31337 不会带来主网 ETH 或代币，切换到其他链也不会将本地余额变为真实资产。可选代币导入只改变钱包显示；网页清单读取真实的本地链余额。NFT 和协议仓位可能需要执行对应钱包操作来取得或补充。
+测试资产是**没有真实价值**的本地测试合约资产。准备操作会先将余额补足至 10 测试 ETH（后续测试合约准备交易可能消耗少量 gas）、5,000 TEST-USD，以及 LAB-USD、LAB-Q、LAB-BLOCK 各 5,000；已有更高余额会保留。它还会准备一个当前 ERC-721 测试 NFT，以及 ERC-1155 ID 1 和 2 各至少十个。WLAB 需要通过包装操作取得。切换到链 31337 不会带来主网 ETH 或代币，切换到其他链也不会将本地余额变为真实资产。资产准备后，网页通过 `wallet_watchAsset` 自动请求钱包显示五种已知 ERC-20（包括余额为零的 WLAB）及当前拥有的测试 NFT，请在 MetaMask 中确认提示。拒绝导入或钱包不支持 NFT 显示，不会撤销已经完成的链上资产准备；网页的链上清单仍是余额依据。MetaMask 扩展中的 NFT 导入属于实验性功能。原生测试 ETH 无需代币导入。NFT 和协议仓位可能需要执行对应钱包操作来取得或补充。
+
+**Clear local test assets** 仅清空当前账户在 Anvil 链 31337 上已知测试合约的钱包余额：测试 ETH、TEST-USD、LAB-USD、LAB-Q、LAB-BLOCK、WLAB 与测试 NFT。执行前阅读英文确认提示。后端使用本地开发节点管理接口与有成功回执的测试合约交易，不重置整条链，也不调用公链 RPC。测试代币被销毁或转至固定丢弃地址，WLAB 被解包装，测试 NFT 转至丢弃地址；对应 NFT 的单项授权会随转移清除。操作员/ERC-20 授权、协议仓位、控制状态和历史保留，不隐藏钱包显示项，也不清理未知代币合约。再次准备可补充资产；若中途失败，已完成步骤可能保留，请先刷新余额。
 
 实验室路由器使用固定本地价格；金库采用简化份额模型；借贷未实现完整清算市场；桥接测试只记录本地行为；控制升级测试合约不会审计新实现。LAB-BLOCK 故意限制卖出，以便测试相应证据路径。这些都不能证明真实协议的身份、流动性、偿付能力或行为。
 
@@ -396,7 +398,8 @@ curl -sS -X POST http://127.0.0.1:5173/api/security/scan \
 | `GET /api/security/records/:id/evidence` | 提供给模型的有界证据包 |
 | `GET /api/lab/status` | 当前案例/分析配置数量、测试合约就绪状态和每日模型预算 |
 | `GET /api/lab/inventory?address=…` | 本地资产和仓位清单 |
-| `POST /api/lab/prepare` | 仅准备本地 Anvil 测试资产 |
+| `POST /api/lab/prepare` | 准备并校验本地测试资产，网页随后请求钱包显示 |
+| `POST /api/lab/clear` | 确认后清空本地测试合约钱包余额，要求 `{address, confirm: true}` |
 | `POST /api/lab/begin`、会话读取/结果路由 | 本地钱包测试生命周期；不能代替 Snap 报告 |
 | `POST /api/wallet-auth/challenge` 和 `POST /api/wallet-auth/verify` | 仅托管模式的准确消息 EOA 登录 challenge 和验证 |
 | `GET /api/wallet-auth/status` | 托管 bearer 身份与到期时间；不返回原始凭据 |
@@ -428,6 +431,7 @@ npm test
 npm run build
 npm run test:security
 npm run test:extensions
+npm run test:asset-cleanup
 ```
 
 | 命令 | 验证内容 / 造成的变化 |
@@ -437,6 +441,7 @@ npm run test:extensions
 | `npm run build` | 重新生成覆盖指南，检查类型，构建前端和 Snap bundle/manifest。 |
 | `npm run test:security` | 在独立端口启动自己的临时 Anvil，验证模拟行为后关闭；不使用当前浏览器测试钱包链，也不调用付费模型。 |
 | `npm run test:extensions` | 启动另一个临时 Anvil，验证账户、仓位及 DAI/ERC-3009 的实际 getter 取数、部分失败和时间边界；仅主动写入测试合约状态，确认采集器不挖块后关闭。不会调用模型或浏览器钱包。 |
+| `npm run test:asset-cleanup` | 在独立随机端口临时 Anvil 验证清零余额、收到的 NFT、保留仓位/授权、重复清理与重新补充。不会接触常用本地链，也不调用钱包或模型。 |
 | `npm run test:chain` | 在运行中的链 31337 上验证原始本地授权/资金准备流程；需要本地部署，会执行本地测试写入，然后恢复快照。 |
 | `npm run test:lab` | 使用本地节点账户执行当前 66 案例目录，验证交易回执和签名恢复，并写入 `docs/wallet-lab-acceptance.json`；会对运行中的本地链创建/恢复快照。 |
 | `npm run docs:coverage` | 从源码定义重新生成详细覆盖指南。 |
@@ -463,7 +468,7 @@ node --import tsx scripts/test-ai-audit.ts
 | Snap 安装或配对失败 | 安装从 8080 端口获取文件；本地 Snap 随后直接连接 8787 的 API。以 “Snap installed;” 开头的消息表示安装后凭据、后端连接或验证阶段失败。重建后刷新页面并重新加载/配对；旧 bundle 可能仍指向 Vite 5173，其默认 CORS 中间件会先处理不透明 origin 的预检。 |
 | 没有 Snap 报告 | 检查钱包是否在钩子前拒绝/失败，Snap 是否启用并配对，以及请求是否有支持的钩子。仅 API 扫描不是自动钱包检查。 |
 | 测试合约或资产不可用 | 保持 Anvil 运行；执行 `npm run deploy:local`（基础代币仍有效时可用 `deploy:lab`），刷新并重新准备资产。重启链会使旧状态失效。 |
-| MetaMask 中没有代币 | 查看网页本地链上清单；可选 ERC-20 导入只添加显示元数据。检查链 31337 和准确合约。 |
+| MetaMask 中没有代币 | 查看网页链上清单，并确认准备后自动出现的钱包导入提示；拒绝显示或钱包不支持 NFT 导入不会改变余额。检查链 31337 和准确合约。 |
 | 金库、借贷、质押、兑换或解包装案例失败 | 完成案例列明的前置授权和存入操作；准备资产不会自动建立这些仓位。 |
 | 没有 AI 分数 | 查看 `ai.status` 与 `ai.message`：密钥缺失/关闭、每日上限、HTTP 失败、超时、拒答、验证失败或放弃评分均可能正常导致无数字。 |
 | 已配置 RPC，但链检查未知 | 检查端点可达性、实际返回链 ID、提供方额度和历史状态支持。已配置不代表已验证连通。 |

@@ -18,6 +18,9 @@ export async function prepareLocalFunds(address: string) {
   // Preflight the new faucet before touching ETH, so old deployments fail clearly.
   await localClient.simulateContract({ account: owner, address: token, abi: faucetAbi, functionName: 'faucet', args: [recipient] });
   const wallet = createWalletClient({ chain: foundry, transport: http(RPC_URL, { timeout: 5000, retryCount: 0 }) });
+  // The local fixture administrator may itself have been cleared by the user.
+  // Restore only its test gas; never depend on a real wallet or a public RPC.
+  if(owner.toLowerCase()!==recipient.toLowerCase()&&await localClient.getBalance({address:owner})<parseEther('1'))await localClient.request({method:'anvil_setBalance' as never,params:[owner,toHex(parseEther('1'))] as never});
   const ethBefore = await localClient.getBalance({ address: recipient });
   if (ethBefore < parseEther('10')) {
     await localClient.request({ method: 'anvil_setBalance' as never, params: [recipient, toHex(parseEther('10'))] as never });
@@ -29,6 +32,9 @@ export async function prepareLocalFunds(address: string) {
     const receipt = await localClient.waitForTransactionReceipt({ hash: mintTransaction, timeout: 5000 });
     if (receipt.status !== 'success') throw new Error('Test token funding failed. Retry and check the on-chain balance.');
   }
+  // When funding the node administrator, its own faucet transaction spends gas.
+  // Replenish after that transaction too, rather than failing a successful top-up.
+  if(await localClient.getBalance({address:recipient})<parseEther('10'))await localClient.request({method:'anvil_setBalance' as never,params:[recipient,toHex(parseEther('10'))] as never});
   const [eth, testUsd] = await Promise.all([
     localClient.getBalance({ address: recipient }),
     localClient.readContract({ address: token, abi: erc20Abi, functionName: 'balanceOf', args: [recipient] })

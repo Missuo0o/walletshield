@@ -184,7 +184,9 @@ Local mode shows **Local wallet lab**, **Public networks**, **Check history**, a
 
 Start with unlimited approval and cancel after reading the insight. Then compare a limited approval and revocation. Other representative cases include native and token transfers, NFTs, V2/V3-shaped swaps, vault deposit/redemption, lending, staking, liquidity, bridge deposit, claiming, wrapping, mint/burn, control changes, deployment, batch calls, SIWE, Permit, Permit2, and typed orders.
 
-Test assets are local fixtures with **no real value**. Preparation tops up to at least 10 test ETH, 5,000 TEST-USD, and 5,000 each of LAB-USD, LAB-Q and LAB-BLOCK, preserving higher existing balances. It prepares one current ERC-721 test NFT and at least ten each of ERC-1155 IDs 1 and 2. WLAB comes from the wrapping operation. Mainnet ETH or tokens do not appear by switching to chain 31337. A local balance does not become a real asset by switching to another chain. Optional token import only changes wallet display; the webpage inventory reads actual local balances. NFTs and protocol positions may require their corresponding wallet operations to obtain or replenish them.
+Test assets are local fixtures with **no real value**. Preparation tops up to 10 test ETH before any subsequent fixture-setup gas, 5,000 TEST-USD, and 5,000 each of LAB-USD, LAB-Q and LAB-BLOCK, preserving higher existing balances. It prepares one current ERC-721 test NFT and at least ten each of ERC-1155 IDs 1 and 2. WLAB comes from the wrapping operation. Mainnet ETH or tokens do not appear by switching to chain 31337. A local balance does not become a real asset by switching to another chain. After preparation, the page automatically requests wallet display registration for all five known ERC-20 entries (including zero-balance WLAB) and owned test NFTs using `wallet_watchAsset`. Confirm the prompts in MetaMask. Declining or unsupported NFT display does not undo funding; the on-chain inventory remains authoritative. NFT display support is experimental in MetaMask Extension. Native test ETH needs no token import. NFTs and protocol positions may require their corresponding wallet operations to obtain or replenish them.
+
+**Clear local test assets** clears only the selected account's known local fixture wallet balances on Anvil chain 31337: test ETH, TEST-USD, LAB-USD, LAB-Q, LAB-BLOCK, WLAB and test NFTs. Review the English confirmation before proceeding. The backend uses local development-node administration and confirmed fixture transactions; it never resets the whole chain or calls a public RPC. Fungible test assets are burned or moved to a fixed discard address, WLAB is unwrapped, and owned test NFTs move to that address. NFT-specific approvals clear as part of transferring those NFTs; operator/ERC-20 approvals, protocol positions, control state and history remain. This does not hide wallet display entries or clear unknown token contracts. Prepare again to replenish. Earlier completed steps can persist if a later step fails; refresh inventory before retrying.
 
 The lab's router uses fixed local pricing; its vault uses a simplified share model; lending does not implement a full liquidation market; bridge tests only record local behavior; control-upgrade fixtures do not audit a new implementation. LAB-BLOCK deliberately restricts selling so the evidence path can be exercised. None of this establishes the identity, liquidity, solvency, or behavior of a real protocol.
 
@@ -397,7 +399,8 @@ Request schemas and limits are in [`src/security/types.ts`](src/security/types.t
 | `GET /api/security/records/:id/evidence` | The bounded evidence packet supplied to the model |
 | `GET /api/lab/status` | Current cases/profile counts, fixture readiness and daily model budget |
 | `GET /api/lab/inventory?address=…` | Local asset and position inventory |
-| `POST /api/lab/prepare` | Prepare only local Anvil test assets |
+| `POST /api/lab/prepare` | Prepare verified local assets; browser then requests wallet display registration |
+| `POST /api/lab/clear` | Confirmed local fixture wallet-balance cleanup; requires `{address, confirm: true}` |
 | `POST /api/lab/begin`, session read/result routes | Local wallet test lifecycle; not a substitute for a Snap report |
 | `POST /api/wallet-auth/challenge` and `POST /api/wallet-auth/verify` | Hosted-only exact-message EOA login challenge and verification |
 | `GET /api/wallet-auth/status` | Hosted bearer identity and expiry; no raw credential returned |
@@ -429,6 +432,7 @@ npm test
 npm run build
 npm run test:security
 npm run test:extensions
+npm run test:asset-cleanup
 ```
 
 | Command | What it verifies / changes |
@@ -438,6 +442,7 @@ npm run test:extensions
 | `npm run build` | Regenerates the coverage guide, type-checks, builds the frontend and Snap bundle/manifest. |
 | `npm run test:security` | Starts its own temporary Anvil on an independent port, validates simulation behavior, and shuts it down; does not use the current browser test wallet chain or make paid model calls. |
 | `npm run test:extensions` | Starts another temporary Anvil to verify actual account, position and DAI/ERC-3009 getter evidence, partial failures and time boundaries. It makes deliberate fixture writes, verifies collectors do not mine, then shuts the chain down; no model or browser wallet calls. |
+| `npm run test:asset-cleanup` | Uses a disposable random-port Anvil to verify balance clearing, incoming NFTs, preserved positions/allowances, idempotence and replenishment. Does not touch the normal local chain or call a wallet/model. |
 | `npm run test:chain` | Validates the original local approval/funding workflow against the running chain 31337; requires local deployment, makes local test writes, then restores its snapshot. |
 | `npm run test:lab` | Executes the current 66-case catalog using a local node account, verifies transaction receipts and signature recovery, and writes `docs/wallet-lab-acceptance.json`; snapshots/restores the running local chain. |
 | `npm run docs:coverage` | Regenerates the detailed coverage guide from source definitions. |
@@ -470,7 +475,7 @@ Use `npm ci` from the updated lockfile; run `npm audit --omit=dev` and `npm audi
 | Snap installation or pairing fails | Installation fetches files from port 8080; the local Snap then connects directly to API port 8787. A message starting “Snap installed;” identifies a failed credential, backend-connection or verification stage after installation. Refresh the page and reload/pair after rebuilding; an older installed bundle may still point to Vite port 5173, whose default CORS middleware consumes opaque-origin preflight. |
 | No Snap report appears | Check whether the wallet rejected/failed before the hook, whether the Snap is enabled and paired, and whether the request has a supported hook. An API-only scan is not an automatic wallet check. |
 | Test contracts or assets are unavailable | Keep Anvil running; run `npm run deploy:local` (or `deploy:lab` when the base token is already valid), refresh and prepare assets again. A restarted chain invalidates prior state. |
-| Token is absent in MetaMask | Read the webpage's local on-chain inventory; optional ERC-20 import adds display metadata. Check chain 31337 and the exact contract. |
+| Token is absent in MetaMask | Read the verified on-chain inventory and confirm the automatic wallet display prompts after preparation. A decline or unsupported NFT display leaves balances unchanged. Check chain 31337 and the exact contract. |
 | Vault, lending, staking, swap or unwrap case fails | Follow the case's explicit prerequisite approvals and deposits; preparation does not create those positions automatically. |
 | No AI score | Inspect `ai.status` and `ai.message`: missing/disabled key, daily cap, HTTP failure, timeout, refusal, validation failure or abstention all legitimately produce no number. |
 | RPC configured but chain checks unknown | Verify endpoint reachability, actual returned chain ID, provider quota and historical-state support. Configured is not connectivity-verified. |

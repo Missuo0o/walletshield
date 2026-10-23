@@ -5,7 +5,8 @@ import {createPublicClient,createWalletClient,http,keccak256,parseEther,formatEt
 import {foundry} from 'viem/chains';
 import {localStatus,localClient} from '../server/chain.js';
 export const labClient=createPublicClient({chain:foundry,transport:http('http://127.0.0.1:8545',{timeout:5000,retryCount:0})});
-const wallet=createWalletClient({chain:foundry,transport:http('http://127.0.0.1:8545',{timeout:5000,retryCount:0})});
+export const labWallet=createWalletClient({chain:foundry,transport:http('http://127.0.0.1:8545',{timeout:5000,retryCount:0})});
+const wallet=labWallet;
 export type Artifact={abi:Abi;bytecode:`0x${string}`};
 export type LabDeployment={version:1;chainId:31337;baseToken:Address;owner:Address;recipient:Address;deployedAt:string;contracts:Record<string,{address:Address;codeHash:`0x${string}`}>};
 const file=()=>resolve(process.cwd(),'.local/lab-deployment.json');
@@ -56,17 +57,31 @@ export async function deployLab(){
  await localClient.request({method:'anvil_setBalance' as never,params:[router,`0x${parseEther('1000').toString(16)}`] as never});
  await mkdir(resolve(process.cwd(),'.local'),{recursive:true});await writeFile(resolve(process.cwd(),'.local/lab-artifacts.json'),JSON.stringify(artifacts));await writeFile(file(),JSON.stringify(d,null,2));return d;
 }
+export async function preflightLab(){
+ const deployment=await verifiedLab(),artifacts=await labArtifacts();
+ const required:Record<string,string[]>={LabToken:['faucet','balanceOf','symbol','decimals'],LabNFT:['faucet','testId','ownerOf'],LabMultiNFT:['faucet','balanceOf'],LabControl:['resetTester','owner'],LabWrapped:['balanceOf','symbol','decimals'],LabVault:['balanceOf'],LabLending:['collateral','debt'],LabActions:['staked','liquidity'],...(deployment.contracts.account?{LabAccount:['resetTester','getOwners','getThreshold']}:{})};
+ for(const [name,methods] of Object.entries(required)){
+  if(!Array.isArray(artifacts[name]?.abi)||methods.some(method=>!artifacts[name].abi.some(item=>item.type==='function'&&item.name===method)))throw Error(`The ${name} fixture artifact is missing or incomplete. Run npm run deploy:lab before preparing assets.`);
+ }
+ return {deployment,artifacts};
+}
+export async function waitLabWrite(hash:`0x${string}`,stage:string){
+ const receipt=await labClient.waitForTransactionReceipt({hash,timeout:15000,pollingInterval:100});
+ if(receipt.status!=='success')throw Error(`${stage} reverted. Some earlier local setup steps may already have completed; refresh balances and retry.`);
+ return receipt;
+}
 export async function prepareLab(address:Address){
- const d=await verifiedLab(),artifacts=await labArtifacts();
- for(const [key,name] of [['token','LabToken'],['quote','LabToken'],['honey','LabToken'],['nft','LabNFT'],['multi','LabMultiNFT']] as const){const hash=await wallet.writeContract({account:d.owner,address:d.contracts[key].address,abi:artifacts[name].abi,functionName:'faucet',args:[address]});await labClient.waitForTransactionReceipt({hash});}
- const hash=await wallet.writeContract({account:d.owner,address:d.contracts.control.address,abi:artifacts.LabControl.abi,functionName:'resetTester',args:[address]});await labClient.waitForTransactionReceipt({hash});
+ const {deployment:d,artifacts}=await preflightLab();
+ for(const [key,name] of [['token','LabToken'],['quote','LabToken'],['honey','LabToken'],['nft','LabNFT'],['multi','LabMultiNFT']] as const){const hash=await wallet.writeContract({account:d.owner,address:d.contracts[key].address,abi:artifacts[name].abi,functionName:'faucet',args:[address]});await waitLabWrite(hash,`${key} asset preparation`);}
+ const hash=await wallet.writeContract({account:d.owner,address:d.contracts.control.address,abi:artifacts.LabControl.abi,functionName:'resetTester',args:[address]});await waitLabWrite(hash,'Control fixture reset');
  if(d.contracts.account){
-  if(!artifacts.LabAccount)throw Error('Run npm run deploy:lab to add the optional account fixture artifact.');
   const other=address.toLowerCase()===d.recipient.toLowerCase()?d.owner:d.recipient;
-  const reset=await wallet.writeContract({account:d.owner,address:d.contracts.account.address,abi:artifacts.LabAccount.abi,functionName:'resetTester',args:[address,other]});await labClient.waitForTransactionReceipt({hash:reset});
+  const reset=await wallet.writeContract({account:d.owner,address:d.contracts.account.address,abi:artifacts.LabAccount.abi,functionName:'resetTester',args:[address,other]});await waitLabWrite(reset,'Account fixture reset');
+  const [owners,threshold]=await Promise.all([labClient.readContract({address:d.contracts.account.address,abi:artifacts.LabAccount.abi,functionName:'getOwners'}),labClient.readContract({address:d.contracts.account.address,abi:artifacts.LabAccount.abi,functionName:'getThreshold'})]);
+  if(!Array.isArray(owners)||owners.length!==2||!owners.some(owner=>String(owner).toLowerCase()===address.toLowerCase())||!owners.some(owner=>String(owner).toLowerCase()===other.toLowerCase())||threshold!==2n)throw Error('The account fixture reset could not be verified. Prepare assets again.');
  }
  const inventory=await labInventory(address);
- if(!inventory.ready)throw Error('Asset verification failed after preparation. Refresh the inventory.');
+ if(!inventory.ready||inventory.positions.controlOwner.toLowerCase()!==address.toLowerCase())throw Error('Asset or control fixture verification failed after preparation. Refresh the inventory.');
  return {address,inventory,token:d.contracts.token.address,quote:d.contracts.quote.address,nft:d.contracts.nft.address,scope:'local-fixtures',message:'LAB-USD, LAB-Q, a restricted-sale test token and NFTs are ready on the local chain. They have no real value. The control fixture is reset for this test account. '+(d.contracts.account?'The optional simplified account fixture is reset too; this does not create a production multisig.':'Run npm run deploy:lab to add the optional simplified account fixture.')};
 }
 
@@ -82,7 +97,7 @@ export async function labInventory(account:Address){
   testId>0n?read('nft','LabNFT','ownerOf',[testId]):Promise.resolve(null),read('multi','LabMultiNFT','balanceOf',[account,1n]),read('multi','LabMultiNFT','balanceOf',[account,2n]),read('vault','LabVault','balanceOf',[account]),read('lending','LabLending','collateral',[account]),read('lending','LabLending','debt',[account]),read('actions','LabActions','staked',[account]),read('actions','LabActions','liquidity',[account]),read('control','LabControl','owner')]);
  const nftOwned=typeof owner==='string'&&owner.toLowerCase()===account.toLowerCase();
  const baseBalance=await labClient.readContract({address:d.baseToken,abi:artifacts.LabToken.abi,functionName:'balanceOf',args:[account],blockNumber:block}) as bigint;
- return {account,chainId:31337,blockNumber:String(block),eth:formatEther(native),ready:native>0n&&assets.slice(0,3).every(a=>BigInt(a.balanceRaw)>0n)&&nftOwned&&multi1>0n&&multi2>0n,
+ return {account,chainId:31337,blockNumber:String(block),eth:formatEther(native),ready:native>0n&&baseBalance>0n&&assets.slice(0,3).every(a=>BigInt(a.balanceRaw)>0n)&&nftOwned&&multi1>0n&&multi2>0n,
   assets:[{key:'base',address:d.baseToken,symbol:'TEST-USD',decimals:6,balanceRaw:String(baseBalance),balance:formatUnits(baseBalance,6),standard:'ERC20' as const},...assets],
   nfts:[{address:d.contracts.nft.address,standard:'ERC721',id:String(testId),balance:nftOwned?'1':'0'},{address:d.contracts.multi.address,standard:'ERC1155',id:'1',balance:String(multi1)},{address:d.contracts.multi.address,standard:'ERC1155',id:'2',balance:String(multi2)}],
   positions:{vaultSharesRaw:String(shares),collateralRaw:String(collateral),debtRaw:String(debt),stakedRaw:String(staked),liquidityUnitsRaw:String(liquidity),controlOwner},
