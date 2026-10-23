@@ -308,7 +308,16 @@ export async function scoreWithAI(report:SecurityReport,config:SecurityConfig,fe
   } catch(e) {
     const timeout=e instanceof Error&&['TimeoutError','AbortError'].includes(e.name);
     const validationReasons:Record<string,string>={'Ambiguous evidence identifiers':'duplicate evidence IDs','Model cited nonexistent evidence':'nonexistent evidence citation','Unsupported signature verification claim':'nonce/domain assertion lacks matching on-chain evidence','Missing or duplicate dimension':'missing or duplicate dimension','Unresolved evidence cannot have strong confidence':'unresolved evidence cannot support strong confidence','No supported dimension for score':'no observed dimension supports the number','Assessed dimension lacks observation':'an assessed dimension cites no actual observation','Dimension cites no relevant observation':'a dimension lacks semantically relevant cited support','Unsupported certainty claim':'an unsupported identity, safety, future-outcome or dollar-loss assertion','Unsupported bounded observation claim':'a completed observation lacks its exact bounded support','Abstention must be explicit':'score and abstention are inconsistent','Incomplete evidence cannot be called low risk':'incomplete evidence cannot establish overall low risk','Identity risk requires an observed adverse signal':'identity-high lacks relevant adverse observations','No honeypot evidence':'no honeypot evidence','Unsupported honeypot claim':'unsupported honeypot assertion','Missing negative honeypot observation':'missing negative honeypot observation','Model ignored observed selling restriction':'observed selling restriction was ignored','Model ignored observed round trip risk':'observed round-trip risk was ignored'};
-    const reason=e instanceof Error?validationReasons[e.message]:undefined;
+    const structuredReasons:Record<string,string>={
+      'Structured facts required':'the required structured evidence facts are missing',
+      'Structured fact version mismatch':'the structured evidence format version is unsupported',
+      'Ambiguous structured facts':'structured evidence facts are duplicated or ambiguous',
+      'Structured fact does not match observation':'a structured fact differs from the collected observation',
+      'Structured fact citation mismatch':'a fact citation is missing its matching evidence ID',
+      'Structured reason lacks observation':'an explanation lacks a cited observation fact',
+      'Structured dimension lacks relevant fact':'a dimension lacks a relevant cited observation fact',
+    };
+    const reason=e instanceof Error?(validationReasons[e.message]??structuredReasons[e.message]):undefined;
     return {status:'failed',message:timeout?'Model request timed out. No score was generated.':phase==='validation'?`Model output failed validation${reason?`: ${reason}`:' (format, citations or consistency)'}. Its score was not accepted.`:phase==='response'?'The model response could not be parsed completely. No score.':'Model connection failed. No score; check connectivity and service status.'};
   }
 }

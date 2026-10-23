@@ -1,0 +1,1522 @@
+{
+  "schemaVersion": "walletshield-validation-summary-v1",
+  "date": "2026-10-23",
+  "timezone": "America/New_York",
+  "projectVersion": "0.4.1",
+  "runtime": "Node.js 24.19.0",
+  "claimBoundary": "Engineering verification of representative implemented paths and model-output validation. Not a detection-accuracy benchmark, independent security certification, or all-wallet acceptance.",
+  "automated": {
+    "unitAndRegression": {
+      "passed": 460,
+      "failed": 0
+    },
+    "walletLab": {
+      "passed": 66,
+      "transactions": 51,
+      "localNodeSignatures": 15,
+      "profiles": 25
+    },
+    "v3StateIntegration": {
+      "passedScenarios": 23
+    },
+    "extendedEvidence": {
+      "passedScenarios": 15
+    },
+    "offlineAI": {
+      "validAbstentionFixtures": 12,
+      "rejectedAdversarialMutations": 120,
+      "modelCalls": 0
+    },
+    "otherPassed": [
+      "production web/Snap build and typechecks",
+      "development private-file HTTP protection",
+      "local funding/spend/revoke chain integration",
+      "local V2/Permit/simulation security integration",
+      "selective test-asset cleanup"
+    ]
+  },
+  "muse": {
+    "model": "muse-wonder-1.0",
+    "plannedCases": 71,
+    "profiles": 30,
+    "initialProviderAttempts": 85,
+    "initialOutputRepairAttempts": 14,
+    "initial": {
+      "accepted": 64,
+      "numeric": 56,
+      "validAbstentions": 8,
+      "failedOrRejected": 7
+    },
+    "followupProviderAttempts": 7,
+    "totalProviderAttempts": 92,
+    "final": {
+      "accepted": 67,
+      "numeric": 59,
+      "validAbstentions": 8,
+      "failedOrRejected": 4
+    },
+    "method": "Collect production evidence on a disposable local node before each lab transaction/signature. Replay those observations through the production scan API and real Muse into a separate SQLite store. Preserve original observation times and blocks; later scans can flag stale evidence. Add five explicit backend-input profiles. No claim that 71 cases traversed MetaMask.",
+    "cases": [
+      {
+        "id": "approve-unlimited",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 82,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 19372
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 82,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "native",
+        "profile": "native",
+        "category": "native_transfer",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 14,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 27460
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 14,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "token-transfer",
+        "profile": "token-transfer",
+        "category": "token_transfer",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 24,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 13482
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 24,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "nft-all",
+        "profile": "operator",
+        "category": "operator_approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 74,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 16729
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 74,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "nft-transfer",
+        "profile": "nft-transfer",
+        "category": "erc721_transfer",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 38,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 20371
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 38,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "permit2-approve",
+        "profile": "permit2-chain",
+        "category": "permit2_approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 82,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 10386
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 82,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "swap-v3",
+        "profile": "swap-v3",
+        "category": "swap_v3",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 52,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 16838
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 52,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "swap-normal",
+        "profile": "swap-v2",
+        "category": "swap",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 35,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 2,
+          "elapsedMs": 26269
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 35,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "vault-deposit",
+        "profile": "vault",
+        "category": "vault",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 30,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 15788
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 30,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "lending-supply",
+        "profile": "lending",
+        "category": "lending",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 20191
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "stake",
+        "profile": "staking",
+        "category": "staking",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 38,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 16922
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 38,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "liquidity",
+        "profile": "liquidity",
+        "category": "liquidity",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 52,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 16750
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 52,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "bridge",
+        "profile": "bridge",
+        "category": "bridge",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 16525
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "claim",
+        "profile": "claim",
+        "category": "claim",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 34,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 14871
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 34,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "wrap",
+        "profile": "wrap",
+        "category": "wrap",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 24,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 16098
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 24,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "mint",
+        "profile": "mint-burn",
+        "category": "mint_burn",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 24,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 14451
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 24,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "ownership",
+        "profile": "control",
+        "category": "control_change",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 15354
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "account-call",
+        "profile": "batch",
+        "category": "account_execution",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 19807
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "deployment",
+        "profile": "deployment",
+        "category": "deployment",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 2,
+          "elapsedMs": 25328
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "unknown",
+        "profile": "unknown",
+        "category": "contract_call",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 17873
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "message",
+        "profile": "personal",
+        "category": "personal_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 12027
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "permit",
+        "profile": "permit-sign",
+        "category": "permit_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 35,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 18126
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 35,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "siwe",
+        "profile": "siwe",
+        "category": "siwe",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "failed",
+          "score": null,
+          "message": "Model request failed (HTTP 500).  Original evidence retained; no AI score.",
+          "providerAttempts": 2,
+          "elapsedMs": 32651
+        },
+        "followup": {
+          "status": "failed",
+          "score": null,
+          "message": "Model output failed validation: score and abstention are inconsistent. Its score was not accepted.",
+          "providerAttempts": 1,
+          "elapsedMs": 35761
+        },
+        "final": {
+          "status": "failed",
+          "score": null,
+          "message": "Model output failed validation: score and abstention are inconsistent. Its score was not accepted."
+        }
+      },
+      {
+        "id": "permit2",
+        "profile": "permit2-sign",
+        "category": "permit2_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 82,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 16724
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 82,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "order",
+        "profile": "typed-order",
+        "category": "order_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "failed",
+          "score": null,
+          "message": "Model request timed out. No score was generated.",
+          "providerAttempts": 2,
+          "elapsedMs": 37216
+        },
+        "followup": {
+          "status": "failed",
+          "score": null,
+          "message": "Model output failed validation: an unsupported identity, safety, future-outcome or dollar-loss assertion. Its score was not accepted.",
+          "providerAttempts": 1,
+          "elapsedMs": 31068
+        },
+        "final": {
+          "status": "failed",
+          "score": null,
+          "message": "Model output failed validation: an unsupported identity, safety, future-outcome or dollar-loss assertion. Its score was not accepted."
+        }
+      },
+      {
+        "id": "explicit-raw-sign",
+        "profile": "raw-sign",
+        "category": "raw_signature",
+        "entry": "explicit-backend-input",
+        "initial": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 2,
+          "elapsedMs": 29583
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "explicit-user-operation",
+        "profile": "user-operation",
+        "category": "user_operation",
+        "entry": "explicit-backend-input",
+        "initial": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 2,
+          "elapsedMs": 25047
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "explicit-permission",
+        "profile": "permission",
+        "category": "permission",
+        "entry": "explicit-backend-input",
+        "initial": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 2,
+          "elapsedMs": 33389
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "explicit-network",
+        "profile": "network",
+        "category": "network_config",
+        "entry": "explicit-backend-input",
+        "initial": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 18410
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "explicit-readonly",
+        "profile": "readonly",
+        "category": "read_only",
+        "entry": "explicit-backend-input",
+        "initial": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 13500
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": null,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "approve-revoke",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 12,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 17587
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 12,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "approve-limited",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 2,
+          "elapsedMs": 29215
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "native-contract",
+        "profile": "native",
+        "category": "native_transfer",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 30,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 14949
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 30,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "nft-approve",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 16193
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "nft-all-revoke",
+        "profile": "operator",
+        "category": "operator_approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 14,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 14905
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 14,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "nft-revoke",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 12,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 28177
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 12,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "multi-transfer",
+        "profile": "nft-transfer",
+        "category": "erc1155_transfer",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 20892
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "multi-all",
+        "profile": "operator",
+        "category": "operator_approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 76,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 25519
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 76,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "multi-batch",
+        "profile": "nft-transfer",
+        "category": "erc1155_batch",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 18802
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "approve-router",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 19321
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "approve-blocked",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 25004
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "swap-blocked",
+        "profile": "swap-v2",
+        "category": "swap",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 58,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 30232
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 58,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "sell-blocked",
+        "profile": "swap-v2",
+        "category": "swap",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 22295
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "approve-vault",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 35,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 2,
+          "elapsedMs": 40267
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 35,
+          "message": "Muse Wonder completed after one output repair. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "vault-redeem",
+        "profile": "vault",
+        "category": "vault",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 30,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 33140
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 30,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "lending-borrow",
+        "profile": "lending",
+        "category": "lending",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 38,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 30527
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 38,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "approve-lending",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "failed",
+          "score": null,
+          "message": "Model request timed out. No score was generated.",
+          "providerAttempts": 2,
+          "elapsedMs": 49320
+        },
+        "followup": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 43000
+        },
+        "final": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "approve-quote",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 19401
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "approve-actions",
+        "profile": "approval",
+        "category": "approval",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 30687
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "unstake",
+        "profile": "staking",
+        "category": "staking",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 22203
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "unwrap",
+        "profile": "wrap",
+        "category": "withdrawal",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "failed",
+          "score": null,
+          "message": "Model request timed out. No score was generated.",
+          "providerAttempts": 2,
+          "elapsedMs": 40537
+        },
+        "followup": {
+          "status": "completed",
+          "score": 34,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 24517
+        },
+        "final": {
+          "status": "completed",
+          "score": 34,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "burn",
+        "profile": "mint-burn",
+        "category": "mint_burn",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 20,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 20057
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 20,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "upgrade",
+        "profile": "control",
+        "category": "control_change",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 76,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 18151
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 76,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "account-module-enable",
+        "profile": "control",
+        "category": "account_control",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 17067
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "account-threshold",
+        "profile": "control",
+        "category": "account_control",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 49159
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "account-module-disable",
+        "profile": "control",
+        "category": "account_control",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 37742
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 42,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "account-guard-set",
+        "profile": "control",
+        "category": "account_control",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 33312
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "account-guard-remove",
+        "profile": "control",
+        "category": "account_control",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 72,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 26615
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 72,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "account-fallback-set",
+        "profile": "control",
+        "category": "account_control",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 34635
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 68,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "account-fallback-remove",
+        "profile": "control",
+        "category": "account_control",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 52,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 30498
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 52,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "batch",
+        "profile": "batch",
+        "category": "batch",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 38,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 27002
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 38,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "siwe-mismatch",
+        "profile": "siwe",
+        "category": "siwe",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "failed",
+          "score": null,
+          "message": "Model request timed out. No score was generated.",
+          "providerAttempts": 2,
+          "elapsedMs": 45576
+        },
+        "followup": {
+          "status": "failed",
+          "score": null,
+          "message": "Model output failed validation (format, citations or consistency). Its score was not accepted.",
+          "providerAttempts": 1,
+          "elapsedMs": 29484
+        },
+        "final": {
+          "status": "failed",
+          "score": null,
+          "message": "Model output failed validation (format, citations or consistency). Its score was not accepted."
+        }
+      },
+      {
+        "id": "permit-unlimited",
+        "profile": "permit-sign",
+        "category": "permit_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 78,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 33446
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 78,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "permit-expired",
+        "profile": "permit-sign",
+        "category": "permit_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 38159
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "permit-owner",
+        "profile": "permit-sign",
+        "category": "permit_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "failed",
+          "score": null,
+          "message": "Model request timed out. No score was generated.",
+          "providerAttempts": 2,
+          "elapsedMs": 50008
+        },
+        "followup": {
+          "status": "failed",
+          "score": null,
+          "message": "Model output failed validation: identity-high lacks relevant adverse observations. Its score was not accepted.",
+          "providerAttempts": 1,
+          "elapsedMs": 30214
+        },
+        "final": {
+          "status": "failed",
+          "score": null,
+          "message": "Model output failed validation: identity-high lacks relevant adverse observations. Its score was not accepted."
+        }
+      },
+      {
+        "id": "permit-nonce",
+        "profile": "permit-sign",
+        "category": "permit_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 27081
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 32,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "dai-revoke",
+        "profile": "permit-sign",
+        "category": "dai_permit_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 14,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 27388
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 14,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "dai-allow",
+        "profile": "permit-sign",
+        "category": "dai_permit_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 82,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 46930
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 82,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "erc3009-receive",
+        "profile": "permit-sign",
+        "category": "transfer_authorization",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 34,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 40865
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 34,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "erc3009-transfer",
+        "profile": "permit-sign",
+        "category": "transfer_authorization",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "failed",
+          "score": null,
+          "message": "Model request timed out. No score was generated.",
+          "providerAttempts": 2,
+          "elapsedMs": 50010
+        },
+        "followup": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 24957
+        },
+        "final": {
+          "status": "completed",
+          "score": 28,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      },
+      {
+        "id": "permit2-batch",
+        "profile": "permit2-sign",
+        "category": "permit2_signature",
+        "entry": "local-node-lab",
+        "initial": {
+          "status": "completed",
+          "score": 74,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability.",
+          "providerAttempts": 1,
+          "elapsedMs": 32381
+        },
+        "followup": null,
+        "final": {
+          "status": "completed",
+          "score": 74,
+          "message": "Muse Wonder analysis completed. The score is an uncalibrated indicator, not loss probability."
+        }
+      }
+    ]
+  },
+  "realMetaMask": {
+    "network": "WalletShield Local",
+    "chainId": 31337,
+    "pairedSnapReloaded": true,
+    "additionalProviderAttempts": 2,
+    "cases": [
+      {
+        "id": "approve-limited",
+        "captureChannel": "paired-snap",
+        "aiStatus": "completed",
+        "score": 28,
+        "walletOutcome": "canceled",
+        "reportPersisted": true
+      },
+      {
+        "id": "message",
+        "captureChannel": "paired-snap",
+        "aiStatus": "completed",
+        "score": null,
+        "abstained": true,
+        "walletOutcome": "canceled",
+        "reportPersisted": true
+      }
+    ],
+    "claimBoundary": "Two actual Chrome MetaMask Flask confirmation windows only. Other lab cases were local-node execution/signature and collector tests."
+  },
+  "publicRPC": [
+    {
+      "chainId": 1,
+      "status": "observed",
+      "checkedAt": "2026-10-23T17:42:02.998Z",
+      "blockNumber": "26256888",
+      "capabilities": {
+        "pinnedCall": "observed",
+        "historicalState": "observed",
+        "historicalBlock": "26256760",
+        "callTrace": "unavailable",
+        "scope": "Fixed zero-value probes only. Historical balance at one height does not establish full archive retention; one trace does not prove complete asset coverage. Unavailable may mean unsupported, disabled, rate-limited or timed out."
+      }
+    },
+    {
+      "chainId": 11155111,
+      "status": "observed",
+      "checkedAt": "2026-10-23T17:42:03.214Z",
+      "blockNumber": "11978228",
+      "capabilities": {
+        "pinnedCall": "observed",
+        "historicalState": "observed",
+        "historicalBlock": "11978100",
+        "callTrace": "unavailable",
+        "scope": "Fixed zero-value probes only. Historical balance at one height does not establish full archive retention; one trace does not prove complete asset coverage. Unavailable may mean unsupported, disabled, rate-limited or timed out."
+      }
+    }
+  ],
+  "dependencies": {
+    "productionAdvisories": 0,
+    "developmentTreeLowSeverityEntries": 16,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "upstreamRoot": "elliptic via MetaMask Snaps CLI",
+    "compatibleFixAvailable": false
+  },
+  "fixes": [
+    "Keep the transaction-insight deadline active through response body parsing.",
+    "Explain structured fact/citation validation rejection without accepting or fabricating a score.",
+    "Add canonical Snap repository metadata and rebuild its manifest checksum."
+  ],
+  "privacy": "No API keys, secret RPC URLs, raw model responses, wallet database, generated signatures or presentation files are included in this summary."
+}

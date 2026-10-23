@@ -1,6 +1,6 @@
 {
   "kind": "isolated-anvil-getter-fixtures",
-  "generatedAt": "2026-10-22T23:11:50.520Z",
+  "generatedAt": "2026-10-23T17:36:05.766Z",
   "passed": 15,
   "scope": "Actual temporary-node HTTP reads and deliberately seeded fixture writes; not MetaMask/Snap UI acceptance or public protocol authentication",
   "noRealNetwork": true,
@@ -47,8 +47,8 @@
             "invalidList": false,
             "chainId": 31337,
             "blockNumber": "6",
-            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x859b0aa884a29fafc1cdbe61f4d34fd2447f98b1618c9dcfb088161f22832309",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -65,8 +65,8 @@
             "withinObservedOwnerCount": true,
             "chainId": 31337,
             "blockNumber": "6",
-            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x859b0aa884a29fafc1cdbe61f4d34fd2447f98b1618c9dcfb088161f22832309",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -82,8 +82,8 @@
             "codeHash": "0xa65c2d88afd82ff878cc80c7b94e2f4767b143c05d4557dd823ca3128426bb77",
             "chainId": 31337,
             "blockNumber": "6",
-            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x859b0aa884a29fafc1cdbe61f4d34fd2447f98b1618c9dcfb088161f22832309",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -99,8 +99,8 @@
             "enabled": false,
             "chainId": 31337,
             "blockNumber": "6",
-            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x859b0aa884a29fafc1cdbe61f4d34fd2447f98b1618c9dcfb088161f22832309",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -116,8 +116,8 @@
             "hasCode": false,
             "chainId": 31337,
             "blockNumber": "6",
-            "blockHash": "0xd750600e44182b802ae4d6c64d8e9ca92a711c1bb3d6ed29f7d020b939a02c94",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x859b0aa884a29fafc1cdbe61f4d34fd2447f98b1618c9dcfb088161f22832309",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         }
@@ -160,8 +160,8 @@
             "invalidList": false,
             "chainId": 31337,
             "blockNumber": "7",
-            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xb7abad7bd16091288af5e40111cb48bff5ce43911e4ecaaad9097469adf76f3b",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -178,8 +178,8 @@
             "withinObservedOwnerCount": true,
             "chainId": 31337,
             "blockNumber": "7",
-            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xb7abad7bd16091288af5e40111cb48bff5ce43911e4ecaaad9097469adf76f3b",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -195,8 +195,8 @@
             "codeHash": "0xa65c2d88afd82ff878cc80c7b94e2f4767b143c05d4557dd823ca3128426bb77",
             "chainId": 31337,
             "blockNumber": "7",
-            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xb7abad7bd16091288af5e40111cb48bff5ce43911e4ecaaad9097469adf76f3b",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -212,8 +212,8 @@
             "enabled": true,
             "chainId": 31337,
             "blockNumber": "7",
-            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xb7abad7bd16091288af5e40111cb48bff5ce43911e4ecaaad9097469adf76f3b",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -229,8 +229,8 @@
             "hasCode": false,
             "chainId": 31337,
             "blockNumber": "7",
-            "blockHash": "0x35d4927f69720679a95105fa5a9be7c8fa53d30569b5d69b2fe1903c5be4e7f7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xb7abad7bd16091288af5e40111cb48bff5ce43911e4ecaaad9097469adf76f3b",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         }
@@ -273,8 +273,8 @@
             "invalidList": false,
             "chainId": 31337,
             "blockNumber": "8",
-            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -288,8 +288,8 @@
             "account": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
             "chainId": 31337,
             "blockNumber": "8",
-            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
-            "blockTimestampSeconds": "1792710710"
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965"
           }
         },
         {
@@ -304,8 +304,8 @@
             "codeHash": "0xa65c2d88afd82ff878cc80c7b94e2f4767b143c05d4557dd823ca3128426bb77",
             "chainId": 31337,
             "blockNumber": "8",
-            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -321,8 +321,8 @@
             "enabled": true,
             "chainId": 31337,
             "blockNumber": "8",
-            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         },
@@ -338,8 +338,8 @@
             "hasCode": false,
             "chainId": 31337,
             "blockNumber": "8",
-            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965",
             "identityVerified": false
           }
         }
@@ -354,13 +354,13 @@
           "id": "position_context",
           "status": "pass",
           "title": "Position ownership and liquidity interfaces observed",
-          "detail": "All successful reads refer to the recorded block. Interfaces can be imitated. Liquidity, NFT IDs and owed raw token quantities are different units; owed values are not a price or a guarantee of proceeds. Pool, tick/price validity, signature acceptance, taxes and full exit economics remain unverified.",
+          "detail": "All successful reads refer to the recorded block. Interfaces can be imitated. Liquidity, NFT IDs and owed raw token quantities are different units; owed values are not a price or a guarantee of proceeds. Separate pool observations do not authenticate identity or a fair market price; signature acceptance, taxes and full exit economics remain unverified.",
           "source": "rpc",
           "data": {
             "chainId": 31337,
             "blockNumber": "8",
-            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965",
             "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
             "identityVerified": false,
             "action": "decreaseLiquidity",
@@ -394,8 +394,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "8",
-            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965",
             "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
             "identityVerified": false,
             "action": "decreaseLiquidity",
@@ -413,8 +413,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "8",
-            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965",
             "token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
             "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "identityVerified": false,
@@ -431,13 +431,33 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "8",
-            "blockHash": "0x507582839cfaf0f59a0a2200c1bce92791cb365c10779c2e04ce00a6dea03699",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965",
             "token": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
             "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "identityVerified": false,
             "decimals": "6",
             "balanceRaw": "9876543"
+          }
+        },
+        {
+          "id": "position_pool",
+          "status": "unknown",
+          "title": "Position pool interfaces unavailable",
+          "detail": "Manager factory, pool lookup or pool interfaces could not be read. Existing position/asset observations are retained; no zero tick, price or liquidity was substituted.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "8",
+            "blockHash": "0x79e1ff299857999119157313818fe83d71764bb3f0e35cf36a23b7f7f4d45e66",
+            "blockTimestampSeconds": "1792776965",
+            "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+            "token0": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            "token1": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            "fee": "3000",
+            "identityVerified": false,
+            "priceQuoteEstablished": false,
+            "missing": []
           }
         }
       ]
@@ -451,13 +471,13 @@
           "id": "position_context",
           "status": "unknown",
           "title": "Position ownership and liquidity interfaces observed",
-          "detail": "All successful reads refer to the recorded block. Interfaces can be imitated. Liquidity, NFT IDs and owed raw token quantities are different units; owed values are not a price or a guarantee of proceeds. Pool, tick/price validity, signature acceptance, taxes and full exit economics remain unverified.",
+          "detail": "All successful reads refer to the recorded block. Interfaces can be imitated. Liquidity, NFT IDs and owed raw token quantities are different units; owed values are not a price or a guarantee of proceeds. Separate pool observations do not authenticate identity or a fair market price; signature acceptance, taxes and full exit economics remain unverified.",
           "source": "rpc",
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
             "identityVerified": false,
             "action": "decreaseLiquidity",
@@ -492,32 +512,14 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
             "identityVerified": false,
             "action": "decreaseLiquidity",
             "tokenId": "7",
             "requested": "11",
             "observed": "10"
-          }
-        },
-        {
-          "id": "position_asset_1",
-          "status": "pass",
-          "title": "Position asset units and caller balance observed",
-          "detail": "These quantities belong to this exact asset and account. No price, pool authentication or guaranteed collection is inferred.",
-          "source": "rpc",
-          "data": {
-            "chainId": 31337,
-            "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
-            "token": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-            "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
-            "identityVerified": false,
-            "decimals": "6",
-            "balanceRaw": "9876543"
           }
         },
         {
@@ -529,13 +531,51 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
             "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "identityVerified": false,
             "decimals": "6",
             "balanceRaw": "1234567"
+          }
+        },
+        {
+          "id": "position_asset_1",
+          "status": "pass",
+          "title": "Position asset units and caller balance observed",
+          "detail": "These quantities belong to this exact asset and account. No price, pool authentication or guaranteed collection is inferred.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
+            "token": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "identityVerified": false,
+            "decimals": "6",
+            "balanceRaw": "9876543"
+          }
+        },
+        {
+          "id": "position_pool",
+          "status": "unknown",
+          "title": "Position pool interfaces unavailable",
+          "detail": "Manager factory, pool lookup or pool interfaces could not be read. Existing position/asset observations are retained; no zero tick, price or liquidity was substituted.",
+          "source": "rpc",
+          "data": {
+            "chainId": 31337,
+            "blockNumber": "9",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
+            "manager": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+            "token0": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            "token1": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            "fee": "3000",
+            "identityVerified": false,
+            "priceQuoteEstablished": false,
+            "missing": []
           }
         }
       ]
@@ -602,8 +642,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "accountKind": "no_code",
             "hasCode": false,
@@ -620,8 +660,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "hasCode": true,
             "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
@@ -637,8 +677,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
@@ -667,8 +707,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "deadline": "0",
             "expiryZeroHasNoSubmissionDeadline": true,
             "implementationVerified": false,
@@ -684,8 +724,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "nonceScope": "holder",
@@ -757,8 +797,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "accountKind": "no_code",
             "hasCode": false,
@@ -775,8 +815,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "hasCode": true,
             "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
@@ -792,8 +832,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
@@ -822,10 +862,10 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "validAfter": "0",
-            "validBefore": "1792714310",
+            "validBefore": "1792780565",
             "invalidWindow": false,
             "notYetValidAtObservedBlock": false,
             "expiredAtObservedBlock": false,
@@ -842,8 +882,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "9",
-            "blockHash": "0xd2038a9593a6f5bb9095fe5f5a217928dd472720c6efc699013f0dc993d728b7",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x19735f2081bb7c8c99a79b008b928a6adb89762048adb211fe3e970e2d28f90b",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "nonce": "0xabababababababababababababababababababababababababababababababab",
@@ -917,8 +957,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "accountKind": "no_code",
             "hasCode": false,
@@ -935,8 +975,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "hasCode": true,
             "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
@@ -952,8 +992,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
@@ -982,10 +1022,10 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "validAfter": "0",
-            "validBefore": "1792714310",
+            "validBefore": "1792780565",
             "invalidWindow": false,
             "notYetValidAtObservedBlock": false,
             "expiredAtObservedBlock": false,
@@ -1002,8 +1042,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "nonce": "0xabababababababababababababababababababababababababababababababab",
@@ -1077,8 +1117,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "accountKind": "no_code",
             "hasCode": false,
@@ -1095,8 +1135,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "hasCode": true,
             "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
@@ -1112,8 +1152,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
@@ -1142,10 +1182,10 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
-            "validAfter": "1792710710",
-            "validBefore": "1792714310",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
+            "validAfter": "1792776965",
+            "validBefore": "1792780565",
             "invalidWindow": false,
             "notYetValidAtObservedBlock": true,
             "expiredAtObservedBlock": false,
@@ -1162,8 +1202,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "nonce": "0xabababababababababababababababababababababababababababababababab",
@@ -1237,8 +1277,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "accountKind": "no_code",
             "hasCode": false,
@@ -1255,8 +1295,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "hasCode": true,
             "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
@@ -1272,8 +1312,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
@@ -1302,10 +1342,10 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "validAfter": "0",
-            "validBefore": "1792710710",
+            "validBefore": "1792776965",
             "invalidWindow": false,
             "notYetValidAtObservedBlock": false,
             "expiredAtObservedBlock": true,
@@ -1322,8 +1362,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "10",
-            "blockHash": "0x0bf2823306a5e0ad9c64c7d4bb1a501512f9c4844a0a98c53843e2dad6e50850",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xadf6f308d8beb032bab9bb7679a8f51610e7798e6570d5c186b25eda5a070ed2",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "nonce": "0xabababababababababababababababababababababababababababababababab",
@@ -1397,8 +1437,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "11",
-            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xee4631cb5e72a5713b8dffb09da7eea7a8540d780406132bee5def83bbdcf891",
+            "blockTimestampSeconds": "1792776965",
             "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "accountKind": "no_code",
             "hasCode": false,
@@ -1415,8 +1455,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "11",
-            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xee4631cb5e72a5713b8dffb09da7eea7a8540d780406132bee5def83bbdcf891",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "hasCode": true,
             "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
@@ -1432,8 +1472,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "11",
-            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xee4631cb5e72a5713b8dffb09da7eea7a8540d780406132bee5def83bbdcf891",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
           }
         },
@@ -1460,8 +1500,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "11",
-            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xee4631cb5e72a5713b8dffb09da7eea7a8540d780406132bee5def83bbdcf891",
+            "blockTimestampSeconds": "1792776965",
             "deadline": "0",
             "expiryZeroHasNoSubmissionDeadline": true,
             "implementationVerified": false,
@@ -1477,8 +1517,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "11",
-            "blockHash": "0xf6f8506e96f99aaf4fa51e1f3f74e305ec5e7a6862decd0647f7ff0929309db0",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0xee4631cb5e72a5713b8dffb09da7eea7a8540d780406132bee5def83bbdcf891",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "nonceScope": "holder",
@@ -1550,8 +1590,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "12",
-            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x45dbaaa5248e748d80c7cc96789c26deca2d2f58006d8b6ef659ada35dce6cd6",
+            "blockTimestampSeconds": "1792776965",
             "signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "accountKind": "no_code",
             "hasCode": false,
@@ -1568,8 +1608,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "12",
-            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x45dbaaa5248e748d80c7cc96789c26deca2d2f58006d8b6ef659ada35dce6cd6",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "hasCode": true,
             "codeHash": "0x6e4ef131697bff0c56e16d6f63bde4e095d437258eac6f93847aebe109852282",
@@ -1585,8 +1625,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "12",
-            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x45dbaaa5248e748d80c7cc96789c26deca2d2f58006d8b6ef659ada35dce6cd6",
+            "blockTimestampSeconds": "1792776965",
             "expected": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "observed": "0x746cfa87eb86ba0fd07e36c26f819f521f22b2057140b6c6cf8a1caa2d71288e",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
@@ -1615,10 +1655,10 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "12",
-            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x45dbaaa5248e748d80c7cc96789c26deca2d2f58006d8b6ef659ada35dce6cd6",
+            "blockTimestampSeconds": "1792776965",
             "validAfter": "0",
-            "validBefore": "1792714310",
+            "validBefore": "1792780565",
             "invalidWindow": false,
             "notYetValidAtObservedBlock": false,
             "expiredAtObservedBlock": false,
@@ -1635,8 +1675,8 @@
           "data": {
             "chainId": 31337,
             "blockNumber": "12",
-            "blockHash": "0xcae28784f95b00bb32d7c7d39c573b8738d57f6b85534aa3cdc87f0b103168e3",
-            "blockTimestampSeconds": "1792710710",
+            "blockHash": "0x45dbaaa5248e748d80c7cc96789c26deca2d2f58006d8b6ef659ada35dce6cd6",
+            "blockTimestampSeconds": "1792776965",
             "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
             "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "nonce": "0xabababababababababababababababababababababababababababababababab",

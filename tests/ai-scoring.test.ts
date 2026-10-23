@@ -1,4 +1,4 @@
-import {finitePermitOutput,finitePermitReport,modelDimensions,structuredFixtureFetcher} from './fixtures/model.js';
+import {finitePermitOutput,finitePermitReport,modelDimensions,structuredFixtureFetcher,structuredModelOutput} from './fixtures/model.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { assess } from '../src/security/rules.js';
@@ -15,6 +15,20 @@ const headers={origin:'http://127.0.0.1:5173'};
 function output(score:number|null){return {...modelDimensions(),score,assessment:score===null?'unknown':'review',summary:'The model judges this evidence without preset score bands.',reasons:[{text:'The permission scope needs verification; evidence remains incomplete.',evidence_ids:['permission_scope']}],missing_data:[],suggested_action:'Verify the permission scope and purpose.',honeypot:'unknown'};}
 const modelResponse=(value:unknown,usage?:{input_tokens:number;output_tokens:number})=>new Response(JSON.stringify({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(value)}]}],usage}));
 const unsupportedOutput=()=>({...finitePermitOutput(42),dimensions:finitePermitOutput(42).dimensions.map(d=>({...d,assessment:'unknown'}))});
+
+test('rejected structured model facts explain the failure without exposing or accepting a score',async()=>{
+ const report=finitePermitReport();
+ const fixtures=[
+  {mutate:(value:any)=>{value.facts[0].value='invented-value';},message:/fact differs from the collected observation/},
+  {mutate:(value:any)=>{value.dimensions[0].fact_ids=[];},message:/dimension lacks a relevant cited observation fact/},
+  {mutate:(value:any)=>{value.reasons[0].fact_ids=[];},message:/explanation lacks a cited observation fact/},
+ ];
+ for(const fixture of fixtures){
+  const value=structuredModelOutput(finitePermitOutput(42),report);fixture.mutate(value);
+  const state=await actualScoreWithAI(report,config,async()=>modelResponse(value));
+  assert.equal(state.status,'failed');assert.equal(state.result,undefined);assert.match(state.message,fixture.message);
+ }
+});
 
 test('all rule paths retain qualitative facts but produce no preset number or numeric floor',()=>{
   for(const sample of securityExamples){

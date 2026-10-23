@@ -58,20 +58,22 @@ export const onTransaction: OnTransactionHandler = async ({ transaction, chainId
   try {
     const numericChain = Number(chainId.split(':')[1]);
     if (!chainId.startsWith('eip155:') || !Number.isSafeInteger(numericChain) || numericChain <= 0) throw new Error('UNSUPPORTED_CHAIN');
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 85000);
-    let response: Response;
     const feeFields:Record<string,string>={};
     for(const key of ['gas','gasPrice','maxFeePerGas','maxPriorityFeePerGas','nonce']){const value=(transaction as unknown as Record<string,unknown>)[key];if(typeof value==='string'&&/^0x[\da-f]{1,64}$/i.test(value))feeFields[key]=value;}
     const raw=transaction as unknown as Record<string,unknown>;const unsupportedFields=unsupportedTransactionFields(raw);
     const authorizationList=normalizeAuthorizationList(raw.authorizationList);
     const type=typeof raw.type==='number'&&Number.isSafeInteger(raw.type)&&raw.type>=0?`0x${raw.type.toString(16)}`:typeof raw.type==='string'&&/^0x[\da-f]{1,64}$/i.test(raw.type)?raw.type:undefined;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 85000);
+    let result: unknown;
     try {
-      response = await fetch(API, { method: 'POST', headers: (await backendConnection(numericChain,true)).headers, signal: controller.signal,
+      const response = await fetch(API, { method: 'POST', headers: (await backendConnection(numericChain,true)).headers, signal: controller.signal,
         body: JSON.stringify({ kind: 'transaction', chainId: numericChain, transaction: { from: transaction.from, to: transaction.to ?? null, data: transaction.data ?? '0x', value: transaction.value ?? '0x0',...feeFields,...(type?{type}:{}),...(authorizationList?{authorizationList}:{}),...(unsupportedFields.length?{unsupportedFields}:{}) }, ...(transactionOrigin ? { origin: transactionOrigin } : {}) }) });
+      if (!response.ok) throw new Error('API_FAILED');
+      // Keep the deadline active until the body has arrived, not only headers.
+      // A backend can return headers and then stall while sending its report.
+      result = await response.json();
     } finally { clearTimeout(timer); }
-    if (!response.ok) throw new Error('API_FAILED');
-    const result: unknown = await response.json();
     if (!validResult(result)) throw new Error('INVALID_RESPONSE');
     const operation=typeof result.operation==='object'?result.operation:undefined;
     const coverage=coverageForCategory(operation?.category),missing=missingLines(result);

@@ -4,5 +4,10 @@
   "private": true,
   "description": "EVM transaction and signature evidence with isolated simulation and optional AI",
   "main": "dist/bundle.js",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Missuo0o/walletshield.git",
+    "directory": "snap"
+  }
 }

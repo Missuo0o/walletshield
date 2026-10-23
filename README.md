@@ -2,7 +2,7 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [中文使用手册](docs/USER-MANUAL-zh.md) · [中文取数与能力边界](docs/AI-COVERAGE-GUIDE-zh.md)
 
-The latest project-wide checks, fixes, model observations and remaining acceptance limits are recorded in [Full validation — 2026-10-22](docs/FULL-VALIDATION-2026-10-22.md). Older acceptance files are historical records, not the latest validation result.
+The latest project-wide checks, fixes, real Muse and MetaMask observations, and remaining acceptance limits are recorded in [Full validation — 2026-10-23](docs/FULL-VALIDATION-2026-10-23.md). This run includes 460 passing unit/regression tests, 66 local-node lab cases, 71 live-model case runs with bounded follow-ups, and two actual Snap confirmation windows. These are different verification layers, not a detection-accuracy claim. Older acceptance files remain historical records.
 
 WalletShield is an EVM wallet security prototype with a local wallet lab and an optional authenticated hosted mode. A paired MetaMask Snap sends an unsigned transaction or message request to the configured backend. By default, that backend runs on your computer. The backend decodes the request, selects evidence collectors, reads the configured network, optionally simulates the transaction in an isolated Anvil fork, and asks **Meta Muse Wonder `muse-wonder-1.0`** to assess the collected evidence. The webpage and Snap show the result before you decide whether to confirm or cancel in the wallet.
 

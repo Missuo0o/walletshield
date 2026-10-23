@@ -2,8 +2,13 @@
   "version": "0.4.1",
   "description": "WalletShield development Snap: EVM transaction and message evidence with optional AI risk analysis.",
   "proposedName": "WalletShield Local",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Missuo0o/walletshield.git",
+    "directory": "snap"
+  },
   "source": {
-    "shasum": "y+XWN/z4XGQyxGzl6MnB+q4Z3pkVGDs93hE4fVMD1ng=",
+    "shasum": "7Tw8Dyxih3S8SY9JF5O1vFJFqKip/eQ831LYq3rl+Ow=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",

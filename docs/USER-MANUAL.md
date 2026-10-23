@@ -2,7 +2,9 @@
 
 [English](USER-MANUAL.md) · [简体中文](USER-MANUAL-zh.md)
 
-The latest project-wide checks, fixes, model observations and remaining acceptance limits are recorded in [Full validation — 2026-10-22](FULL-VALIDATION-2026-10-22.md). Older acceptance files are historical records, not the latest validation result.
+The latest project-wide checks, fixes, real model and wallet observations, and remaining acceptance limits are recorded in [Full validation — 2026-10-23](FULL-VALIDATION-2026-10-23.md). Older acceptance files are historical records, not the latest validation result.
+
+After updating, use **Reload and pair Snap** so MetaMask runs the rebuilt code. A completed Muse analysis can return no number when its evidence does not support one. A rejected output keeps no accepted score; its message identifies supported validation failures. The combined warning can remain **Unable to assess** despite a numeric model indicator when important checks are unfinished. The number and overall completeness are separate observations. The transaction transport deadline includes response-body parsing, so stalled bodies return an error rather than waiting indefinitely.
 
 This manual explains the current English interface and the implemented local and hosted workflows. WalletShield gives advice about an unsigned EVM request before you decide in your wallet. It cannot guarantee safety, force rejection, sign for you, recover assets or continuously monitor a signed request.
 

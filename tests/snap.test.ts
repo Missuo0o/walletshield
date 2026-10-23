@@ -8,6 +8,23 @@ async function invoke(chainId = 'eip155:31337') {
   assert.ok(result && 'content' in result);
   return result;
 }
+
+test('transaction insight deadline includes a stalled response body after headers arrive',async()=>{
+ const originalFetch=globalThis.fetch,originalTimer=globalThis.setTimeout,oldSnap=(globalThis as any).snap;
+ let signal:AbortSignal|undefined;
+ (globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
+ globalThis.setTimeout=((callback:any,delay?:number,...args:any[])=>originalTimer(callback,delay===85000?20:delay,...args)) as typeof setTimeout;
+ globalThis.fetch=async(_url,init)=>{
+  signal=init!.signal as AbortSignal;
+  return {ok:true,json:()=>new Promise((_resolve,reject)=>{
+   const fallback=originalTimer(()=>reject(Error('Test body remained open after its deadline')),200);
+   const aborted=()=>{clearTimeout(fallback);reject(new DOMException('Body aborted','AbortError'));};
+   if(signal!.aborted)aborted();else signal!.addEventListener('abort',aborted,{once:true});
+  })} as Response;
+ };
+ try{const result=await invoke();assert.equal(signal?.aborted,true,'Headers must not disarm the body deadline');assert.ok(JSON.stringify(result).includes('Unable to assess'));}
+ finally{globalThis.fetch=originalFetch;globalThis.setTimeout=originalTimer;(globalThis as any).snap=oldSnap;}
+});
 test('Snap surfaces RPC findings and fails visibly for network, API, and untrusted response errors', async () => {
   const original = globalThis.fetch;
   const oldSnap=(globalThis as any).snap;(globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
