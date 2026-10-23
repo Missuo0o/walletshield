@@ -100,7 +100,7 @@ test('stale, future and invalid timestamps remain critical on actual observed ch
 
 test('conflicting hashes at one chain and height remain critical; fork execution is a distinct state space',()=>{
  const value=report();
- for(const [id,hash,source] of [['observed_a','a','rpc'],['observed_b','b','rpc']] as const)value.checks.push({...evidence(id,'pass',id,'Synthetic pinned observation',source,{chainId:1,blockNumber:'100',blockHash:'0x'+hash.repeat(64)}),observedAt:new Date(at).toISOString()});
+ for(const [id,hash,source] of [['observed_a','a','rpc'],['observed_b','b','rpc']] as const)value.checks.push({...evidence(id,'pass',id,'Synthetic pinned observation',source,{chainId:1,blockNumber:'100',blockHash:'0x'+hash.repeat(64),blockTimestampSeconds:String(at/1000)}),observedAt:new Date(at).toISOString()});
  assert.ok(assessmentScope(value).criticalMissingData.includes('Conflicting block hashes: chain 1, block 100'));
  critical(value);
  value.checks.find(c=>c.id==='observed_b')!.source='isolated-fork';

@@ -80,12 +80,12 @@ test('hosted local-chain scans are rejected; manual RPC summaries are authentica
  }finally{await f.close();}
 });
 
-test('hosted revocation makes Snap health and later scans fail, without affecting the web session',async()=>{
+test('hosted wallet-wide revocation makes Snap health, later scans and the existing web session fail',async()=>{
  const f=await fixture();try{
   const identity=await signup(f);const revoked=await f.app.inject({method:'POST',url:'/api/wallet-auth/revoke',headers:webHeaders(identity.web.token),payload:{}});assert.equal(revoked.statusCode,200);
   assert.equal((await f.app.inject({url:'/api/security/pair/status',headers:snapHeaders(identity.snap.token)})).statusCode,401);
   assert.equal((await f.app.inject({method:'POST',url:'/api/security/scan',headers:snapHeaders(identity.snap.token),payload:request()})).statusCode,401);
-  assert.equal((await f.app.inject({url:'/api/wallet-auth/status',headers:webHeaders(identity.web.token)})).statusCode,200);assert.equal(f.counts().scoreCalls,0);
+  assert.equal((await f.app.inject({url:'/api/wallet-auth/status',headers:webHeaders(identity.web.token)})).statusCode,401);assert.equal(f.counts().scoreCalls,0);
  }finally{await f.close();}
 });
 

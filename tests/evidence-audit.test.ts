@@ -87,7 +87,7 @@ test('identity high requires relevant observed identity evidence rather than an 
  const withIdentity=(id:string)=>({...modelDimensions(),score:23,assessment:'review',summary:'Evidence-bound test',reasons:[{text:'scope',evidence_ids:['permission_scope']}],missing_data:[],suggested_action:'verify',honeypot:'unknown',dimensions:modelDimensions().dimensions.map(d=>d.dimension==='identity'?{...d,assessment:'high',evidence_ids:[id]}:d)});
  assert.throws(()=>validateAI(withIdentity('permission_scope'),report,'test'),/Identity risk/);
  const id='address_0x3333333333333333333333333333333333333333';
- report.checks.push(evidence(id,'risk','地址不利情报','数据源命中','goplus',{flags:{phishing_activities:'1'}}));
+ report.checks.push(evidence(id,'risk','地址不利情报','数据源命中','goplus',{address:'0x3333333333333333333333333333333333333333',chainId:report.request.chainId,flags:{phishing_activities:'1'}}));
  assert.equal(validateAI(withIdentity(id),report,'test').score,23);
  const negativeToken=assess(example('approve'),[evidence('token_security','warning','代币情报','未命中','goplus',{is_honeypot:'0'})]);
  assert.throws(()=>validateAI(withIdentity('token_security'),negativeToken,'test'),/Identity risk/);
@@ -107,7 +107,7 @@ test('each assessed dimension needs an observation even when another dimension s
 });
 test('honeypot conclusions require selling-specific evidence and cannot ignore a contradictory restriction',()=>{
  const valid={...modelDimensions(),score:23,assessment:'review',summary:'Evidence-bound test',reasons:[{text:'scope',evidence_ids:['permission_scope']}],missing_data:[],suggested_action:'verify',honeypot:'unknown'};
- const report=(data:Record<string,string>)=>assess(example('approve'),[evidence('token_security','risk','代币情报','observed','goplus',data)]);
+ const report=(data:Record<string,string>)=>{const request=example('approve');return assess(request,[evidence('token_security','risk','代币情报','observed','goplus',{token:decodeRequest(request).token,chainId:request.chainId,cannot_sell_all:'0',missing:[],...data})]);};
  const controls=report({is_honeypot:'0',owner_change_balance:'1'});
  assert.throws(()=>validateAI({...valid,honeypot:'risk_indicator'},controls,'test'),/Unsupported honeypot/);
  assert.equal(validateAI({...valid,honeypot:'no_known_indicator'},controls,'test').honeypot,'no_known_indicator');

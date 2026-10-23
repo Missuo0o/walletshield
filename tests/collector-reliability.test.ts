@@ -141,7 +141,7 @@ test('missing receipt price retains raw balances but cannot fabricate a zero fee
 });
 
 test('address intelligence failure and missing flags do not erase other targets or claim known freshness',async()=>{
- const request=native(),fourth='0x4444444444444444444444444444444444444444',op={...decodeRequest(request),targets:[owner,target,delegate,fourth]},local=fixture();
+ const request=native(),extra=Array.from({length:6},(_,i)=>`0x${String(i+4).repeat(40)}`),ninth=extra.at(-1)!,op={...decodeRequest(request),targets:[owner,target,delegate,...extra]},local=fixture();
  const seen:string[]=[];
  const fetcher:typeof fetch=async(input,init)=>{
   const parsed=new URL(String(input));if(parsed.origin===new URL(url).origin)return local.fetcher(input,init);
@@ -155,7 +155,7 @@ test('address intelligence failure and missing flags do not erase other targets 
  const checks=await usingFetch(fetcher,()=>collector({...config,lookups:true},fetcher)(request,op));
  assert.equal(checks.find(e=>e.id===`address_${owner}`)?.status,'unknown');assert.equal(checks.find(e=>e.id===`address_${target}`)?.status,'unknown');assert.equal(checks.find(e=>e.id===`address_${delegate}`)?.status,'risk');
  const observed=checks.find(e=>e.id===`address_${owner}`)!;assert.equal(observed.data?.providerAsOf,null);assert.equal(observed.data?.freshnessVerified,false);assert.equal(observed.data?.chainId,31337);assert.equal(observed.data?.blockNumber,undefined);assert.ok((observed.data?.missing as string[]).includes('stealing_attack'));
- assert.ok(checks.some(e=>e.id==='address_reputation'&&e.title==='Address intelligence queries truncated'));assert.ok(!seen.some(path=>path.includes(fourth)));
+ assert.ok(checks.some(e=>e.id==='address_intelligence_limit'&&e.title==='Address intelligence queries truncated'));assert.ok(seen.some(path=>path.includes(extra[0])));assert.ok(!seen.some(path=>path.includes(ninth)));assert.equal(checks.filter(check=>check.id.startsWith('address_0x')).length,8);
 });
 
 test('RPC envelopes with a mismatched request ID cannot become observed contract controls',async()=>{

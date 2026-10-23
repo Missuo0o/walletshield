@@ -40,7 +40,7 @@ export async function buildApp(store: Store, options: { context?: (i: AnalysisIn
   });
   await app.register(cors, { origin: [...service.origins, 'null'], methods: ['GET', 'POST'], allowedHeaders: ['Content-Type','Authorization','X-WalletShield-Test-Session'] });
   app.addHook('onSend',async(req,reply,payload)=>{reply.header('X-Content-Type-Options','nosniff');reply.header('Referrer-Policy','no-referrer');if(req.url.startsWith('/api/'))reply.header('Cache-Control','no-store');if(service.mode==='hosted'){reply.header('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'");reply.header('X-Frame-Options','DENY');}return payload;});
-  const auth=registerWalletAuth(app,store,{origin:service.origin,enabled:service.mode==='hosted'});
+  const auth=registerWalletAuth(app,store,{origin:service.origin,enabled:service.mode==='hosted',retentionDays:service.reportRetentionDays});
   registerSecurity(app, store, {...options.security,access:{service,auth}});
   if(service.mode==='local')registerLab(app,store,options.lab);
   registerNetworks(app,options.security?.config??loadSecurityConfig,options.networkProbe,{origins:service.origins,authorize:service.mode==='hosted'?(req,address)=>{const who=auth.authenticate(req);return !!who&&(!address||who.address===address.toLowerCase());}:undefined});

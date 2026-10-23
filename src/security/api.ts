@@ -63,7 +63,13 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
   });
   }
   const busy=new Set<string>(),recent=new Map<string,number[]>();
+  class RevokedScan extends Error {}
+  function save(report:SecurityReport,principal?:WalletPrincipal){
+    if(principal){if(!auth!.saveReport(report,principal))throw new RevokedScan('Wallet session ended during analysis. Sign in and pair again.');}
+    else store.securitySave(report);
+  }
   async function modelStage(report:SecurityReport,config:SecurityConfig,principal?:WalletPrincipal){
+    if(principal&&!auth!.active(principal))throw new RevokedScan('Wallet session ended during analysis. Sign in and pair again.');
     report.quality=evidenceQuality(report);
     report.assessmentScope=assessmentScope(report);
     // Only the model supplies a number. Failure, abstention and quotas never
@@ -71,9 +77,9 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     report.score=null;report.scoreSource='none';delete report.ruleScoreFloor;
     if(config.apiKey&&config.aiEnabled&&principal&&!auth!.takeAttempt(principal,options.access!.service.walletDailyLimit,config.aiDailyLimit??100))report.ai={status:'disabled',message:'The wallet or service daily model limit has been reached. Evidence retained; no AI score.'};
     else if(config.apiKey&&config.aiEnabled&&!principal&&!store.securityAiAttempt(config.aiDailyLimit??30))report.ai={status:'disabled',message:`The local daily model limit of ${config.aiDailyLimit??30} attempts has been reached. No AI score; evidence retained.`};
-    else {if(config.apiKey&&config.aiEnabled){report.ai={status:'pending',message:'Muse is analyzing this evidence. No score yet; wait for the wallet insight.'};store.securitySave(report);}try{report.ai=options.score?await options.score(report,config):await scoreWithAI(report,config,fetch,()=>principal?auth!.takeAttempt(principal,options.access!.service.walletDailyLimit,config.aiDailyLimit??100):store.securityAiAttempt(config.aiDailyLimit??30));}catch{report.ai={status:'failed',message:'Model service error. No AI score; qualitative evidence retained.'};}}
+    else {if(config.apiKey&&config.aiEnabled){report.ai={status:'pending',message:'Muse is analyzing this evidence. No score yet; wait for the wallet insight.'};save(report,principal);}try{report.ai=options.score?await options.score(report,config):await scoreWithAI(report,config,fetch,()=>principal?auth!.active(principal)&&auth!.takeAttempt(principal,options.access!.service.walletDailyLimit,config.aiDailyLimit??100):store.securityAiAttempt(config.aiDailyLimit??30));}catch{report.ai={status:'failed',message:'Model service error. No AI score; qualitative evidence retained.'};}}
     if(report.ai.status==='completed'&&report.ai.result){const ai=report.ai.result;report.assessmentScope=assessmentScope(report,ai.missing_data);if(ai.score!==null){report.score=ai.score;report.scoreSource='ai';}if(report.level!=='high'&&ai.assessment==='high'){report.level='high';report.title='High risk';}if(!report.assessmentScope.criticalMissingData.length&&report.level!=='high'){report.level=ai.assessment;report.title=ai.assessment==='low'?'No clear risk observed within request scope':ai.assessment==='review'?'Review needed':'Unable to assess';}}
-    store.securitySave(report);return report;
+    save(report,principal);return report;
   }
   if(!hosted){
   app.post('/api/security/ai/test',async(req,reply)=>{
@@ -120,6 +126,11 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     busy.add(key);times.push(now);recent.set(key,times);
     try {
       const config=await getConfig();
+      if(principal){
+        if(!auth!.active(principal))return reply.code(401).send({error:'Wallet session ended. Sign in and pair again.'});
+        const service=options.access!.service;
+        if(!auth!.takeEvidenceAttempt(principal,req.ip,{walletPerDay:service.scanWalletDailyLimit??100,ipPerDay:service.scanIpDailyLimit??300,globalPerDay:service.scanGlobalDailyLimit??1000}))return reply.header('Retry-After','60').code(429).send({error:'The wallet, network or service evidence-query limit was reached. No evidence collection or AI analysis was started.'});
+      }
       let facts;
       try {
         let timer:ReturnType<typeof setTimeout>|undefined;
@@ -128,12 +139,11 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
       }
       catch {facts=[evidence('collector','unknown','Evidence collection failed','Evidence queries did not complete.','service')];}
       const report=assess(parsed.data,facts);report.capture={channel:fromSnap?'paired-snap':'workbench',...(principal?{wallet:principal.address,pairingId:principal.id}:{})};
-      if(principal)auth!.reportOwner(report.id,principal);
       // Store once before model work. The same ID is updated; AI never creates a
       // second wallet-operation record or fabricates a transaction outcome.
-      store.securitySave(report);
+      save(report,principal);
       if(fromSnap&&!hosted){const sessionId=req.headers['x-walletshield-test-session'];const candidates=store.labList().filter(s=>typeof sessionId!=='string'||s.id===sessionId);const session=matchLabReport(candidates,report);if(session)store.labSave(session);}
       return await modelStage(report,config,principal);
-    } finally {busy.delete(key);}
+    } catch(error){if(error instanceof RevokedScan)return reply.code(401).send({error:error.message});throw error;} finally {busy.delete(key);}
   });
 }

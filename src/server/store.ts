@@ -7,6 +7,7 @@ import type { Watch, Alert } from '../security/monitor.js';
 import type { Analysis, Execution } from '../core/types.js';
 export type WalletAuthChallenge = {id:string;address:string;chainId:number;origin:string;message:string;createdAt:string;expiresAt:string};
 export type WalletAuthToken = {id:string;address:string;kind:'web'|'snap';createdAt:string;expiresAt:string};
+export type EvidenceScanLimits={walletPerMinute:number;ipPerMinute:number;globalPerMinute:number;walletPerDay:number;ipPerDay:number;globalPerDay:number};
 export function createStore(path: string) {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
@@ -17,7 +18,10 @@ export function createStore(path: string) {
   db.exec('CREATE TABLE IF NOT EXISTS lab_sessions(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,payload TEXT NOT NULL)');
   db.exec('CREATE TABLE IF NOT EXISTS wallet_auth_challenges(id TEXT PRIMARY KEY,address TEXT NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS wallet_auth_tokens(token_hash TEXT PRIMARY KEY,address TEXT NOT NULL,kind TEXT NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_address ON wallet_auth_tokens(address,kind); CREATE TABLE IF NOT EXISTS wallet_report_owners(report_id TEXT PRIMARY KEY,address TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_report_owners_address ON wallet_report_owners(address); CREATE TABLE IF NOT EXISTS wallet_ai_attempts(address TEXT NOT NULL,day TEXT NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(address,day)); CREATE TABLE IF NOT EXISTS wallet_auth_rates(rate_key TEXT NOT NULL,bucket INTEGER NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(rate_key,bucket));');
   db.exec('CREATE INDEX IF NOT EXISTS wallet_auth_challenges_expiry ON wallet_auth_challenges(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_expiry ON wallet_auth_tokens(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_owner_expiry ON wallet_auth_tokens(address,kind,expires_at,token_hash); CREATE INDEX IF NOT EXISTS wallet_auth_rates_bucket ON wallet_auth_rates(bucket);');
+  db.exec('CREATE INDEX IF NOT EXISTS security_reports_created ON security_reports(created_at,id); CREATE TABLE IF NOT EXISTS evidence_scan_budgets(scope TEXT NOT NULL,bucket TEXT NOT NULL,expires_at TEXT NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(scope,bucket)); CREATE INDEX IF NOT EXISTS evidence_scan_budgets_expiry ON evidence_scan_budgets(expires_at);');
   function pruneAuth(now:string){db.prepare('DELETE FROM wallet_auth_challenges WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_tokens WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_rates WHERE bucket<?').run(Math.floor(Date.parse(now)/60000)-2);}
+  function activeWeb(address:string,id:string,now:string){return Boolean(db.prepare("SELECT 1 FROM wallet_auth_tokens WHERE token_hash=? AND address=? AND kind='web' AND expires_at>?").get(id,address,now));}
+  function revokeOwner(address:string){const changes=db.prepare('DELETE FROM wallet_auth_tokens WHERE address=?').run(address).changes;db.prepare('DELETE FROM wallet_auth_challenges WHERE address=?').run(address);return Number(changes);}
   return {
     authPrune:pruneAuth,
     /** Reserve all issuance budgets and rotate only this owner's oldest Snap
@@ -45,6 +49,49 @@ export function createStore(path: string) {
     authTokenGet(id:string,now:string):WalletAuthToken|null{const row=db.prepare('SELECT payload FROM wallet_auth_tokens WHERE token_hash=? AND expires_at>?').get(id,now);return row?JSON.parse(row.payload as string):null;},
     authTokenRevoke(id:string){db.prepare('DELETE FROM wallet_auth_tokens WHERE token_hash=?').run(id);},
     authRevokeSnaps(address:string){db.prepare("DELETE FROM wallet_auth_tokens WHERE address=? AND kind='snap'").run(address);},
+    authRevokeAll(address:string,id:string,now:string):number|null{
+      db.exec('BEGIN IMMEDIATE');try{if(!activeWeb(address,id,now)){db.exec('COMMIT');return null;}const removed=revokeOwner(address);db.exec('COMMIT');return removed;}catch(error){db.exec('ROLLBACK');throw error;}
+    },
+    authDeleteReports(address:string,id:string,now:string):{reportsDeleted:number;credentialsRevoked:number}|null{
+      db.exec('BEGIN IMMEDIATE');try{
+        if(!activeWeb(address,id,now)){db.exec('COMMIT');return null;}
+        const reportsDeleted=Number(db.prepare('DELETE FROM security_reports WHERE id IN (SELECT report_id FROM wallet_report_owners WHERE address=?)').run(address).changes);
+        db.prepare('DELETE FROM wallet_report_owners WHERE address=?').run(address);const credentialsRevoked=revokeOwner(address);
+        db.exec('COMMIT');return {reportsDeleted,credentialsRevoked};
+      }catch(error){db.exec('ROLLBACK');throw error;}
+    },
+    /** The authorization and ownership checks share the write lock with every
+     * insert/update, preventing revoked in-flight requests from backfilling. */
+    authSaveSecurityReport(report:SecurityReport,address:string,id:string,now:string):boolean{
+      db.exec('BEGIN IMMEDIATE');try{
+        if(!db.prepare('SELECT 1 FROM wallet_auth_tokens WHERE token_hash=? AND address=? AND expires_at>?').get(id,address,now)){db.exec('COMMIT');return false;}
+        db.prepare('INSERT OR IGNORE INTO wallet_report_owners VALUES(?,?)').run(report.id,address);
+        if(!db.prepare('SELECT 1 FROM wallet_report_owners WHERE report_id=? AND address=?').get(report.id,address)){db.exec('COMMIT');return false;}
+        db.prepare('INSERT INTO security_reports VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload').run(report.id,report.createdAt,JSON.stringify(report));
+        db.exec('COMMIT');return true;
+      }catch(error){db.exec('ROLLBACK');throw error;}
+    },
+    /** Reserve all upstream-evidence budgets atomically before doing any RPC,
+     * intelligence or fork work. These are independent of model-attempt caps. */
+    authTakeEvidenceAttempt(address:string,id:string,ipKey:string,now:string,limits:EvidenceScanLimits):boolean{
+      if(![limits.walletPerMinute,limits.ipPerMinute,limits.globalPerMinute,limits.walletPerDay,limits.ipPerDay,limits.globalPerDay].every(value=>Number.isSafeInteger(value)&&value>0)||!Number.isFinite(Date.parse(now)))throw Error('Invalid evidence scan limits');
+      const time=Date.parse(now),minute=Math.floor(time/60000),day=now.slice(0,10),minuteExpiry=new Date((minute+1)*60000).toISOString(),dayExpiry=new Date(Date.parse(day+'T00:00:00.000Z')+86400000).toISOString();
+      const budgets:[string,string,string,number][]=[['wallet:'+address,'minute:'+minute,minuteExpiry,limits.walletPerMinute],['ip:'+ipKey,'minute:'+minute,minuteExpiry,limits.ipPerMinute],['global','minute:'+minute,minuteExpiry,limits.globalPerMinute],['wallet:'+address,'day:'+day,dayExpiry,limits.walletPerDay],['ip:'+ipKey,'day:'+day,dayExpiry,limits.ipPerDay],['global','day:'+day,dayExpiry,limits.globalPerDay]];
+      db.exec('BEGIN IMMEDIATE');try{
+        db.prepare('DELETE FROM evidence_scan_budgets WHERE expires_at<=?').run(now);
+        if(!db.prepare('SELECT 1 FROM wallet_auth_tokens WHERE token_hash=? AND address=? AND expires_at>?').get(id,address,now)||budgets.some(([scope,bucket,,limit])=>Number(db.prepare('SELECT attempts FROM evidence_scan_budgets WHERE scope=? AND bucket=?').get(scope,bucket)?.attempts??0)>=limit)){db.exec('COMMIT');return false;}
+        for(const [scope,bucket,expiry] of budgets)db.prepare('INSERT INTO evidence_scan_budgets VALUES(?,?,?,1) ON CONFLICT(scope,bucket) DO UPDATE SET attempts=attempts+1').run(scope,bucket,expiry);
+        db.exec('COMMIT');return true;
+      }catch(error){db.exec('ROLLBACK');throw error;}
+    },
+    pruneHostedReports(cutoff:string,batch=100):number{
+      if(!Number.isFinite(Date.parse(cutoff))||!Number.isInteger(batch)||batch<1||batch>500)throw Error('Invalid report retention settings');
+      db.exec('BEGIN IMMEDIATE');try{
+        const ids=db.prepare('SELECT r.id FROM security_reports r JOIN wallet_report_owners o ON o.report_id=r.id WHERE r.created_at<? ORDER BY r.created_at,r.id LIMIT ?').all(cutoff,batch).map(row=>String(row.id));
+        for(const id of ids){db.prepare('DELETE FROM security_reports WHERE id=?').run(id);db.prepare('DELETE FROM wallet_report_owners WHERE report_id=?').run(id);}
+        db.exec('COMMIT');return ids.length;
+      }catch(error){db.exec('ROLLBACK');throw error;}
+    },
     authRateAttempt(key:string,bucket:number,limit:number):boolean{if(!Number.isSafeInteger(bucket)||!Number.isInteger(limit)||limit<1)throw Error('Invalid auth rate');return db.prepare('INSERT INTO wallet_auth_rates VALUES(?,?,1) ON CONFLICT(rate_key,bucket) DO UPDATE SET attempts=attempts+1 WHERE attempts<?').run(key,bucket,limit).changes===1;},
     authReportOwner(reportId:string,address:string):boolean {db.prepare('INSERT OR IGNORE INTO wallet_report_owners VALUES(?,?)').run(reportId,address);return Boolean(db.prepare('SELECT 1 FROM wallet_report_owners WHERE report_id=? AND address=?').get(reportId,address));},
     authOwnsReport(reportId:string,address:string):boolean{return Boolean(db.prepare('SELECT 1 FROM wallet_report_owners WHERE report_id=? AND address=?').get(reportId,address));},

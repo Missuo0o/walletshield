@@ -11,6 +11,8 @@ export function assessmentScope(report:SecurityReport,modelMissing:readonly stri
  if(!report.complete&&!missing.length)missing.push('Evidence collection is incomplete; specific missing observations were not supplied.');
  const quality=evidenceQuality(report);
  const timing=[...quality.freshness.staleCheckIds.map(id=>`Stale observation: ${id}`),...quality.freshness.futureCheckIds.map(id=>`Future-dated observation: ${id}`),...quality.freshness.missingTimestampCheckIds.map(id=>`Missing observation timestamp: ${id}`),...(quality.conflictingBlockHashes??[]).map(value=>`Conflicting block hashes: chain ${value.chainId}, block ${value.blockNumber}`)];
+ const block=quality.blockFreshness;
+ if(block)timing.push(...block.staleCheckIds.map(id=>`Stale upstream block: ${id}`),...block.futureCheckIds.map(id=>`Future-dated upstream block: ${id}`),...block.missingTimestampCheckIds.map(id=>`Missing upstream block timestamp: ${id}`),...block.missingHashCheckIds.map(id=>`Missing upstream block hash: ${id}`),...block.unverifiedChainCheckIds.map(id=>`Unverified upstream chain: ${id}`));
  return {
   policy:'observable-request-v1',label:'Observable request evidence',
   criticalUnknownCheckIds:unknown.map(c=>c.id),

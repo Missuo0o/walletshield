@@ -100,8 +100,8 @@ test('only active web sessions issue/revoke Snap tokens; logout/revocation persi
   assert.throws(()=>f.auth.issueSnap(snapPrincipal));assert.throws(()=>f.auth.issueSnap({...a.principal,address:b.principal.address}));
   const denied=await f.app.inject({method:'POST',url:'/api/wallet-auth/revoke',headers:{origin,authorization:`Bearer ${one.token}`},payload:{}});assert.equal(denied.statusCode,401);
   const revoked=await f.app.inject({method:'POST',url:'/api/wallet-auth/revoke',headers:{origin,authorization:`Bearer ${a.token}`},payload:{}});assert.equal(revoked.statusCode,200);
-  assert.equal((await status(f,one.token)).statusCode,401);assert.equal((await status(f,two.token)).statusCode,401);assert.equal((await status(f,other.token)).statusCode,200);assert.equal((await status(f,a.token)).statusCode,200);
-  assert.equal((await f.app.inject({method:'POST',url:'/api/wallet-auth/logout',headers:{origin,authorization:`Bearer ${a.token}`},payload:{}})).statusCode,200);assert.equal((await status(f,a.token)).statusCode,401);
+  assert.equal((await status(f,one.token)).statusCode,401);assert.equal((await status(f,two.token)).statusCode,401);assert.equal((await status(f,other.token)).statusCode,200);assert.equal((await status(f,a.token)).statusCode,401);
+  assert.equal((await f.app.inject({method:'POST',url:'/api/wallet-auth/logout',headers:{origin,authorization:`Bearer ${a.token}`},payload:{}})).statusCode,401);assert.equal((await status(f,a.token)).statusCode,401);
   f.auth.revokeToken(other.token);assert.equal((await status(f,other.token)).statusCode,401);
  }finally{await f.close();}
 });

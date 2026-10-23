@@ -1,7 +1,8 @@
 import { createPublicClient, http, keccak256 } from 'viem';
 import type { SecurityRequest, Operation, Evidence } from './types.js';
 import type { SecurityConfig } from './config.js';
-import { evidence, snapshotMetadata, validateAccountCode, readBoundedText } from './evidence.js';
+import { evidence, snapshotMetadata, validateAccountCode } from './evidence.js';
+import {intelligenceEvidence} from './intelligence.js';
 import { simulateRequest } from './simulation.js';
 import { signatureChainEvidence, signatureStructure } from './signatures.js';
 import { planRequest } from './routing.js';
@@ -12,10 +13,9 @@ import {batchEvidence} from './batch-evidence.js';
 import {positionEvidence} from './position-evidence.js';
 export { evidence } from './evidence.js';
 export type Collector = (request:SecurityRequest, op:Operation) => Promise<Evidence[]>;
-const chainCache=new WeakMap<typeof fetch,{expires:number;ids:Set<string>}>();
 export function collector(config:SecurityConfig, fetcher:typeof fetch = fetch):Collector {
   return async(request,op)=>{
-    const tasks=[basicCollector(config,fetcher)(request,op),simulateRequest(request,op,config),signatureChainEvidence(request,config),protocolEvidence(request,op,config,fetcher),assetEvidence(request,op,config),accountEvidence(request,op,config,fetcher),Promise.resolve(batchEvidence(request,op)),positionEvidence(request,op,config,fetcher)];
+    const tasks=[basicCollector(config,fetcher)(request,op),simulateRequest(request,op,config),signatureChainEvidence(request,config),protocolEvidence(request,op,config,fetcher),assetEvidence(request,op,config),accountEvidence(request,op,config,fetcher),Promise.resolve(batchEvidence(request,op)),positionEvidence(request,op,config,fetcher),intelligenceEvidence(request,op,config,fetcher)];
     // Leave time for the API to retain completed tools before its overall budget.
     const results=await Promise.allSettled(tasks.map(async(task,index)=>{
       let timer:ReturnType<typeof setTimeout>|undefined;
@@ -80,64 +80,6 @@ function basicCollector(config:SecurityConfig, fetcher:typeof fetch):Collector {
     }
     // A basic call is not a trace or a dependent buy/sell simulation.
     if(request.kind!=='transaction')collected.push(evidence('asset_simulation','unknown','Future signature consumption was not simulated','An unsigned message does not specify the complete future consumption transaction.','coverage'));
-    if(!config.lookups) {
-      collected.push(evidence('address_reputation','unknown','Address intelligence is disabled','No conclusion about fraud involving the address, domain, or investment platform is supported.','configuration'));
-      collected.push(evidence('website_reputation','unknown','Website intelligence is disabled','The origin has not been checked against known phishing intelligence.','configuration'));
-      collected.push(evidence('token_security','unknown','Token intelligence is disabled','Honeypot indicators, sell taxes, blacklists, and administrator powers have not been checked by an intelligence provider.','configuration'));
-      return collected;
-    }
-    async function lookup(path:string) {
-      const response=await fetcher(`https://api.gopluslabs.io/api/v1/${path}`,{headers:{accept:'application/json',...(config.goPlusToken?{Authorization:`Bearer ${config.goPlusToken}`}:{})},redirect:'error',signal:AbortSignal.timeout(3500)});
-      if(!response.ok) throw Error('Lookup unavailable');
-      const text=await readBoundedText(response,250000);
-      const body=JSON.parse(text); if(body.code!==1 || !body.result) throw Error('Incomplete lookup'); return body.result;
-    }
-    let supported=false;
-    try{
-      let cached=chainCache.get(fetcher);
-      if(!cached||cached.expires<Date.now()){const chains=await lookup('supported_chains');if(!Array.isArray(chains))throw Error('Invalid chain list');cached={expires:Date.now()+3600000,ids:new Set(chains.map(c=>String(c.id)))};chainCache.set(fetcher,cached);}
-      supported=cached.ids.has(String(lookupChain));
-    }catch{/* An unavailable chain list is not permission to guess support. */}
-    await Promise.all([
-      (async()=>{
-        let origin:string;
-        try {const url=new URL(request.origin??'');if(!['http:','https:'].includes(url.protocol)||['127.0.0.1','localhost','[::1]'].includes(url.hostname))throw Error('No public origin');origin=url.origin;}
-        catch {collected.push(evidence('website_reputation','unknown','Origin website unverified','The origin is missing, local, or invalid.','coverage'));return;}
-        try {
-          const data=await lookup(`phishing_site?url=${encodeURIComponent(origin)}`);
-          const flag=data.phishing_site;const known=flag===0||flag==='0'||flag===1||flag==='1';const risky=flag===1||flag==='1';
-          collected.push(evidence('website_reputation',risky?'risk':known?'pass':'unknown',risky?'Origin flagged by phishing intelligence':'Website intelligence result',risky?'The intelligence provider flags this origin for phishing risk.':'No reported match does not authenticate the website or its investment claims.','goplus',{origin,...(known?{phishing_site:String(flag)}:{}),providerAsOf:null,freshnessVerified:false}));
-        }catch {collected.push(evidence('website_reputation','unknown','Website intelligence query failed','No usable website-risk result was obtained.','goplus'));}
-      })(),
-      (async()=>{
-        if(!supported){collected.push(evidence('address_reputation','unknown','Intelligence support for this network is unconfirmed','Test or unknown network addresses are not queried as if they belonged to a different supported chain.','goplus'));return;}
-        if(!op.targets.length) {collected.push(evidence('address_reputation','unknown','No explicit counterparty address to query','The complete recipient or authority target cannot be determined from this request.','goplus'));return;}
-        const targets=[...new Map(op.targets.map(target=>[target.toLowerCase(),target])).values()];
-        await Promise.all(targets.slice(0,3).map(async target=>{
-          try {
-            const data=await lookup(`address_security/${target.toLowerCase()}?chain_id=${lookupChain}`);
-            const flags=['cybercrime','money_laundering','phishing_activities','stealing_attack','honeypot_related_address','blackmail_activities','sanctioned'];
-            const present=flags.filter(k=>data[k]==='0'||data[k]==='1'||data[k]===0||data[k]===1),missing=flags.filter(k=>!present.includes(k));
-            const risky=present.filter(k=>String(data[k])==='1');
-            collected.push(evidence(`address_${target.toLowerCase()}`,risky.length?'risk':missing.length?'unknown':'pass',risky.length?'Address flagged by risk intelligence':'Address intelligence result',risky.length?risky.join(', '):'Missing flags remain unknown. No reported match does not establish safety or authenticate the counterparty.','goplus',{chainId:lookupChain,address:target,flags:Object.fromEntries(present.map(k=>[k,data[k]])),missing,providerAsOf:null,freshnessVerified:false}));
-          }catch{collected.push(evidence(`address_${target.toLowerCase()}`,'unknown','Address intelligence query failed','This target could not be checked. Results already obtained for other targets are retained.','goplus',{chainId:lookupChain,address:target,providerAsOf:null,freshnessVerified:false}));}
-        }));
-        if(targets.length>3)collected.push(evidence('address_reputation','unknown','Address intelligence queries truncated','At most 3 explicit counterparties are queried; remaining addresses are not checked.','coverage',{chainId:lookupChain,queried:3,declared:targets.length}));
-      })(),
-      (async()=>{
-        if(!supported){collected.push(evidence('token_security','unknown','Token intelligence support for this network is unconfirmed','No usable token-risk result was obtained for this network.','goplus'));return;}
-        if(!op.token) {collected.push(evidence('token_security','unknown','No explicit target token','A native transfer or authority target does not identify a token that might be bought later.','coverage'));return;}
-        try {
-          const data=(await lookup(`token_security/${lookupChain}?contract_addresses=${op.token.toLowerCase()}`))[op.token.toLowerCase()];
-          if(!data) throw Error('Missing token');
-          const keys=['is_honeypot','cannot_sell_all','buy_tax','sell_tax','is_open_source','is_proxy','transfer_pausable','is_blacklisted','slippage_modifiable','owner_change_balance','hidden_owner','can_take_back_ownership','is_mintable'];
-          const sanitized:Record<string,string>={}; for(const key of keys){const v=String(data[key]);if(['buy_tax','sell_tax'].includes(key)?/^(?:0(?:\.\d+)?|1(?:\.0+)?)$/.test(v):v==='0'||v==='1')sanitized[key]=v;}
-          const risks=['is_honeypot','cannot_sell_all','owner_change_balance'].filter(k=>sanitized[k]==='1');
-          const tax=Number(sanitized.sell_tax); if(sanitized.sell_tax && Number.isFinite(tax) && tax>=0.5) risks.push('high_sell_tax');
-          collected.push(evidence('token_security',risks.length?'risk':Object.keys(sanitized).length?'warning':'unknown','Token risk intelligence',risks.length?`Provider reports: ${risks.join(', ')}. Review the actual route and simulation before drawing conclusions.`:'One query does not guarantee future sellability. Missing fields remain unknown.','goplus',{chainId:lookupChain,token:op.token,...sanitized,missing:keys.filter(key=>sanitized[key]===undefined),providerAsOf:null,freshnessVerified:false}));
-        } catch { collected.push(evidence('token_security','unknown','Token intelligence query failed','Usable honeypot and contract-control intelligence was not obtained.','goplus')); }
-      })()
-    ]);
     return collected;
   };
 }

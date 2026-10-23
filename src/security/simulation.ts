@@ -3,12 +3,12 @@ import { createServer } from 'node:net';
 import { createServer as createHttpServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
-import { encodeFunctionData, decodeFunctionResult, erc20Abi, parseAbi, decodeEventLog, keccak256, toHex } from 'viem';
+import { encodeFunctionData, decodeFunctionData, decodeFunctionResult, erc20Abi, parseAbi, decodeEventLog, keccak256, toHex, toFunctionSelector, type Abi } from 'viem';
 import type { SecurityConfig } from './config.js';
 import type { Evidence, Operation, SecurityRequest } from './types.js';
 import { evidence } from './evidence.js';
 type Rpc=(method:string,params?:unknown[])=>Promise<any>;
-export type ForkSession={rpc:Rpc;chainId:number;blockNumber:string;blockHash:string;close:()=>Promise<void>};
+export type ForkSession={rpc:Rpc;chainId:number;blockNumber:string;blockHash:string;blockTimestampSeconds?:string;close:()=>Promise<void>};
 export type ForkFactory=(config:SecurityConfig,chainId:number)=>Promise<ForkSession>;
 const nftAbi=parseAbi(['function ownerOf(uint256) view returns (address)','function balanceOf(address,uint256) view returns(uint256)','function getApproved(uint256) view returns(address)','function isApprovedForAll(address,address) view returns(bool)','event TransferSingle(address indexed operator,address indexed from,address indexed to,uint256 id,uint256 value)','event TransferBatch(address indexed operator,address indexed from,address indexed to,uint256[] ids,uint256[] values)']);
 const eq=(a:string,b:string)=>a.toLowerCase()===b.toLowerCase();
@@ -79,9 +79,10 @@ export const openFork:ForkFactory=async(config,chainId)=>{
       try {if(Number(BigInt(await rpc('eth_chainId')))!==chainId)throw Error('Wrong child');const block=await rpc('eth_getBlockByNumber',[base.number,false]);if(block?.hash!==base.hash)throw Error('Fork mismatch');ready=true;break;}catch{await new Promise(ok=>setTimeout(ok,60));}
     }
     if(!ready)throw Error('Fork unavailable');
-    return {rpc,chainId,blockNumber:String(BigInt(base.number)),blockHash:base.hash,close};
+    return {rpc,chainId,blockNumber:String(BigInt(base.number)),blockHash:base.hash,...(typeof base.timestamp==='string'&&/^0x[\da-f]+$/i.test(base.timestamp)?{blockTimestampSeconds:String(BigInt(base.timestamp))}:{}),close};
   }catch{await close();throw Error('Isolated fork unavailable');}
 };
+function forkSnapshot(fork:ForkSession){return {chainId:fork.chainId,blockNumber:fork.blockNumber,blockHash:fork.blockHash,...(fork.blockTimestampSeconds!==undefined?{blockTimestampSeconds:fork.blockTimestampSeconds}:{})};}
 type Asset={kind:'erc20'|'erc721'|'erc1155';contract:`0x${string}`;tokenId?:string};
 const transferTopic=keccak256(toHex('Transfer(address,address,uint256)'));
 export function assetsFromLogs(logs:any[]):Asset[]{
@@ -126,7 +127,7 @@ export async function simulateRequest(request:SecurityRequest,op:Operation,confi
     fork=await factory(config,request.chainId);const rpc=fork.rpc;
     const snapshot=await rpc('evm_snapshot');const beforeNative=BigInt(await rpc('eth_getBalance',[request.transaction.from,'latest']));
     let executed;
-    try{executed=await send(rpc,request.transaction);}catch{return [evidence('simulation_execution','unknown','Fork execution incomplete','The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.','isolated-fork',{chainId:fork.chainId,blockNumber:fork.blockNumber})];}
+    try{executed=await send(rpc,request.transaction);}catch{return [evidence('simulation_execution','unknown','Fork execution incomplete','The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.','isolated-fork',{...forkSnapshot(fork)})];}
     const {hash,receipt}=executed;const afterNative=BigInt(await rpc('eth_getBalance',[request.transaction.from,'latest']));
     const assets=assetsFromLogs(receipt.logs??[]);
     if(op.token&&isAddress(op.token)&&['erc20','erc721','erc1155'].includes(op.tokenStandard??'')&&!assets.some(a=>eq(a.contract,op.token!))) {
@@ -140,37 +141,78 @@ export async function simulateRequest(request:SecurityRequest,op:Operation,confi
     const before=await Promise.all(assets.map(a=>readAsset(rpc,a,request.transaction.from)));
     const deltas=assets.map((asset,i)=>({...asset,owner:request.transaction.from,before:before[i],after:after[i],delta:asset.kind!=='erc721'&&before[i]!==null&&after[i]!==null?String(BigInt(after[i]!)-BigInt(before[i]!)):null}));
     const gas=observedGasCost(receipt);
-    const facts=[evidence('simulation_execution','pass','Isolated fork execution completed','Execution occurred only on a temporary local fork; no transaction was sent upstream. Supplied gas, fees, and nonce were preserved; a fork cap was used if gas was absent. The fork mines from the stated base block, so this is not a guarantee of future execution.','isolated-fork',{chainId:fork.chainId,blockNumber:fork.blockNumber,blockHash:fork.blockHash,executionBlockNumber:receipt.blockNumber?String(BigInt(receipt.blockNumber)):null,gasLimit:request.transaction.gas??'0xb71b00',gasLimitSource:request.transaction.gas?'request':'simulation_default',status:'success',native:{before:String(beforeNative),after:String(afterNative),deltaIncludingGas:String(afterNative-beforeNative),gasWei:gas===null?null:String(gas),deltaExcludingGas:gas===null?null:String(afterNative-beforeNative+gas)},assets:deltas,calls,traceAvailable}),evidence('asset_simulation','unknown','Asset discovery has coverage limits','Before/after state was read for identified assets and assets found in Transfer events. Assets without events, nonstandard storage, future proxy changes, and cross-chain results may be missed.','isolated-fork')];
-    if(gas===null)facts.push(evidence('simulation_fee','unknown','Execution fee could not be measured','The receipt lacks a usable gas-used or effective-gas-price value. Raw native balance changes are retained; gas-adjusted native changes are not guessed using a zero fee.','isolated-fork',{chainId:fork.chainId,blockNumber:fork.blockNumber}));
-    if(op.addsPermission&&deltas.some(d=>d.delta!==null&&BigInt(d.delta)<0n||d.kind==='erc721'&&d.before!==null&&d.after!==null&&eq(d.before,request.transaction.from)&&!eq(d.after,request.transaction.from)))facts.push(evidence('unexpected_asset_loss','risk','Permission operation also reduced assets','The fork observed an asset decrease. The permission operation may have additional unexpected behavior.','isolated-fork',{assets:deltas}));
-    if(op.category==='token_transfer'&&deltas.some(d=>d.delta!==null&&eq(d.contract,op.token??'')&&-BigInt(d.delta)>BigInt(String(op.fields.amount))))facts.push(evidence('excess_token_spend','risk','Observed token decrease exceeds the declared amount','The fork balance decrease exceeds the transfer parameter. Review extra debits or nonstandard token behavior.','isolated-fork',{assets:deltas}));
-    if(op.category==='native_transfer'&&gas!==null&&afterNative-beforeNative+gas < -BigInt(request.transaction.value??'0x0'))facts.push(evidence('excess_native_spend','risk','Native-asset decrease exceeds the declared value','After accounting for observed gas, the account still decreased by more than the declared value.','isolated-fork'));
-    if(op.category==='swap')facts.push(...await roundTrip(request,op,fork));
+    const facts=[evidence('simulation_execution','pass','Isolated fork execution completed','Execution occurred only on a temporary local fork; no transaction was sent upstream. Supplied gas, fees, and nonce were preserved; a fork cap was used if gas was absent. The fork mines from the stated base block, so this is not a guarantee of future execution.','isolated-fork',{...forkSnapshot(fork),executionBlockNumber:receipt.blockNumber?String(BigInt(receipt.blockNumber)):null,gasLimit:request.transaction.gas??'0xb71b00',gasLimitSource:request.transaction.gas?'request':'simulation_default',status:'success',native:{before:String(beforeNative),after:String(afterNative),deltaIncludingGas:String(afterNative-beforeNative),gasWei:gas===null?null:String(gas),deltaExcludingGas:gas===null?null:String(afterNative-beforeNative+gas)},assets:deltas,calls,traceAvailable}),evidence('asset_simulation','unknown','Asset discovery has coverage limits','Before/after state was read for identified assets and assets found in Transfer events. Assets without events, nonstandard storage, future proxy changes, and cross-chain results may be missed.','isolated-fork')];
+    if(gas===null)facts.push(evidence('simulation_fee','unknown','Execution fee could not be measured','The receipt lacks a usable gas-used or effective-gas-price value. Raw native balance changes are retained; gas-adjusted native changes are not guessed using a zero fee.','isolated-fork',{...forkSnapshot(fork)}));
+    if(op.addsPermission&&deltas.some(d=>d.delta!==null&&BigInt(d.delta)<0n||d.kind==='erc721'&&d.before!==null&&d.after!==null&&eq(d.before,request.transaction.from)&&!eq(d.after,request.transaction.from)))facts.push(evidence('unexpected_asset_loss','risk','Permission operation also reduced assets','The fork observed an asset decrease. The permission operation may have additional unexpected behavior.','isolated-fork',{...forkSnapshot(fork),assets:deltas}));
+    if(op.category==='token_transfer'&&deltas.some(d=>d.delta!==null&&eq(d.contract,op.token??'')&&-BigInt(d.delta)>BigInt(String(op.fields.amount))))facts.push(evidence('excess_token_spend','risk','Observed token decrease exceeds the declared amount','The fork balance decrease exceeds the transfer parameter. Review extra debits or nonstandard token behavior.','isolated-fork',{...forkSnapshot(fork),assets:deltas}));
+    if(op.category==='native_transfer'&&gas!==null&&afterNative-beforeNative+gas < -BigInt(request.transaction.value??'0x0'))facts.push(evidence('excess_native_spend','risk','Native-asset decrease exceeds the declared value','After accounting for observed gas, the account still decreased by more than the declared value.','isolated-fork',forkSnapshot(fork)));
+    if(['swap','swap_v3'].includes(op.category))facts.push(...await roundTrip(request,op,fork));
+    else if(op.category==='batch')facts.push(evidence('round_trip','unknown','Dependent router buy/sell experiment is unavailable','Opaque aggregator commands and arbitrary nested wrappers have no authenticated reverse route. The original transaction may have fork observations, but no synthetic sell is invented.','coverage'));
     return facts;
   }catch{return [evidence('asset_simulation','unknown','Isolated fork simulation failed','The node, historical state, or executor was unavailable. Asset simulation was not completed.','isolated-fork')];}
   finally{if(fork)await fork.close();}
 }
+const v3SingleAbi=parseAbi([
+ 'function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 deadline,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96) params)',
+ 'function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96) params)'
+]);
+type SwapExperiment={variant:'v2'|'v3_single';input:`0x${string}`;output:`0x${string}`;declaredInput:bigint;nativeInput:boolean;v3?:{abi:Abi;params:any};path?:`0x${string}`[]};
+function swapExperiment(request:Extract<SecurityRequest,{kind:'transaction'}>,op:Operation):SwapExperiment|null {
+ const tx=request.transaction;
+ if(!tx.to||!eq(String(op.fields.recipient),tx.from))return null;
+ if(op.category==='swap_v3') {
+  // Exact official interface shapes only. SwapRouter02 amountIn=0 means use
+  // the router balance, which is not a declared sender-funded amount.
+  try{
+   const abi=v3SingleAbi.filter(item=>toFunctionSelector(item)===tx.data.slice(0,10).toLowerCase());
+   if(abi.length!==1)return null;
+   const decoded=decodeFunctionData({abi,data:tx.data as `0x${string}`});
+   if(encodeFunctionData({abi,functionName:decoded.functionName,args:decoded.args as never}).toLowerCase()!==tx.data.toLowerCase())return null;
+   const p=(decoded.args as any)[0];
+   if(BigInt(tx.value??'0x0')!==0n||p.amountIn<=0n||!isAddress(p.tokenIn)||!isAddress(p.tokenOut)||/^0x0{40}$/i.test(p.tokenIn)||/^0x0{40}$/i.test(p.tokenOut)||eq(p.tokenIn,p.tokenOut)||!eq(p.recipient,tx.from))return null;
+   return {variant:'v3_single',input:p.tokenIn,output:p.tokenOut,declaredInput:p.amountIn,nativeInput:false,v3:{abi,params:p}};
+  }catch{return null;}
+ }
+ const path=op.fields.path,method=String(op.fields.method);
+ if(!Array.isArray(path)||path.length<2||path.length>12||!path.every(isAddress)||path.some(value=>/^0x0{40}$/i.test(value))||!['swapExactTokensForTokens','swapExactETHForTokens'].includes(method))return null;
+ return {variant:'v2',input:path[0],output:path.at(-1)!,declaredInput:BigInt(String(op.fields.amountIn)),nativeInput:method==='swapExactETHForTokens',path};
+}
 async function roundTrip(request:Extract<SecurityRequest,{kind:'transaction'}>,op:Operation,fork:ForkSession):Promise<Evidence[]>{
-  const method=op.fields.method;const path=op.fields.path;
-  if(!Array.isArray(path)||path.length<2||path.length>12||!path.every(isAddress)||!request.transaction.to||!['swapExactTokensForTokens','swapExactETHForTokens'].includes(String(method))||!eq(String(op.fields.recipient),request.transaction.from))return [evidence('round_trip','unknown','Dependent buy/sell simulation unsupported for this request','Only common V2 token-input or ETH-input buys received by the same account and sold along the reverse path are covered.','isolated-fork')];
-  const rpc=fork.rpc;const output=path.at(-1)!;const asset:Asset={kind:'erc20',contract:output};
-  try {
-    // Main simulation already reverted to the base snapshot. Every dependent
-    // step below executes against this same child, never the upstream RPC.
-    const baseBalance=await readAsset(rpc,asset,request.transaction.from);if(baseBalance===null)throw Error('Missing balance');
-    const {receipt:buy}=await send(rpc,request.transaction);const boughtBalance=await readAsset(rpc,asset,request.transaction.from);if(boughtBalance===null)throw Error('Missing balance');
-    const acquired=BigInt(boughtBalance)-BigInt(baseBalance);if(acquired<=0n)return [evidence('round_trip','risk','Buy did not increase the output token balance','Fork execution succeeded, but the recipient did not gain the expected output token.','isolated-fork')];
-    const approve=encodeFunctionData({abi:erc20Abi,functionName:'approve',args:[request.transaction.to as `0x${string}`,acquired]});
-    await send(rpc,{from:request.transaction.from,to:output,data:approve});
-    const reverseAbi=parseAbi(['function swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)','function swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)']);
-    const returnAsset:Asset={kind:'erc20',contract:path[0]};
-    const beforeReturn=method==='swapExactETHForTokens'?String(BigInt(await rpc('eth_getBalance',[request.transaction.from,'latest']))):await readAsset(rpc,returnAsset,request.transaction.from);
-    const sellData=encodeFunctionData({abi:reverseAbi,functionName:method==='swapExactETHForTokens'?'swapExactTokensForETHSupportingFeeOnTransferTokens':'swapExactTokensForTokensSupportingFeeOnTransferTokens',args:[acquired,0n,[...path].reverse(),request.transaction.from as `0x${string}`,BigInt(op.fields.deadline as string)]});
-    let sold;try{sold=await send(rpc,{from:request.transaction.from,to:request.transaction.to,data:sellData});}catch{return [evidence('round_trip','warning','Sell after buy failed','Token restrictions, routing, liquidity, or gas may explain the failure. Combine it with contract and intelligence evidence; this alone does not prove a honeypot.','isolated-fork',{bought:String(acquired),buyGas:String(buy.gasUsed),blockNumber:fork.blockNumber})];}
-    const afterReturn=method==='swapExactETHForTokens'?String(BigInt(await rpc('eth_getBalance',[request.transaction.from,'latest']))):await readAsset(rpc,returnAsset,request.transaction.from);
-    const gas=observedGasCost(sold.receipt);
-    const returned=beforeReturn!==null&&afterReturn!==null&&(method!=='swapExactETHForTokens'||gas!==null)?BigInt(afterReturn)-BigInt(beforeReturn)+(method==='swapExactETHForTokens'?gas!:0n):null;
-    const spent=BigInt(String(op.fields.amountIn));const ratio=returned!==null&&spent>0n?Number(returned*10000n/spent)/100:null;
-    return [evidence('round_trip',returned===null?'unknown':returned<=0n||ratio!==null&&ratio<50?'risk':'warning','Buy/sell simulation from a fixed base block','The fork mines sequential buy, approval, and sell steps from a base block. Minimum sell output is zero for observation. Loss includes taxes, fees, and price impact; it is not a tax rate. One successful sell does not guarantee future safety.','isolated-fork',{chainId:fork.chainId,blockNumber:fork.blockNumber,blockHash:fork.blockHash,bought:String(acquired),returned:returned===null?null:String(returned),roundTripReturnPercent:ratio,...(method==='swapExactETHForTokens'?{sellGasCostWei:gas===null?null:String(gas),returnAmountUnavailableReason:gas===null?'missing_receipt_fee':null}:{})})];
-  }catch{return [evidence('round_trip','unknown','Dependent buy/sell simulation incomplete','Balances and token storage were not modified to manufacture success. Failed buy, approval, read, or execution steps remain unknown.','isolated-fork')];}
+ const experiment=swapExperiment(request,op),snapshot=forkSnapshot(fork);
+ if(!experiment)return [evidence('round_trip','unknown','Dependent buy/sell simulation unsupported for this request','Only supported V2 reverse paths and canonical V3 exactInputSingle token-input requests received by the same account are covered. V3 native funding, router-balance input, other recipients, exact-output, multi-hop and opaque commands remain unsupported.','isolated-fork',snapshot)];
+ const rpc=fork.rpc,asset:Asset={kind:'erc20',contract:experiment.output},returnAsset:Asset={kind:'erc20',contract:experiment.input};
+ const scope={...snapshot,variant:experiment.variant,inputToken:experiment.input,outputToken:experiment.output,router:request.transaction.to,recipient:request.transaction.from,protocolIdentityVerified:false,derivedMinimumOutputRaw:'0',derivedPriceLimit:'0',derivedNonceSource:'isolated_node_pending',derivedGasLimit:'0xb71b00',originalBuyPreserved:true};
+ try {
+  // The parent execution was reverted. Replay the exact original buy, including
+  // supplied nonce/fees/gas. Dependent approval/sell are explicitly derived local
+  // experiments with their own pending nonces, not replacements for that buy.
+  const baseBalance=await readAsset(rpc,asset,request.transaction.from),baseInput=experiment.nativeInput?null:await readAsset(rpc,returnAsset,request.transaction.from);
+  if(baseBalance===null||!experiment.nativeInput&&baseInput===null)throw Error('Missing balance');
+  const {receipt:buy}=await send(rpc,request.transaction),boughtBalance=await readAsset(rpc,asset,request.transaction.from),afterBuyInput=experiment.nativeInput?null:await readAsset(rpc,returnAsset,request.transaction.from);
+  if(boughtBalance===null)throw Error('Missing balance');
+  const acquired=BigInt(boughtBalance)-BigInt(baseBalance);
+  if(acquired<=0n)return [evidence('round_trip','risk','Buy did not increase the output token balance','Fork execution succeeded, but the same-account recipient did not gain the expected output token.','isolated-fork',scope)];
+  const observedInputDebit=baseInput!==null&&afterBuyInput!==null?BigInt(baseInput)-BigInt(afterBuyInput):null;
+  if(experiment.variant==='v3_single'&&(observedInputDebit===null||observedInputDebit<=0n))throw Error('V3 input debit unavailable');
+  const fees=Object.fromEntries((['gasPrice','maxFeePerGas','maxPriorityFeePerGas'] as const).filter(key=>request.transaction[key]!==undefined).map(key=>[key,request.transaction[key]]));
+  const derived={from:request.transaction.from,...fees};
+  const approve=encodeFunctionData({abi:erc20Abi,functionName:'approve',args:[request.transaction.to as `0x${string}`,acquired]});
+  await send(rpc,{...derived,to:experiment.output,data:approve});
+  const beforeReturn=experiment.nativeInput?String(BigInt(await rpc('eth_getBalance',[request.transaction.from,'latest']))):await readAsset(rpc,returnAsset,request.transaction.from);
+  let sellData:`0x${string}`;
+  if(experiment.v3){
+   const original=experiment.v3.params;
+   sellData=encodeFunctionData({abi:experiment.v3.abi,functionName:'exactInputSingle',args:[{tokenIn:experiment.output,tokenOut:experiment.input,fee:original.fee,recipient:request.transaction.from,...(original.deadline!==undefined?{deadline:original.deadline}:{}),amountIn:acquired,amountOutMinimum:0n,sqrtPriceLimitX96:0n}]});
+  }else{
+   const reverseAbi=parseAbi(['function swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)','function swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)']);
+   sellData=encodeFunctionData({abi:reverseAbi,functionName:experiment.nativeInput?'swapExactTokensForETHSupportingFeeOnTransferTokens':'swapExactTokensForTokensSupportingFeeOnTransferTokens',args:[acquired,0n,[...experiment.path!].reverse(),request.transaction.from as `0x${string}`,BigInt(op.fields.deadline as string)]});
+  }
+  let sold;
+  try{sold=await send(rpc,{...derived,to:request.transaction.to,data:sellData});}
+  catch{return [evidence('round_trip','warning','Sell after buy failed','Token restrictions, routing, pool/fee support, liquidity, approval behavior or gas may explain failure. This single experiment does not prove a honeypot.','isolated-fork',{...scope,bought:String(acquired),buyGas:String(buy.gasUsed)})];}
+  const afterReturn=experiment.nativeInput?String(BigInt(await rpc('eth_getBalance',[request.transaction.from,'latest']))):await readAsset(rpc,returnAsset,request.transaction.from),gas=observedGasCost(sold.receipt);
+  const returned=beforeReturn!==null&&afterReturn!==null&&(!experiment.nativeInput||gas!==null)?BigInt(afterReturn)-BigInt(beforeReturn)+(experiment.nativeInput?gas!:0n):null;
+  const spent=experiment.variant==='v3_single'?observedInputDebit!:experiment.declaredInput,ratio=returned!==null&&spent>0n?Number(returned*10000n/spent)/100:null;
+  return [evidence('round_trip',returned===null?'unknown':returned<=0n||ratio!==null&&ratio<50?'risk':'warning','Buy/sell simulation from a fixed base block','The temporary fork replays the original buy, approves only newly acquired output tokens, then derives a reverse sell with zero minimum output and no price limit. Derived transactions reuse supplied fee fields but use new local nonces/default gas. V3 compares the observed input debit, which can differ from the input cap. Loss includes taxes, fees and price impact; it is not a tax rate or future-sellability guarantee.','isolated-fork',{...scope,bought:String(acquired),returned:returned===null?null:String(returned),declaredInputRaw:String(experiment.declaredInput),observedInputDebitRaw:observedInputDebit===null?null:String(observedInputDebit),ratioInputRaw:String(spent),roundTripReturnPercent:ratio,...(experiment.v3?{feeTier:String(experiment.v3.params.fee),originalPriceLimit:String(experiment.v3.params.sqrtPriceLimitX96),deadlinePresent:experiment.v3.params.deadline!==undefined}:{}),...(experiment.nativeInput?{sellGasCostWei:gas===null?null:String(gas),returnAmountUnavailableReason:gas===null?'missing_receipt_fee':null}:{})})];
+ }catch{return [evidence('round_trip','unknown','Dependent buy/sell simulation incomplete','Balances and token storage were not modified to manufacture success. Failed buy, approval, input-debit, read, or execution steps remain unknown.','isolated-fork',scope)];}
 }

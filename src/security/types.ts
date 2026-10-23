@@ -21,6 +21,7 @@ export type AIState = { status: 'pending' | 'not_configured' | 'disabled' | 'com
 export type EvidenceQuality={computedAt:string;counts:Record<'pass'|'warning'|'risk'|'unknown',number>;sources:{source:string;observed:number;unknown:number}[];
  snapshots:{checkId:string;source:string;chainId?:number;blockNumber:string;blockHash?:string;blockTimestampSeconds?:string}[];
  freshness:{staleCheckIds:string[];futureCheckIds:string[];missingTimestampCheckIds:string[];staleAfterSeconds:number;futureToleranceSeconds:number};mixedBlockChains:number[];conflictingBlockHashes?:{chainId:number;blockNumber:string;hashes:string[]}[];
+ blockFreshness?:{staleCheckIds:string[];futureCheckIds:string[];missingTimestampCheckIds:string[];missingHashCheckIds:string[];unverifiedChainCheckIds:string[];localCheckIds:string[];maxAgeSeconds:number;futureToleranceSeconds:number};
  capture:'paired-snap'|'workbench'|'unattributed';walletBinding:'authenticated-credential'|'not-established';caveats:string[]};
 export type SecurityReport = {
   quality?:EvidenceQuality;
@@ -37,11 +38,11 @@ export const COVERAGE = [
   ['Native transfer', 'Read state; optional isolated execution, gas and native deltas'],
   ['ERC-20 / NFT transfers', 'Decode common transfers; shared selectors require token-standard observations'],
   ['Approvals and revocations', 'ERC-20, individual NFT approval, NFT operators and on-chain Permit2 limits'],
-  ['Swaps and batches', 'Selected V2 routes support isolated buy/sell tests; other routes and silent assets remain partial'],
+  ['Swaps and batches', 'Selected V2 and V3 exactInputSingle routes support isolated buy/sell tests; other routes and silent assets remain partial'],
   ['Lending / vaults / staking / liquidity', 'Candidate ABI parsing and selected health/vault reads; protocol identity and future yield remain unverified'],
   ['Bridges / claims / control changes', 'Selected bridge/claim/control/upgrade calls; no proof of destination settlement or project legitimacy'],
   ['Message signatures', 'Encoding, selected Permit/Permit2 nonce and domain reads; future consumption remains unknown'],
-  ['Token and address risk', 'Optional GoPlus observations; missing fields and failed queries remain unknown'],
+  ['Token and address risk', 'Optional bounded GoPlus observations for up to eight decoded tokens and eight counterparties; missing fields, truncation and failed queries remain unknown'],
   ['Permissions / smart accounts / unknown RPC', 'Bounded summary for AI; no RPC execution or universal automatic Snap interception'],
   ['Devices / secrets / exchanges', 'Device malware, leaked keys and custodial-exchange internals are outside scope'],
   ['Post-sign monitoring / enforcement', 'Not provided; pre-sign advice with the user deciding in the wallet'],

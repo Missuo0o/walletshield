@@ -245,39 +245,42 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
-  <style>
-  :root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.85;color:#213a40;background:#eef3f4;scroll-behavior:smooth}*{box-sizing:border-box}body{max-width:1120px;margin:34px auto;padding:42px 54px;background:#fff;border:1px solid #dbe5e5;border-radius:12px;box-shadow:0 5px 26px #163b4010}header{text-align:left;border-bottom:1px solid #dbe5e5;margin-bottom:24px;padding-bottom:16px}header h1{font-size:28px}h1,h2,h3,h4{color:#164b44;line-height:1.5;scroll-margin-top:24px}h1{font-size:30px}h2{font-size:23px;margin-top:44px;padding-bottom:10px;border-bottom:2px solid #dcece7}h3{font-size:19px;margin-top:30px}a{color:#086f61;text-decoration:none}a:hover{text-decoration:underline}a:focus-visible{outline:2px solid #087b6c;outline-offset:3px}nav#TOC{padding:22px 28px;background:#f1f7f5;border:1px solid #d9e7e2;border-radius:8px}nav#TOC ul{padding-left:22px}nav#TOC li{margin:5px 0}table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;font-size:14px;line-height:1.7;margin:22px 0}th,td{padding:12px 15px;vertical-align:top;border:1px solid #d9e5e5;min-width:125px;overflow-wrap:anywhere}th{background:#e9f3ef;color:#28594e;text-align:left}tbody tr:nth-child(even){background:#f8fbfa}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#eff5f3;padding:2px 5px;border-radius:4px;font-size:.88em;overflow-wrap:anywhere}pre{padding:18px 22px;background:#f1f6f5;border:1px solid #dce8e3;border-radius:7px;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}pre code{padding:0;background:none}blockquote{margin:20px 0;padding:10px 22px;background:#eef8f3;border-left:4px solid #76b59f}li{margin:7px 0}p{margin:15px 0}img{max-width:100%;height:auto}@media(max-width:760px){body{margin:0;border:0;border-radius:0;padding:24px 20px}h1{font-size:25px}h2{font-size:21px}nav#TOC{padding:16px 18px}}@media print{body{padding:0;border:0;box-shadow:none;max-width:none;background:white}nav#TOC{break-after:page}h2,h3,h4{break-after:avoid}table{display:table;font-size:10px}th,td{min-width:0;padding:7px}pre{break-inside:avoid}a{color:inherit}}
-  </style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">WalletShield 中文使用手册 · v0.4.1 · Muse Wonder</h1>
-</header>
 <nav id="TOC" role="doc-toc">
 <ul>
 <li><a href="#walletshield-中文使用手册"
 id="toc-walletshield-中文使用手册">WalletShield 中文使用手册</a>
 <ul>
-<li><a href="#1-选择使用流程" id="toc-1-选择使用流程">1.
+<li><a href="#选择使用流程" id="toc-选择使用流程">1.
 选择使用流程</a></li>
-<li><a href="#2-本地安装与启动" id="toc-2-本地安装与启动">2.
+<li><a href="#本地安装与启动" id="toc-本地安装与启动">2.
 本地安装与启动</a></li>
-<li><a href="#3-配置数据与可选-ai" id="toc-3-配置数据与可选-ai">3.
+<li><a href="#配置数据与可选-ai" id="toc-配置数据与可选-ai">3.
 配置数据与可选 AI</a></li>
-<li><a href="#4-连接钱包并验证-snap" id="toc-4-连接钱包并验证-snap">4.
+<li><a href="#连接钱包并验证-snap" id="toc-连接钱包并验证-snap">4.
 连接钱包并验证 Snap</a></li>
-<li><a href="#5-运行本地钱包测试" id="toc-5-运行本地钱包测试">5.
-运行本地钱包测试</a></li>
-<li><a href="#6-使用公网和自己的账户" id="toc-6-使用公网和自己的账户">6.
+<li><a href="#运行本地钱包测试" id="toc-运行本地钱包测试">5.
+运行本地钱包测试</a>
+<ul>
+<li><a href="#可选账户与签名变体测试"
+id="toc-可选账户与签名变体测试">可选账户与签名变体测试</a></li>
+</ul></li>
+<li><a href="#使用公网和自己的账户" id="toc-使用公网和自己的账户">6.
 使用公网和自己的账户</a></li>
-<li><a href="#7-阅读证据和-ai-评估" id="toc-7-阅读证据和-ai-评估">7.
+<li><a href="#阅读证据和-ai-评估" id="toc-阅读证据和-ai-评估">7.
 阅读证据和 AI 评估</a></li>
-<li><a href="#8-了解准确字段提取与覆盖边界"
-id="toc-8-了解准确字段提取与覆盖边界">8.
-了解准确字段提取与覆盖边界</a></li>
-<li><a href="#9-托管身份与发布运行" id="toc-9-托管身份与发布运行">9.
+<li><a href="#了解准确字段提取与覆盖边界"
+id="toc-了解准确字段提取与覆盖边界">8. 了解准确字段提取与覆盖边界</a>
+<ul>
+<li><a href="#剩余缺口可以怎样改进"
+id="toc-剩余缺口可以怎样改进">剩余缺口可以怎样改进？</a></li>
+</ul></li>
+<li><a href="#托管身份与发布运行" id="toc-托管身份与发布运行">9.
 托管身份与发布运行</a></li>
-<li><a href="#10-隐私与故障排查" id="toc-10-隐私与故障排查">10.
+<li><a href="#托管隐私上游预算与证据强化"
+id="toc-托管隐私上游预算与证据强化">托管隐私、上游预算与证据强化</a></li>
+<li><a href="#隐私与故障排查" id="toc-隐私与故障排查">10.
 隐私与故障排查</a></li>
 </ul></li>
 </ul>
@@ -298,8 +301,13 @@ href="CURRENT-COVERAGE-zh.md">当前覆盖范围对照表</a>区分代表性实�
 <p>当前检查使用钱包提供的未签名请求、来源
 origin/网络元数据，以及成功取得的 RPC、情报和模拟证据。Muse
 评价可观察请求信号，包括支持范围内的来源、消息和请求不一致。链/provider/执行上下文指技术观察。历史报告与验收文件保留原始记录，不被删除或改写。</p>
-<h2 id="1-选择使用流程">1. 选择使用流程</h2>
+<h2 id="选择使用流程">1. 选择使用流程</h2>
 <table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
 <thead>
 <tr>
 <th>目标</th>
@@ -348,7 +356,7 @@ insight</strong></td>
 <p>同一个账户地址可以用于不同网络，但余额和合约属于各自的链。本地
 TEST-USD、LAB 代币和测试 NFT
 没有真实价值，切换到公网不会把它们变成公网资产。</p>
-<h2 id="2-本地安装与启动">2. 本地安装与启动</h2>
+<h2 id="本地安装与启动">2. 本地安装与启动</h2>
 <p>使用 Node.js 24.x、npm，以及安装了 MetaMask Flask
 的桌面浏览器。使用专门的开发账户。应用内嵌浏览器可能没有钱包扩展。</p>
 <p>在项目目录执行：</p>
@@ -358,6 +366,11 @@ TEST-USD、LAB 代币和测试 NFT
 <p>该命令构建网页和 Snap，启动全新的 Anvil
 链，部署本地测试合约，并启动以下回环服务：</p>
 <table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
 <thead>
 <tr>
 <th>服务</th>
@@ -368,28 +381,27 @@ TEST-USD、LAB 代币和测试 NFT
 <tbody>
 <tr>
 <td>网页</td>
-<td><a href="http://127.0.0.1:5173">http://127.0.0.1:5173</a></td>
+<td>http://127.0.0.1:5173</td>
 <td>工作台和浏览器 API 代理</td>
 </tr>
 <tr>
 <td>后端</td>
-<td><a href="http://127.0.0.1:8787">http://127.0.0.1:8787</a></td>
+<td>http://127.0.0.1:8787</td>
 <td>分析、取证、配对、认证及 SQLite 历史</td>
 </tr>
 <tr>
 <td>开发 Snap 文件服务</td>
-<td><a href="http://127.0.0.1:8080">http://127.0.0.1:8080</a></td>
+<td>http://127.0.0.1:8080</td>
 <td>安装或重新加载本地 Snap</td>
 </tr>
 <tr>
 <td>Anvil，链 31337</td>
-<td><a href="http://127.0.0.1:8545">http://127.0.0.1:8545</a></td>
+<td>http://127.0.0.1:8545</td>
 <td>本地余额、测试合约交易和实验室测试</td>
 </tr>
 </tbody>
 </table>
-<p>在装有 Flask 的浏览器中打开 <a
-href="http://127.0.0.1:5173。网页把">http://127.0.0.1:5173。网页把</a>
+<p>在装有 Flask 的浏览器中打开 http://127.0.0.1:5173。网页把
 <code>/api</code> 代理到 8787 端口；<strong>Snap 直接访问
 <code>http://127.0.0.1:8787/api</code></strong>，其带认证、来自不透明来源（opaque
 origin）的预检请求必须能够到达后端。5173 不是当前 Snap 的 API 端点。</p>
@@ -405,7 +417,7 @@ WalletShield 会话。释放端口前确认进程归属，不要随意结束其�
 <code>npm run chain</code>、<code>npm run deploy:local</code>、<code>npm run build</code>
 和 <code>npm run dev</code>。修改 Snap
 后须重新构建，再重新加载和配对。</p>
-<h2 id="3-配置数据与可选-ai">3. 配置数据与可选 AI</h2>
+<h2 id="配置数据与可选-ai">3. 配置数据与可选 AI</h2>
 <p>没有模型密钥也能运行本地钱包请求。Muse
 未启用、未配置或未成功完成有效分析时，报告只显示证据和缺口，不显示数值分数。</p>
 <p>按需创建 <code>.local/</code>，以 <a
@@ -413,6 +425,11 @@ href="../.env.example"><code>.env.example</code></a>
 为配置参考，并保留已有设置。项目根目录下任意命名的 <code>.env</code>
 文件不会自动加载。</p>
 <table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
 <thead>
 <tr>
 <th>配置</th>
@@ -474,7 +491,7 @@ HTTP 除外；含内嵌用户名或密码的 URL 会被拒绝。</p>
 <p>README 中本地合成 AI 连通性测试命令会主动调用
 Meta，可能产生费用。安装、离线测试或无评分取证不需要运行该命令。托管模式没有此测试路由。无论
 <code>ENABLE_MONITOR</code> 如何设置，定时签名后监控都保持禁用。</p>
-<h2 id="4-连接钱包并验证-snap">4. 连接钱包并验证 Snap</h2>
+<h2 id="连接钱包并验证-snap">4. 连接钱包并验证 Snap</h2>
 <ol type="1">
 <li>在 <strong>Choose wallet</strong>
 中选择目标钱包扩展。支持时，EIP-6963
@@ -502,7 +519,7 @@ failed</strong>
 端口，需要重新构建和加载。</p>
 <p>Snap 权限允许交易和消息洞察、网络访问、主页显示、状态存储、配套网站
 RPC，以及只读的钱包提供者观察。它们不会形成覆盖所有钱包权限、会话、智能账户请求或网络变更的统一拦截入口。</p>
-<h2 id="5-运行本地钱包测试">5. 运行本地钱包测试</h2>
+<h2 id="运行本地钱包测试">5. 运行本地钱包测试</h2>
 <ol type="1">
 <li>在 <strong>Wallet setup</strong> 点击 <strong>Switch to local chain
 and prepare assets</strong>。在钱包中批准添加或切换至 WalletShield
@@ -564,7 +581,7 @@ DELEGATECALL；不会修改真实智能钱包权限。</p>
 消费方法，也没有 ERC-3009 authorizationState
 getter；缺失状态/消费证据是预期边界。签名本身不消费消息、不改
 allowance、不转币，生成签名仍在浏览器丢弃。</p>
-<h2 id="6-使用公网和自己的账户">6. 使用公网和自己的账户</h2>
+<h2 id="使用公网和自己的账户">6. 使用公网和自己的账户</h2>
 <p><strong>Public networks</strong> 用于查询公网数据并检查实际 Snap
 送达。先使用 Sepolia 和专用测试账户。主网可能持有真实资产，本地 Flask
 开发钱包不应存放这些资产。</p>
@@ -602,11 +619,15 @@ MetaMask/Flask 连接网页与用户账户、展示请求并由用户决定签�
 或显式 RPC 给后端提供相应链的状态；协议适配器负责对特定
 ABI、版本和方法进行有边界的解析与检查。连接钱包不会自动配置后端 RPC；RPC
 可用也不会自动认证协议身份或补齐所有协议语义。</p>
-<h2 id="7-阅读证据和-ai-评估">7. 阅读证据和 AI 评估</h2>
+<h2 id="阅读证据和-ai-评估">7. 阅读证据和 AI 评估</h2>
 <p>参考分数前，先阅读请求和未完成检查。新分数只能来自通过验证的 Muse
 输出：<strong>0–100 的整数，或
 <code>null</code>（不评分）</strong>。这是<strong>未经校准的风险指示值</strong>，不是损失概率、诈骗百分比、身份信任分或安全保证。没有数值阈值、规则加分、权重、最低分或兜底分。定性规则信号独立保留，可能在模型评估之外继续提示警告。旧规则分数标记为历史记录。</p>
 <table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
 <thead>
 <tr>
 <th>必须包含的维度</th>
@@ -646,7 +667,7 @@ ID，不是数值子分数，也不取平均。证据置信度描述所提供证
 声明校验覆盖摘要、原因、各维度、行动建议和缺失数据文本，包括条目索引、匹配方向、否定和条件性建议，并要求对应实际
 RPC 观察。自然语言校验仍只是部分防护，不证明所有句子正确。每个
 low/review/high 维度，必须引用至少一条工具计划之外、状态并非 unknown
-的观察。评估范围记录此次请求实际未完成的检查与缺失证据；任何未知检查/缺口、模型发现的缺失、过旧/缺失/未来时间戳或同高度冲突哈希都会阻止整体
+的观察。评估范围记录此次请求实际未完成的检查与缺失证据；任何未知检查/缺口、模型发现的缺失、过旧/缺失/未来观察时间戳、公链区块来源/新鲜度失败或同高度冲突哈希都会阻止整体
 low 或 strong 证据支持程度。完整 complete 与缺失列表继续显示；包字段为
 assessment_scope，报告属性为 assessmentScope，策略名
 observable-request-v1。允许的 low/strong
@@ -667,7 +688,7 @@ selector
 <p>Snap 优先展示最多 24 条证据、6 行主要参数和 6
 条缺失检查摘要。使用报告 ID 在 <strong>Check history</strong>
 查阅完整报告。显示截断不意味着被省略检查已经通过。旧的非英文历史报告保留原文，不凭空翻译或重新评估。</p>
-<h2 id="8-了解准确字段提取与覆盖边界">8. 了解准确字段提取与覆盖边界</h2>
+<h2 id="了解准确字段提取与覆盖边界">8. 了解准确字段提取与覆盖边界</h2>
 <p>本轮还增加 DAI 结构 Permit、ERC-3009 单次转移授权、Safe
 结构控制/执行、有界递归封装摘要、V3 仓位状态、部分桥提款/完成参数和通用
 withdraw(uint256)。它们是有边界的候选适配器，不是全协议支持。已确认
@@ -682,6 +703,11 @@ href="../README.md#evidence-collected-for-each-operation">README
 操作表</a>和<a
 href="AI-COVERAGE-GUIDE-zh.md">中文覆盖指南</a>列出全部类别。典型示例如下：</p>
 <table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
 <thead>
 <tr>
 <th>请求</th>
@@ -780,6 +806,11 @@ RPC。其他类别仍有各方法特有的缺口。对于非 EVM
 链、其他钱包、恶意软件、密钥泄露、交易所内部、任意链下投资宣传、目标链到账和未来管理操作，目前也没有完整集成。</p>
 <h3 id="剩余缺口可以怎样改进">剩余缺口可以怎样改进？</h3>
 <table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
 <thead>
 <tr>
 <th>所需输入</th>
@@ -822,7 +853,7 @@ RPC。其他类别仍有各方法特有的缺口。对于非 EVM
 </table>
 <p>这些是扩展方向，不是当前能力。30
 个分析类别都保留文档所述的不完整之处。语义引用校验约束部分断言，不能证明每一句英文解释都正确。检测质量需要独立、带标签的评估，不能由本地测试合约推出。</p>
-<h2 id="9-托管身份与发布运行">9. 托管身份与发布运行</h2>
+<h2 id="托管身份与发布运行">9. 托管身份与发布运行</h2>
 <p>托管用户先连接账户，点击 <strong>Verify current wallet
 identity</strong> 或 <strong>Sign to verify this
 wallet</strong>。核对完整 domain、URI、地址、chain、nonce 和
@@ -840,8 +871,9 @@ expiry。后端针对已保存的一次性消息验证 EOA
 IP 12 次、全局 60 次。每地址最多 4 个活动 Snap 凭据，全局最多 8192
 个；成功重载仅轮换自己的最早到期凭据。429 不改变已有配对，含
 <code>Retry-After: 60</code>。过期凭据和旧限流记录使用索引清理。</p>
-<p><strong>Sign out and revoke Snap pairing</strong> 撤销该地址的 Snap
-凭据和当前网页会话。其他网页会话可以继续有效至退出或到期。仅切换账户不会撤销之前的服务端凭据。Snap
+<p><strong>Sign out all sessions and revoke pairing</strong>
+原子撤销该地址全部网页/Snap
+凭据和未完成登录挑战，其他钱包不变。仅切换账户不会撤销之前的服务端凭据。Snap
 凭据过期或被撤销后，须重新登录和配对。</p>
 <p>运营者必须在 <code>.local/service.env</code> 配置真实 HTTPS
 域名、自有 npm 包名和公开仓库，参考<a
@@ -864,9 +896,67 @@ AI
 测试路由；它实施钱包与全局额度、每地址一个活动扫描、可配置总扫描并发上限和速率限制。打包不代表已经部署、发布
 npm、获得注册资格、完成独立安全审查或被浏览器钱包接受。邀请公众前须另行完成这些工作。默认构建仍是本地
 Flask 集成。</p>
-<h2 id="10-隐私与故障排查">10. 隐私与故障排查</h2>
+<h2 id="托管隐私上游预算与证据强化">托管隐私、上游预算与证据强化</h2>
+<p><strong>Sign out all sessions and revoke pairing</strong>
+会以原子操作撤销当前已验证地址的全部网页/Snap
+凭据和未完成登录挑战，其他钱包不变。恢复使用须重新验证与配对。<strong>Delete
+my stored reports</strong>
+先要求明确确认，只删除该地址拥有的报告，并撤销该地址全部凭据；使用额度不清零。每次托管报告插入/更新都会在同一
+SQLite
+事务内校验凭据仍有效且归属正确，撤销后的进行中请求不能把报告写回来。已发送给
+Meta/RPC/情报服务的请求无法因删除报告而撤回或退款。</p>
+<p>这里的删除是 SQLite <strong>逻辑行删除</strong>，不保证 WAL
+页、磁盘、备份或第三方日志中的历史字节被法证擦除。应用不加密数据库。自动保留默认关闭；运营者可在后端
+<code>.local/service.env</code> 或进程环境配置以下非密钥项：</p>
+<pre class="dotenv"><code>WALLETSHIELD_SCAN_WALLET_DAILY_LIMIT=100
+WALLETSHIELD_SCAN_IP_DAILY_LIMIT=300
+WALLETSHIELD_SCAN_GLOBAL_DAILY_LIMIT=1000
+WALLETSHIELD_REPORT_RETENTION_DAYS=0</code></pre>
+<p>证据/RPC/分叉扫描预算独立于模型调用预算：托管扫描在<strong>采集之前</strong>原子预留六个范围（每分钟每钱包
+8 次、服务端观察 IP 16 次、全局 60 次，另有以上可配置 UTC
+日上限）。任一范围耗尽就拒绝扫描，不扣其他范围，不启动采集器。计数持久化，重启不重置；拒绝/未完成检查不产生兜底分数。模型调用仍有独立限额。这是初始容量策略，不是公众规模吞吐或可用性保证；网络连通探测仍有自己的限额。可配置日上限范围：每钱包
+1–10,000、每 IP 1–100,000、全局 1–1,000,000。</p>
+<p>保留天数 <code>0</code> 不删除已有数据。显式设置 1–3650
+天时，每次启动及之后每分钟最多清理 100
+份已过期且有托管所有者映射的报告，积压可能需要多批；年龄按报告创建时间计算。无所有者映射的本地历史、使用额度、其他应用状态和第三方副本不由该策略删除。</p>
+<p>公链区块来源与采集时间分开记录。<code>quality.blockFreshness</code>
+标出 RPC/隔离分叉区块时间超过 300 秒、未来超过 30 秒、缺少区块时间/hash
+或链身份未验证的观察；这些缺口会阻止整体 <code>low</code> 和
+<code>strong</code> 证据支持程度，不是评分权重。合成演示与本地链 31337
+不按公链区块年龄限制，因为本地时钟可能人为设置；观察时间诊断另算，新近区块也不证明没有重组或节点不一致。</p>
+<p>Muse 新增接收
+<code>evidence_admissibility</code>（各维度可由哪些实际观察支持）与
+<code>claim_support</code>（有界基本调用/分叉执行/分叉卖出的支持）。真实但不相关的引用不能支撑该维度。代币元数据/开源状态或卖出风险标记为零，不能单独支撑身份、诱导或权限结论；实际控制权标记可支持权限，卖出/税费观察可支持敞口/协议，负面身份断言须有绑定请求/链的已识别风险观察。后端对所有展示文字检查无依据的“官方身份”、绝对安全、未来执行/卖出保证与事实性美元损失断言，同时保留明确未知与条件建议。基本调用不是交易上链，分叉结果不是公网执行或未来保证。这些只是部分自然语言防护，不是形式证明或独立准确率/校准基准；本轮新增检查采用离线对抗样本，不证明当前线上
+Muse 的准确率。模型成功响应流式限制为 150,000 字节，错误响应为 16,000
+字节，超限会取消读取，拒绝无效
+UTF-8；不会把原始供应商错误文本作为用户建议。资源限制不证明模型结论真实。</p>
+<p>GoPlus
+仍需显式开启。它从已识别的外层/路径/Permit2/批量字段中最多选八个代币与八个交易对手，不把桥的远端
+token 或 delegatecall
+目标直接当作本链代币。每轮最多十八个网络请求、四路并发、单请求 1.8
+秒、总共 7.5 秒；响应缓存三十秒（最多 256
+项），支持链列表缓存一小时。结果带
+<code>fetchedAt</code>、<code>cacheHit</code>、<code>cacheAgeMs</code>、<code>cacheTtlMs</code>、<code>providerAsOf:null</code>、<code>freshnessVerified:false</code>；刚取得不表示知道供应商数据的实际日期。缺失标记、闭源/代理导致的遗漏、未查询/截断候选与未命中均是边界，参见
+<a href="https://docs.gopluslabs.io/reference/response-details">GoPlus
+官方响应说明</a>。</p>
+<p>部分标准 V3 <code>exactInputSingle</code>（有/无
+deadline、代币出资）现在支持依赖式分叉买卖实验：原样重放买入，测量新取得输出与实际输入扣减，只授权新取得数量，再按原
+fee tier 和存在时的原 deadline
+生成反向卖出。实验卖出的最低输出/价格限制为零，使用新的本地 nonce/默认
+gas；部分成交按实际输入扣减计算比例。原生币出资、路由余额出资、多跳、exact-output、其他收款人和不透明聚合器仍不支持。卖出成功一次不保证未来可卖；失败一次也不单独证明蜜罐。
+新增 <code>npm run test:v3</code> 使用临时节点测试四个场景（两种元组格式
+×
+正常/阻止卖出），并核对源区块/hash/nonce/余额均不变。它们是简化适配器测试，不认证官方池、不证明
+MetaMask/Snap 交付或在线模型准确率；钱包目录仍为 66 个案例。</p>
+<p>自动入口仍取决于钱包实际交付。MetaMask 当前仅显示 Critical
+严重级别的消息洞察，并在进入 Sign 后展示；交易洞察有独立入口，参见 <a
+href="https://docs.metamask.io/snaps/reference/entry-points/">官方入口说明</a>。权限、会话、UserOperation
+和其他钱包 RPC 仍需显式 API 提交，不是通用钱包拦截。托管登录仍仅支持
+EOA，不支持 ERC-1271 认证。公开上线仍需真实域名/TLS、目标 Snap
+发布与分发、浏览器钱包验收、安全备份恢复以及负载/故障测试。</p>
+<h2 id="隐私与故障排查">10. 隐私与故障排查</h2>
 <p>未签名请求、证据和输出发送到所配置后端并保存在
-SQLite。本地模式存储在本机，托管模式存储在运营者服务器。应用没有数据库加密，也没有自动保留期限或删除策略。RPC
+SQLite。本地模式存储在本机，托管模式存储在运营者服务器。应用不加密数据库；提供托管本人报告的确认逻辑删除与可选有界保留策略，默认关闭。RPC
 提供者会看到查询状态和分叉所需的地址/调用参数；启用的 GoPlus
 接收受限的所选地址、代币及规范化公开来源；启用的 Meta
 接收受限证据包，包括受限消息预览和解码字段，不包含完整
@@ -875,6 +965,10 @@ calldata/历史或密钥。修复会重新发送该证据及受限的被拒输�
 <p>实验室和中性测试生成的签名留在浏览器。托管登录签名会按设计发送以完成认证，但不会持久化。不要把秘密放入未签名数据，过滤不是通用秘密检测器。捕获渠道记录的是凭据来源，不是钱包/Snap
 代码实际执行的密码学证明。</p>
 <table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
 <thead>
 <tr>
 <th>问题</th>

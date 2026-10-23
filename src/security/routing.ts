@@ -9,7 +9,7 @@ export function planRequest(request:SecurityRequest,op:Operation,config?:Securit
   add('rpc_context',true,'Verify network, block, balance, code and token interfaces',config?!!config.rpc[request.chainId||Number(op.fields.domainChainId??op.fields.chainId)]:null);
   add('contract_controls',request.kind==='transaction'||request.kind==='signature'&&!!op.fields.verifyingContract,'Read code hashes, proxy slots, owner and pause state; interfaces do not establish identity');
   add('isolated_simulation',request.kind==='transaction','Execute in an isolated fork and compare recognized asset changes',config?!!config.forkEnabled:null);
-  add('round_trip',op.category==='swap','Buy then sell through a supported V2 route; no guarantee of future exits',config?!!config.forkEnabled:null);
+  add('round_trip',['swap','swap_v3'].includes(op.category),'Buy then sell through selected V2 or V3 exactInputSingle routes; unsupported reverse routes remain unknown, with no guarantee of future exits',config?!!config.forkEnabled:null);
   add('signature_verification',request.kind==='signature','EIP-712 encoding, domain, selected Permit nonces and replay scope');
   add('login_envelope',op.category==='siwe','Inspect supported SIWE fields, URI/source binding and local time conditions; server nonce use and signature acceptance remain unknown');
   add('vault_preview',op.category==='vault','Read ERC-4626 underlying asset, shares, previews and limits');
