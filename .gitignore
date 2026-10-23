@@ -25,3 +25,6 @@ snap/dist/
 # Private audit runs and presentation rendering intermediates.
 .audit-build/
 .presentation-build/
+
+# Keep presentation deliverables local.
+presentations/*.pptx
