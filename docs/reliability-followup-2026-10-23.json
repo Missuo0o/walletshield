@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "walletshield-reliability-followup-v1",
+  "date": "2026-10-23",
+  "runtime": "Node.js 24.19.0",
+  "verification": {
+    "unitRegressionPassed": 495,
+    "unitRegressionFailed": 0,
+    "v3StateIntegrationScenarios": 23,
+    "independentEvaluatorTests": 9,
+    "traceRegressionTests": 14
+  },
+  "liveMuse": {
+    "cases": 4,
+    "repeatsPerCase": 2,
+    "runs": [
+      {
+        "caseId": "siwe",
+        "repeat": 0,
+        "evidencePacketSha256": "dc0641057410ac31db8cbd70b49a717ffac5112284ddae0fce7f551dd562374b",
+        "status": "completed",
+        "score": 52,
+        "attempts": 1,
+        "repaired": false,
+        "elapsedMs": 15708,
+        "failureKind": null
+      },
+      {
+        "caseId": "order",
+        "repeat": 0,
+        "evidencePacketSha256": "d2394aabcb0cc7099f6954a03a90fee868768809f3b148a35bcecf87f1052c8c",
+        "status": "completed",
+        "score": null,
+        "attempts": 1,
+        "repaired": false,
+        "elapsedMs": 12853,
+        "failureKind": null
+      },
+      {
+        "caseId": "siwe-mismatch",
+        "repeat": 0,
+        "evidencePacketSha256": "1c101c688dc18491401fd9777147085012aae7b793e127c1481085e8027b3c61",
+        "status": "completed",
+        "score": 74,
+        "attempts": 1,
+        "repaired": false,
+        "elapsedMs": 15543,
+        "failureKind": null
+      },
+      {
+        "caseId": "permit-owner",
+        "repeat": 0,
+        "evidencePacketSha256": "2da46104b847b097ead24281f6f6c6ad91bb4fd5ae499c6b1eeb1dd6d0631773",
+        "status": "completed",
+        "score": 76,
+        "attempts": 1,
+        "repaired": false,
+        "elapsedMs": 23382,
+        "failureKind": null
+      },
+      {
+        "caseId": "siwe",
+        "repeat": 1,
+        "evidencePacketSha256": "5b3dd0bbee0192602304c414d0e6173f2e1bd44363136eb970a23fbf8dad5966",
+        "status": "completed",
+        "score": 62,
+        "attempts": 1,
+        "repaired": false,
+        "elapsedMs": 18527,
+        "failureKind": null
+      },
+      {
+        "caseId": "order",
+        "repeat": 1,
+        "evidencePacketSha256": "ecd1a32d69e72e566ee923f1a97cb1e2f420b5b86e11268dd71522665adcbff1",
+        "status": "completed",
+        "score": 55,
+        "attempts": 1,
+        "repaired": false,
+        "elapsedMs": 15931,
+        "failureKind": null
+      },
+      {
+        "caseId": "siwe-mismatch",
+        "repeat": 1,
+        "evidencePacketSha256": "6a33c1974e51aed24b01e421ed2ada699db8cdfc1e2c52b40890f02ed42f1a46",
+        "status": "completed",
+        "score": 82,
+        "attempts": 2,
+        "repaired": true,
+        "elapsedMs": 29958,
+        "failureKind": null
+      },
+      {
+        "caseId": "permit-owner",
+        "repeat": 1,
+        "evidencePacketSha256": "2311e55a6db8f789eadb6b2148fc64617c7d26ead8991df21bef5e63fb0be28d",
+        "status": "completed",
+        "score": 68,
+        "attempts": 1,
+        "repaired": false,
+        "elapsedMs": 16253,
+        "failureKind": null
+      }
+    ],
+    "providerAttempts": 9,
+    "accepted": 8,
+    "numeric": 7,
+    "validAbstentions": 1,
+    "repairedOutputs": 1,
+    "failures": 0,
+    "repeatability": [
+      {
+        "caseId": "siwe",
+        "outputs": [
+          52,
+          62
+        ],
+        "numericRange": 10,
+        "abstentionChanged": false
+      },
+      {
+        "caseId": "order",
+        "outputs": [
+          null,
+          55
+        ],
+        "numericRange": 0,
+        "abstentionChanged": true
+      },
+      {
+        "caseId": "siwe-mismatch",
+        "outputs": [
+          74,
+          82
+        ],
+        "numericRange": 8,
+        "abstentionChanged": false
+      },
+      {
+        "caseId": "permit-owner",
+        "outputs": [
+          76,
+          68
+        ],
+        "numericRange": 8,
+        "abstentionChanged": false
+      }
+    ],
+    "claimBoundary": "Targeted engineering recheck of previously failed case families. Current deterministic comparisons plus preserved historical non-rule evidence, including its original block/time. Each run has a different inspection timestamp/packet hash. Not a bit-identical-input repeatability test, independent labelled benchmark, accuracy result or loss-probability calibration."
+  },
+  "environmentSetup": {
+    "preflightTransportFailures": 8,
+    "note": "An earlier execution-environment network restriction produced eight immediate connection failures with no provider responses; these local diagnostics were retained separately from the connected recheck."
+  },
+  "publicRPC": {
+    "mainnet": {
+      "chainId": 1,
+      "blockNumber": "26257163",
+      "traceDialects": {
+        "debug_traceCall": "method_unsupported",
+        "trace_call": "method_unsupported"
+      }
+    },
+    "sepolia": {
+      "chainId": 11155111,
+      "blockNumber": "11978503",
+      "traceDialects": {
+        "debug_traceCall": "method_unsupported",
+        "trace_call": "method_unsupported"
+      }
+    },
+    "localAnvil": {
+      "trace": "observed",
+      "method": "debug_traceCall",
+      "retainedFrames": 1,
+      "transactionSubmitted": false
+    },
+    "scope": "Read-only capability observations. Existing Infura trace support was not enabled by code. Optional server-side dedicated endpoints require independent operator configuration and exact primary-chain snapshot checks."
+  },
+  "independentAccuracy": {
+    "measured": false,
+    "reason": "The external-label evaluator is implemented and tested. No independent reviewer-labelled holdout has been provided; synthetic format examples do not establish accuracy."
+  },
+  "privacy": "No credentials, private RPC URLs, raw model bodies, request payloads, generated signatures or wallet database are published."
+}

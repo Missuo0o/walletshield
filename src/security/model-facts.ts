@@ -4,7 +4,7 @@ import type {AIDimension,SecurityReport} from './types.js';
 import {dimensionsForEvidence} from './ai-claims.js';
 
 export const FACT_SCHEMA_VERSION='walletshield-facts-v1' as const;
-export const FACT_LIMITS={candidates:256,selected:32,perEvidence:48,arrayItems:16,text:200} as const;
+export const FACT_LIMITS={candidates:256,selected:32,perEvidence:48,arrayItems:16,traceFrames:4,text:200} as const;
 export const modelFactSchema=z.object({
  id:z.string().regex(/^fact_[a-f0-9]{24}$/),evidence_id:z.string().min(1).max(150),
  subject:z.object({role:z.enum(['operation','token','asset','address','account','owner','verifier','target','origin','evidence']),value:z.string().min(1).max(200)}).strict(),
@@ -23,7 +23,7 @@ const fields=new Set((
  'amount amountRaw amountIn amountOut amountInMaximum amountOutMinimum amountADesired amountBDesired amountAMin amountBMin value valueWei balance nativeBalanceWei decimals standard allowance currentAllowance expected declaredNonce nonce observed activeAtObservedBlock expiration deadline sigDeadline validAfter validBefore validAtObservedBlock expiredAtObservedBlock invalidWindow notYetValidAtObservedBlock authorizationUsedOrCanceled '+
  'unlimited allowed approved addsPermission tokenId tokenIds amounts tokens path fee liquidity shares assets minimum maximum totalAssets totalSupply maxDeposit maxWithdraw maxRedeem convertToAssets previewDeposit previewMint previewWithdraw previewRedeem '+
  'returned received spent actualInputDebit roundTripReturnPercent gasUsed status success revert reasonCode amountKind outputKind shareKind maxFeePerGas maxPriorityFeePerGas gas gasPrice maximumExecutionFeeWei transactionNonce pendingNonce baseFeePerGas '+
- 'hasCode targetHasCode codeHash accountKind ownerMatchesSigner publishedAddressMatch standardDomainFieldsMatch declared interfaceId interfaceSupported threshold newThreshold owners moduleEnabled enabled domainHash digest signingHash domainChainId chainId readChainId requestChainId declaredChainId signingNetworkVerified cryptographicSignerVerified identityVerified '+
+ 'hasCode targetHasCode codeHash accountKind ownerMatchesSigner publishedAddressMatch standardDomainFieldsMatch declared interfaceId interfaceSupported threshold newThreshold owners moduleEnabled enabled domainHash digest signingHash domainChainId chainId readChainId requestChainId declaredChainId signingNetworkVerified cryptographicSignerVerified identityVerified loginStructureValid nonceFormatValid nonceLength resourceCount domain scheme issuedAt notBefore declaredOrigin uriOrigin sourceOrigin '+
  'is_honeypot cannot_sell_all buy_tax sell_tax is_open_source is_proxy transfer_pausable is_blacklisted slippage_modifiable owner_change_balance hidden_owner can_take_back_ownership is_mintable phishing_site '+
  'cybercrime money_laundering phishing_activities stealing_attack honeypot_related_address blackmail_activities sanctioned '+
  'totalCollateralBase totalDebtBase availableBorrowsBase currentLiquidationThreshold ltv healthFactor configuration reserveConfiguration '+
@@ -36,13 +36,23 @@ const fields=new Set((
  'type authorizationCount typeExplicitlySet destinationPresent envelopeShapeSupported tupleIndex delegate action authorizationChainId chainMatches crossChainAuthorization nonceWithinProcessingRange signatureRecovered recoveredAuthority authorityIsOuterSender authority expectedNonceAtThisTuple authorityCodeEligible tupleEligibleAtSnapshot assumesOuterTransactionAccepted outerEnvelopeShapeSupported outerDeclaredNonceMatchesCurrent codeObservation authorityCodeHash currentDelegate declaredOuterNonce declaredNonceMatchesCurrent conditional confirmedChanges registryMatched resolutionHopsChecked implementationPolicyVerified '+
  'manager token0 token1 factory pool poolToken0 poolToken1 poolFee poolFactory sqrtPriceX96 currentTick observationIndex observationCardinality observationCardinalityNext feeProtocol unlocked activeLiquidityRaw poolHasCode poolCodeHash interfaceBindingConsistent withinDeclaredTickRange priceQuoteEstablished sourceMethod exactOutput declaredInputRaw declaredInputKind requestedOutputRaw observedInputDebitRaw ratioInputRaw originalBuyPreserved '+
  'kind sameStore changedFields erc20AllowanceRaw erc20AllowanceToVerifierRaw permit2AmountRaw permit2ExpirationSeconds permit2Nonce erc721Owner erc721Approved ownerCount ownersTruncated '+
+ 'traceAvailable traceTruncated traceGaps retainedTraceCalls rootReverted completeAssetCoverage '+
  'sourceChainId destinationChainId sourceBridge destinationBridge sourceMessenger destinationMessenger sourceChainRole destinationChainRole roleVersionsCompatible routeBindingEstablished anyObservedPaused snapshotsSynchronized arrivalProven proofVerified runtimeVersion runtimeCodeMatched versionMatchesRegistry adapterVersionSupported trustedGetterSemantics observedOther expectedOther observedMessenger expectedMessenger pointerMatches paused nextMessageNonce nonceProvesThisMessage observationComplete callerMatchesMessenger expectedMessenger declaredAssetSender activeCrossDomainSenderVerified declaredRemoteToken declaredBridge expectedRemoteToken expectedBridge maintainedMintableBinding pairMatches tokenValueEstablished localChainId otherChainId otherToken bothTokenCodeObserved maintainedMintableCount maintainedDeclarationsMatch tokenPairBindingEstablished'
 ).split(/\s+/));
-const metadataOnly=new Set(['status','standard','declared','interfaceId','interfaceSupported','hasCode','codeHash','identityVerified','cryptographicSignerVerified','signingNetworkVerified','referenceOnly','sourceCodeAudit','fullWalletInventory']);
+const metadataOnly=new Set(['status','standard','declared','interfaceId','interfaceSupported','hasCode','codeHash','identityVerified','cryptographicSignerVerified','signingNetworkVerified','referenceOnly','sourceCodeAudit','fullWalletInventory','completeAssetCoverage']);
 function stable(value:unknown):string{return JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);}
 function subjectFor(check:SecurityReport['checks'][number],field:string,report:SecurityReport):ModelFact['subject']{
  const data=check.data??{};
  const subjects=data.subjects as Record<string,unknown>|undefined;
+ const traceFrame=check.id==='call_trace'&&/^data\.calls\[(\d+)\]\.(\w+)$/.exec(field);
+ if(traceFrame&&Array.isArray(data.calls)){
+  const frame=data.calls[Number(traceFrame[1])] as Record<string,unknown>|undefined;
+  if(traceFrame[2]==='valueWei')return {role:'asset',value:'native'};
+  if(traceFrame[2]==='from'&&address(frame?.from))return {role:'account',value:frame.from.toLowerCase()};
+  if(address(frame?.to))return {role:'target',value:frame.to.toLowerCase()};
+  if(address(frame?.from))return {role:'account',value:frame.from.toLowerCase()};
+  return {role:'evidence',value:check.id};
+ }
  // A wallet owner is not the unit of a vault share or underlying-token
  // quantity. Real fork collectors include subjects.owner, unlike early minimal
  // fixtures; choosing that owner first silently collapsed distinct assets.
@@ -101,6 +111,15 @@ export function modelFactCandidates(report:SecurityReport):{version:typeof FACT_
    for(const [name,flag] of Object.entries(value))if(fields.has(name))append(`data.flags.${name}`,flag,dimensions);
   }else if(['values','differences','subjects','beforeValues','afterValues'].includes(key)&&value&&typeof value==='object'&&!Array.isArray(value)){
    for(const [name,item] of Object.entries(value))if(fields.has(name)){if(Array.isArray(item)){omitted+=Math.max(0,item.length-FACT_LIMITS.arrayItems);item.slice(0,FACT_LIMITS.arrayItems).forEach((entry,index)=>append(`data.${key}.${name}[${index}]`,entry,dimensions));}else append(`data.${key}.${name}`,item,dimensions);}
+  }else if(check.id==='call_trace'&&key==='calls'&&Array.isArray(value)){
+   omitted+=Math.max(0,value.length-FACT_LIMITS.traceFrames);
+   value.slice(0,FACT_LIMITS.traceFrames).forEach((item,index)=>{
+    if(!item||typeof item!=='object'||Array.isArray(item))return;
+    const frame=item as Record<string,unknown>;
+    for(const name of ['from','to','selector','depth','reverted'])if(scalar(frame[name]))append(`data.calls[${index}].${name}`,frame[name],dimensions);
+    if(typeof frame.type==='string'&&/^(?:CALL|STATICCALL|DELEGATECALL|CALLCODE|CREATE|CREATE2|SELFDESTRUCT|SUICIDE)$/.test(frame.type))append(`data.calls[${index}].callType`,frame.type,dimensions);
+    if(typeof frame.value==='string'&&/^0x[\da-f]{1,64}$/i.test(frame.value))append(`data.calls[${index}].valueWei`,String(BigInt(frame.value)),dimensions);
+   });
   }else if(['offer','consideration'].includes(key)&&Array.isArray(value)){
    omitted+=Math.max(0,value.length-FACT_LIMITS.arrayItems);value.slice(0,FACT_LIMITS.arrayItems).forEach((item,index)=>{if(item&&typeof item==='object')for(const [name,scalar] of Object.entries(item))if(fields.has(name))append(`data.${key}[${index}].${name}`,scalar,dimensions);});
   }

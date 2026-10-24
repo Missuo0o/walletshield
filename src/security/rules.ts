@@ -11,7 +11,7 @@ export function assess(request:SecurityRequest, collected:Evidence[], source:'rp
   const op:Operation=decodeRequest(request);
   const checks:Evidence[]=[];
   checks.push(...loginEvidence(request,op));
-  const add=(id:string,status:Evidence['status'],title:string,detail:string)=>checks.push(evidence(id,status,title,detail,'rules/0.3.0'));
+  const add=(id:string,status:Evidence['status'],title:string,detail:string,data?:Record<string,unknown>)=>checks.push(evidence(id,status,title,detail,'rules/0.3.0',data));
   if(collected.some(c=>c.id==='typed_structure'&&c.status==='unknown')){op.decoded=false;op.complex=true;}
   if(op.fields.previewTruncated===true||op.fields.truncated===true)add('extraction_limit','unknown','Request summary is truncated','Display or extraction reached its resource limit; unread content is not checked.');
   const token=collected.find(e=>e.id==='token_identity'&&e.status==='pass')?.data;
@@ -56,11 +56,11 @@ export function assess(request:SecurityRequest, collected:Evidence[], source:'rp
     add('signature_effects','unknown','Future signature use is unverified','A third party can submit the signature later. This inspection neither executes that transaction nor proves future assets cannot move.');
     if(!request.chainId) add('signature_chain','unknown','Request-bound wallet network unavailable','The signature hook did not supply a request-bound chain ID; the active network must not be guessed.');
     const domainChain=String(op.fields.domainChainId||op.fields.chainId||'');
-    if(domainChain && request.chainId && /^(?:\d+|0x[\da-f]+)$/i.test(domainChain) && BigInt(domainChain)!==BigInt(request.chainId)) add('signature_chain_mismatch','risk','Signed chain differs from request chain','Review the EIP-712 or login network.');
+    if(domainChain && request.chainId && /^(?:\d+|0x[\da-f]+)$/i.test(domainChain) && BigInt(domainChain)!==BigInt(request.chainId)) add('signature_chain_mismatch','risk','Signed chain differs from request chain','Review the EIP-712 or login network.',{requestChainId:request.chainId,declaredChainId:String(BigInt(domainChain)),matches:false});
     const owner=op.fields.owner;
-    if(typeof owner==='string'&&/^0x[\da-f]{40}$/i.test(owner)&&owner.toLowerCase()!==request.signature.from.toLowerCase()) add('signer_mismatch','risk','Message account differs from signer','Verify the signing subject; do not assume this is an ordinary approval or login.');
+    if(typeof owner==='string'&&/^0x[\da-f]{40}$/i.test(owner)&&owner.toLowerCase()!==request.signature.from.toLowerCase()) add('signer_mismatch','risk','Message account differs from signer','Verify the signing subject; do not assume this is an ordinary approval or login.',{owner,signer:request.signature.from,ownerMatchesSigner:false});
     if(op.category==='siwe' && request.origin) {
-      try { if(new URL(request.origin).host.toLowerCase()!==String(op.fields.domain).toLowerCase()) add('login_domain','risk','Login domain differs from source','This may authorize login to another website.'); } catch { add('login_domain','unknown','Source domain could not be verified','The declared login domain could not be compared.'); }
+      try { const source=new URL(request.origin);if(source.host.toLowerCase()!==String(op.fields.domain).toLowerCase()) add('login_domain','risk','Login domain differs from source','This may authorize login to another website.',{sourceOrigin:source.origin,domain:String(op.fields.domain),matches:false}); } catch { add('login_domain','unknown','Source domain could not be verified','The declared login domain could not be compared.'); }
     }
   }
   if(op.category==='siwe' && typeof op.fields.expiration==='string' && op.fields.expiration) {

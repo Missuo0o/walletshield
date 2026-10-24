@@ -11,7 +11,7 @@ Current checks use the wallet-supplied unsigned request, source origin/network m
 
 ## Current evidence and integration additions
 
-Current Muse output uses `walletshield-facts-v1`: exact selected subject/field/value/source/chain/block/time/scope facts, with per-reason and per-dimension `fact_ids`. Historical output remains readable. The backend verifies observation copying and relevance, not the truth of every provider response or free-form sentence. Scores remain Muse-only, with no fixed numeric weights, floors or fallback.
+Muse returns compact `walletshield-selection-v1` fact IDs. The backend resolves the original server-owned facts, stores `walletshield-facts-v1` and retains strict references and semantic checks. Historical full-fact responses remain readable. Scores remain Muse-only, without numeric weights, floors or fallback. The [reliability follow-up](RELIABILITY-FOLLOWUP-2026-10-23.md) documents clear outcome labels, trace fallback and independent-label evaluation; actual accuracy remains unmeasured without external labels.
 
 Backend deployment-registry/code matching, reference USD feeds and maintained two-chain bridge-route validation have been removed. Existing `.local/registry.json` files are not read. Basic transaction/approval/signature decoding, configured RPC state, selected V2 routes (including the existing native path), token-funded V3 and generic fork simulation, optional GoPlus and Muse assessment remain. `ENABLE_SOURCE_VERIFICATION=1` independently enables bounded Sourcify source-match observations; this is not an official-deployment registry or code audit.
 

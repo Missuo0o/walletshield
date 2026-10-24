@@ -6,6 +6,7 @@ import { NodeType, type Component, type Panel } from '@metamask/snaps-sdk';
 import { coverageForCategory, ENTRY_LABELS, ENTRY_BOUNDARY, ADVICE_ONLY, DATA_BOUNDARY } from '../../src/security/coverage';
 import { operationLines, missingLines, adviceLine } from '../../src/security/display';
 import {unsupportedTransactionFields,normalizeAuthorizationList} from '../../src/security/transaction-fields';
+import {scoreDisposition} from '../../src/security/score-disposition';
 const legacyPanel = (children: Component[]): Panel => ({ type: NodeType.Panel, children });
 const legacyHeading = (value: string): Component => ({ type: NodeType.Heading, value });
 const legacyText = (value: string): Component => ({ type: NodeType.Text, value });
@@ -30,11 +31,11 @@ export const onRpcRequest:OnRpcRequestHandler=async({origin,request})=>{
   const status=await pairingStatus(`Bearer ${params.token}`);await snap.request({method:'snap_manageState',params:{operation:'update',newState:{backendToken:params.token,...(status.chainId!==undefined?{chainId:status.chainId}:{})}}});return {configured:true,...status};
 };
 
-type Result = { operation?:string|{category:string;label:string;fields:Record<string,unknown>};missingData?:string[];score?: number | null; scoreSource?: string; ai?: { status: string; message: string;result?:{dimensions?:{dimension:string;assessment:string;reason:string;evidence_ids:string[]}[];evidence_confidence?:string;assessment?:'low'|'review'|'high'|'unknown';summary:string;suggested_action:string;missing_data?:string[];reasons:{text:string;evidence_ids:string[]}[]} }; id: string; source: 'rpc'; level: 'low' | 'review' | 'high' | 'unknown'; title: string; summary: string; complete: boolean; checks: { title: string; detail: string; status: string }[] };
+type Result = { operation?:string|{category:string;label:string;fields:Record<string,unknown>};missingData?:string[];score?: number | null; scoreSource?: string; ai?: { status: string; message: string;failureKind?:string;result?:{dimensions?:{dimension:string;assessment:string;reason:string;evidence_ids:string[]}[];evidence_confidence?:string;assessment?:'low'|'review'|'high'|'unknown';summary:string;suggested_action:string;missing_data?:string[];reasons:{text:string;evidence_ids:string[]}[]} }; id: string; source: 'rpc'; level: 'low' | 'review' | 'high' | 'unknown'; title: string; summary: string; complete: boolean; checks: { title: string; detail: string; status: string }[] };
 const assessmentLabel={low:'No clear risk observed',review:'Review required',high:'High risk',unknown:'Unable to assess'};
 const scoreExplanation='Muse independently assesses the observable request evidence; there are no fixed scores or floors. A low assessment or strong evidence support is not a safety guarantee. The combined warning preserves qualitative signals and unfinished request checks instead of using score bands.';
 const dimensionNames:Record<string,string>={authority:'Authority',exposure:'Exposure',execution:'Execution',identity:'Identity',protocol:'Protocol',deception:'Deception'};
-function dimensionLines(result:Result){return (result.ai?.result?.dimensions??[]).map(d=>`${dimensionNames[d.dimension]??d.dimension}: ${d.assessment==='not_applicable'?'Not applicable':assessmentLabel[d.assessment as keyof typeof assessmentLabel]??'Unknown'}. ${d.reason}`);}
+function dimensionLines(result:Result){return (result.ai?.status==='completed'?result.ai.result?.dimensions??[]:[]).map(d=>`${dimensionNames[d.dimension]??d.dimension}: ${d.assessment==='not_applicable'?'Not applicable':assessmentLabel[d.assessment as keyof typeof assessmentLabel]??'Unknown'}. ${d.reason}`);}
 function displayedChecks(checks:Result['checks']){const order:Record<string,number>={risk:0,warning:1,unknown:2,pass:3};return checks.map((check,index)=>({check,index})).sort((a,b)=>(order[a.check.status]??2)-(order[b.check.status]??2)||a.index-b.index).slice(0,24).map(v=>v.check);}
 const API = `${RUNTIME.apiBase}/security/scan`;
 async function pairingStatus(authorization:string){const response=await fetch(`${RUNTIME.apiBase}/security/pair/status`,{headers:{Authorization:authorization},signal:AbortSignal.timeout(4000)});if(!response.ok)throw Error('Backend pairing rejected');const value=await response.json();if(value?.paired!==true||value.chainId!==undefined&&!validChain(value.chainId))throw Error('Invalid backend status');if(value.chainId!==undefined){const observed=await providerContext(typeof ethereum==='undefined'?undefined:ethereum);if(observed?.chainId!==value.chainId)throw new PairingNetworkError();}return {paired:true,...(typeof value.address==='string'?{address:value.address}:{}),expiresAt:value.expiresAt??null,...(value.chainId!==undefined?{chainId:value.chainId as number}:{})};}
@@ -42,7 +43,7 @@ function validResult(value: unknown): value is Result {
   if (!value || typeof value !== 'object') return false;
   const r = value as Partial<Result>;
   if(r.score!==undefined&&r.score!==null&&(!Number.isInteger(r.score)||r.score<0||r.score>100))return false;
-  if(r.ai&&(typeof r.ai.message!=='string'||r.ai.message.length>2000))return false;
+  if(r.ai&&(!['pending','not_configured','disabled','not_applicable','completed','failed'].includes(r.ai.status)||typeof r.ai.message!=='string'||r.ai.message.length>2000||r.ai.failureKind!==undefined&&!['validation','transport','response','budget','input'].includes(r.ai.failureKind)))return false;
   if(r.operation&&typeof r.operation!=='string'&&(typeof r.operation.category!=='string'||typeof r.operation.label!=='string'||!r.operation.fields||typeof r.operation.fields!=='object'))return false;
   if(r.missingData&&(!Array.isArray(r.missingData)||r.missingData.length>256||r.missingData.some(v=>typeof v!=='string'||v.length>1000)))return false;
   const ai=r.ai?.result;
@@ -76,11 +77,11 @@ export const onTransaction: OnTransactionHandler = async ({ transaction, chainId
     } finally { clearTimeout(timer); }
     if (!validResult(result)) throw new Error('INVALID_RESPONSE');
     const operation=typeof result.operation==='object'?result.operation:undefined;
-    const coverage=coverageForCategory(operation?.category),missing=missingLines(result);
+    const coverage=coverageForCategory(operation?.category),missing=missingLines(result),disposition=scoreDisposition(result);
     return {
       content: Box({ children: [Heading({ children: `WalletShield · ${result.title}` }),
-        Text({ children: result.score === undefined || result.score === null ? 'No AI score. Review the evidence and unfinished checks.' : `${result.scoreSource === 'ai' ? 'AI risk indicator' : 'Historical rule score'}: ${result.score}/100 (not a loss probability)` }), Text({children:scoreExplanation}),Text({ children: result.ai?.message ?? 'Review the scope of the checks.' }),
-        ...(result.ai?.result?.assessment?[Text({children:`Model assessment: ${assessmentLabel[result.ai.result.assessment]}`})]:[]),
+        Text({ children: disposition.kind==='scored'||disposition.kind==='legacy_score' ? `${result.scoreSource === 'ai' ? 'AI risk indicator' : 'Historical rule score'}: ${result.score}/100 (not a loss probability)` : `${disposition.label}. ${disposition.detail}` }), Text({children:scoreExplanation}),Text({ children: result.ai?.message ?? 'Review the scope of the checks.' }),
+        ...(result.ai?.status==='completed'&&result.ai.result?.assessment?[Text({children:`Model assessment: ${assessmentLabel[result.ai.result.assessment]}`})]:[]),
         ...(result.ai?.status==='completed'&&result.ai.result?[Text({children:result.ai.result.summary}),...result.ai.result.reasons.map(r=>Text({children:r.text})),Text({children:adviceLine(result.ai.result.suggested_action)})]:[]),...dimensionLines(result).map(line=>Text({children:line})),Text({ children: result.summary }), Divider({}),
         Heading({children:'Scope of this analysis'}),Text({children:operation?.label??'Operation category unavailable'}),Text({children:coverage.scope}),
         ...operationLines(operation).map(line=>Text({children:line})),
@@ -115,10 +116,10 @@ export const onSignature: OnSignatureHandler = async ({ signature, signatureOrig
     const result: unknown = await response.json();
     if (!validResult(result)) throw new Error('INVALID_RESPONSE');
     const operation=typeof result.operation==='object'?result.operation:undefined;
-    const coverage=coverageForCategory(operation?.category),missing=missingLines(result);
+    const coverage=coverageForCategory(operation?.category),missing=missingLines(result),disposition=scoreDisposition(result);
     return { severity: 'critical', content: legacyPanel([legacyHeading(`WalletShield · ${result.title}`),
-      legacyText(result.summary), legacyText(result.score === undefined || result.score === null ? 'No AI score.' : `${result.scoreSource === 'ai' ? 'AI risk indicator' : 'Historical rule score'}: ${result.score}/100 (not a loss probability)`),legacyText(scoreExplanation),
-      ...(result.ai?.result?.assessment?[legacyText(`Model assessment: ${assessmentLabel[result.ai.result.assessment]}`)]:[]),
+      legacyText(result.summary), legacyText(disposition.kind==='scored'||disposition.kind==='legacy_score' ? `${result.scoreSource === 'ai' ? 'AI risk indicator' : 'Historical rule score'}: ${result.score}/100 (not a loss probability)` : `${disposition.label}. ${disposition.detail}`),legacyText(scoreExplanation),
+      ...(result.ai?.status==='completed'&&result.ai.result?.assessment?[legacyText(`Model assessment: ${assessmentLabel[result.ai.result.assessment]}`)]:[]),
       legacyText(result.ai?.message ?? 'A message signature can authorize later asset operations.'),
       ...(result.ai?.status==='completed'&&result.ai.result?[legacyText(result.ai.result.summary),...result.ai.result.reasons.map(r=>legacyText(r.text)),legacyText(adviceLine(result.ai.result.suggested_action))]:[]),
       ...dimensionLines(result).map(legacyText),legacyHeading('Scope of this analysis'),legacyText(operation?.label??'Operation category unavailable'),legacyText(coverage.scope),...operationLines(operation).map(legacyText),legacyText(`Still unverified: ${coverage.uncertain}`),

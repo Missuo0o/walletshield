@@ -11,7 +11,7 @@ WalletShield 对单个未签名 EVM 请求提供**签名前风险提示**。按�
 
 ## 当前证据与接入新增能力
 
-当前 Muse 回复使用 `walletshield-facts-v1`：精确主体/字段/值/来源/链/区块/时间/范围，并在理由和维度中引用 `fact_ids`；历史回复继续可读。后端验证观察复制和相关性，不证明每个外部响应或自然语言句子真实。数字仍只由 Muse 给出，没有固定权重、下限或兜底。
+Muse 返回精简 `walletshield-selection-v1` 事实 ID，后端解析原始服务器事实、保存 `walletshield-facts-v1` 并保留严格引用和语义校验。历史完整事实仍可读，数字仍只由 Muse 给出，没有固定权重、下限或兜底。[可靠性改进](RELIABILITY-FOLLOWUP-2026-10-23-zh.md)说明评分分类、trace 回退和独立标签评估；没有真实外部标签时仍不能声称测得准确率。
 
 后端部署登记/代码匹配、USD 参考价格源和维护式两链桥接路线核对已移除。已有 `.local/registry.json` 不再读取。基础交易/授权/签名解析、配置的 RPC 状态、部分 V2 路径（含已有原生币路径）、代币出资 V3 与通用分叉模拟、可选 GoPlus 和 Muse 评分保留。`ENABLE_SOURCE_VERIFICATION=1` 仍独立启用有界 Sourcify 源码匹配观察；它不是官方部署登记或代码审计。
 

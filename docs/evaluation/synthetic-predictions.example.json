@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "walletshield-external-predictions-v1",
+  "labelsSha256": "5082ed60437011fc06bf72f40d504e040b48b0dcef15bf0970214aad37d7eb74",
+  "model": "fabricated-no-model-called",
+  "modelVersion": "synthetic-format-v1",
+  "promptSha256": "217892a87904ba161bd09254afce9e74ca6ef59497394d8ee61a1acb04e67af0",
+  "collectorVersion": "synthetic-format-v1",
+  "generatedAt": "2026-10-21T00:00:00.000Z",
+  "results": [
+    {
+      "caseId": "example-adverse",
+      "evidenceSha256": "f52a59e98ce727bb5b29dba9b033b676eb617cf03ce68a29ec8e98d0e99b7e65",
+      "generatedAt": "2026-10-21T00:00:00.000Z",
+      "status": "scored",
+      "score": 80,
+      "assessment": "high"
+    },
+    {
+      "caseId": "example-benign",
+      "evidenceSha256": "f6198657abd8a21c552ddacab331eb87795caf3c875f8e29e3613efbcd96c8e3",
+      "generatedAt": "2026-10-21T00:00:00.000Z",
+      "status": "scored",
+      "score": 20,
+      "assessment": "low"
+    },
+    {
+      "caseId": "example-unknown",
+      "evidenceSha256": "dd51a9842a24ebd8fd7dedb16b3a449a33546967cdeebb4fe45c06a5e21e389e",
+      "generatedAt": "2026-10-21T00:00:00.000Z",
+      "status": "abstained",
+      "reason": "Fabricated abstention for demonstrating file format only."
+    }
+  ]
+}

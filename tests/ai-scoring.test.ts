@@ -91,6 +91,8 @@ test('the Muse request declares the same six-dimension bounds validated locally 
     assert.equal(url,'https://api.meta.ai/v1/responses');
     const request=JSON.parse(String(init?.body)),schema=request.text.format.schema;
     assert.equal(request.model,'muse-wonder-1.0');
+    assert.equal(schema.properties.response_schema_version.const,'walletshield-selection-v1');
+    assert.equal(schema.properties.selected_fact_ids.maxItems,32);assert.equal(schema.properties.facts,undefined);
     assert.equal(schema.properties.dimensions.minItems,6);assert.equal(schema.properties.dimensions.maxItems,6);
     assert.equal(schema.properties.dimensions.items.properties.evidence_ids.minItems,1);
     assert.equal(schema.properties.dimensions.items.properties.reason.maxLength,500);
@@ -216,9 +218,9 @@ test('a repair must still reject fabricated domain verification when only nonce 
   assert.equal(calls,2);assert.equal(reservations,1);
 });
 
-test('transport, HTTP, refusal, incomplete output and envelope parsing failures never reserve a repair',async()=>{
+test('terminal transport, HTTP, refusal, incomplete output and envelope parsing failures never reserve a repair',async()=>{
   const failures:(()=>Promise<Response>)[]=[
-    ...[401,403,429,500].map(status=>async()=>new Response('{}',{status})),
+    ...[401,403,429].map(status=>async()=>new Response('{}',{status})),
     async()=>{throw Error('private-provider-error');},
     async()=>{throw new DOMException('timeout','TimeoutError');},
     async()=>{throw new DOMException('aborted','AbortError');},

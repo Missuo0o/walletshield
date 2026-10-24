@@ -2,7 +2,7 @@
 
 [English](RELIABILITY-AND-INTEGRATION.md) · [简体中文](RELIABILITY-AND-INTEGRATION-zh.md)
 
-The latest project-wide checks, fixes, model observations and remaining acceptance limits are recorded in [Full validation — 2026-10-22](FULL-VALIDATION-2026-10-22.md). Older acceptance files are historical records, not the latest validation result.
+The latest [reliability follow-up](RELIABILITY-FOLLOWUP-2026-10-23.md) adds compact fact selection, explicit score outcomes, read-only exemptions, trace fallback and independent-label evaluation. The [complete validation](FULL-VALIDATION-2026-10-23.md) and earlier dated acceptance files preserve their original observations.
 
 This describes implemented evidence paths and operating options. It does not certify detection accuracy, official protocol identity, future execution or public-launch readiness. WalletShield remains a **pre-sign advisory service**: the user decides in the wallet. Neither forced blocking nor continuous post-sign monitoring is enabled.
 
@@ -22,7 +22,7 @@ Extraction is **structured parsing**, not searching for suspicious keywords. For
 
 ## Structured model observations
 
-Current model responses use `fact_schema_version: "walletshield-facts-v1"`. The backend supplies `structured_fact_candidates` and the model selects exact `facts`; each reason and dimension references `fact_ids` as well as `evidence_ids`.
+Current provider responses use `response_schema_version: "walletshield-selection-v1"` and exact `selected_fact_ids` from `structured_fact_candidates`. The backend resolves canonical facts and stores `fact_schema_version: "walletshield-facts-v1"`; each reason and dimension retains `fact_ids` and `evidence_ids`. This avoids copying large fact objects without changing model numbers or weakening validation.
 
 Each fact contains:
 
@@ -31,7 +31,7 @@ Each fact contains:
 - Its limited scope: decoded request, reported observation, reference observation, isolated fork or unresolved check.
 - Original source, known chain ID, block number/hash and collection timestamp. Missing provenance remains null; request claims do not silently become verified chain provenance.
 
-The backend rejects modified subjects, values, fields, source/chain/block/time/scope, duplicate facts, wrong references and irrelevant facts supporting a rated dimension. It returns canonical server observations. This means **the model copied the supplied observation correctly**, not that an external provider or contract has been proven truthful. Metadata/status alone cannot replace substantive evidence. Existing historical reports without this schema remain readable; current Muse responses must supply it.
+The backend rejects unknown/duplicate selections, wrong references and irrelevant facts supporting a rated dimension; legacy full-fact responses additionally require exact subject/value/field/source/chain/block/time/scope copying. It returns canonical server observations. This means **the selected references match the supplied observations**, not that an external provider or contract has been proven truthful. Metadata/status alone cannot replace substantive evidence. Historical reports remain readable.
 
 Candidate extraction is bounded to 256 observations, 48 per evidence item and 16 entries per array; omissions are recorded. The model can select at most 32 facts and is asked to prefer 3–8 relevant facts. Full calldata, signatures, arbitrary source code, token-name text and personal-message previews are not structured-fact candidates. Other parts of the evidence packet can still contain decoded private information.
 

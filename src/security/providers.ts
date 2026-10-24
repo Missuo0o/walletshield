@@ -17,11 +17,12 @@ import {userOperationEvidence} from './user-operation-evidence.js';
 import {delegationEvidence} from './delegation-evidence.js';
 import {bridgeScopeEvidence} from './bridge-scope.js';
 import {executionLimitations} from './transaction-fields.js';
+import {transactionTraceEvidence} from './trace.js';
 export { evidence } from './evidence.js';
 export type Collector = (request:SecurityRequest, op:Operation) => Promise<Evidence[]>;
 export function collector(config:SecurityConfig, fetcher:typeof fetch = fetch):Collector {
   return async(request,op)=>{
-    const tasks=[basicCollector(config,fetcher)(request,op),simulateRequest(request,op,config),signatureChainEvidence(request,config),protocolEvidence(request,op,config,fetcher),assetEvidence(request,op,config),accountEvidence(request,op,config,fetcher),Promise.resolve(batchEvidence(request,op)),positionEvidence(request,op,config,fetcher),intelligenceEvidence(request,op,config,fetcher),sourceVerificationEvidence(request,op,config,fetcher),orderEvidence(request,op,config,fetcher),userOperationEvidence(request,op,config,fetcher),delegationEvidence(request,op,config,fetcher),Promise.resolve(bridgeScopeEvidence(request,op))];
+    const tasks=[basicCollector(config,fetcher)(request,op),simulateRequest(request,op,config),signatureChainEvidence(request,config),protocolEvidence(request,op,config,fetcher),assetEvidence(request,op,config),accountEvidence(request,op,config,fetcher),Promise.resolve(batchEvidence(request,op)),positionEvidence(request,op,config,fetcher),intelligenceEvidence(request,op,config,fetcher),sourceVerificationEvidence(request,op,config,fetcher),orderEvidence(request,op,config,fetcher),userOperationEvidence(request,op,config,fetcher),delegationEvidence(request,op,config,fetcher),Promise.resolve(bridgeScopeEvidence(request,op)),transactionTraceEvidence(request,config,fetcher)];
     // Leave time for the API to retain completed tools before its overall budget.
     const results=await Promise.allSettled(tasks.map(async(task,index)=>{
       let timer:ReturnType<typeof setTimeout>|undefined;

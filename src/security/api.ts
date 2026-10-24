@@ -19,6 +19,7 @@ import { resolve } from 'node:path';
 import {matchLabReport} from '../testing/sessions.js';
 import {sanitizeRpcParams} from './rpc-redaction.js';
 import {executionLimitations} from './transaction-fields.js';
+import {readOnlyAssetRiskExemption} from './read-only.js';
 export type SecurityOptions={access?:{service:ServiceConfig;auth:WalletAuth};config?:()=>Promise<SecurityConfig>;collect?:Collector;score?:(report:SecurityReport,config:SecurityConfig)=>Promise<AIState>};
 export function registerSecurity(app:FastifyInstance,store:Store,options:SecurityOptions={}) {
   const hosted=options.access?.service.mode==='hosted',auth=options.access?.auth;
@@ -77,9 +78,14 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     // Only the model supplies a number. Failure, abstention and quotas never
     // fall back to a preset score, including when handling an older report.
     report.score=null;report.scoreSource='none';delete report.ruleScoreFloor;
+    const readOnly=readOnlyAssetRiskExemption(report.request);
+    if(readOnly&&!report.checks.some(check=>check.id==='unsigned_input_redaction')){
+      report.ai={status:'not_applicable',message:readOnly.reason};
+      save(report,principal);return report;
+    }
     if(config.apiKey&&config.aiEnabled&&principal&&!auth!.takeAttempt(principal,options.access!.service.walletDailyLimit,config.aiDailyLimit??100))report.ai={status:'disabled',message:'The wallet or service daily model limit has been reached. Evidence retained; no AI score.'};
     else if(config.apiKey&&config.aiEnabled&&!principal&&!store.securityAiAttempt(config.aiDailyLimit??30))report.ai={status:'disabled',message:`The local daily model limit of ${config.aiDailyLimit??30} attempts has been reached. No AI score; evidence retained.`};
-    else {if(config.apiKey&&config.aiEnabled){report.ai={status:'pending',message:'Muse is analyzing this evidence. No score yet; wait for the wallet insight.'};save(report,principal);}try{report.ai=options.score?await options.score(report,config):await scoreWithAI(report,config,fetch,()=>principal?auth!.active(principal)&&auth!.takeAttempt(principal,options.access!.service.walletDailyLimit,config.aiDailyLimit??100):store.securityAiAttempt(config.aiDailyLimit??30));}catch{report.ai={status:'failed',message:'Model service error. No AI score; qualitative evidence retained.'};}}
+    else {if(config.apiKey&&config.aiEnabled){report.ai={status:'pending',message:'Muse is analyzing this evidence. No score yet; wait for the wallet insight.'};save(report,principal);}try{report.ai=options.score?await options.score(report,config):await scoreWithAI(report,config,fetch,()=>principal?auth!.active(principal)&&auth!.takeAttempt(principal,options.access!.service.walletDailyLimit,config.aiDailyLimit??100):store.securityAiAttempt(config.aiDailyLimit??30));}catch{report.ai={status:'failed',failureKind:'transport',message:'Model service error. No AI score; qualitative evidence retained.'};}}
     if(report.ai.status==='completed'&&report.ai.result){const ai=report.ai.result;report.assessmentScope=assessmentScope(report,ai.missing_data);if(ai.score!==null){report.score=ai.score;report.scoreSource='ai';}if(report.level!=='high'&&ai.assessment==='high'){report.level='high';report.title='High risk';}if(!report.assessmentScope.criticalMissingData.length&&report.level!=='high'){report.level=ai.assessment;report.title=ai.assessment==='low'?'No clear risk observed within request scope':ai.assessment==='review'?'Review needed':'Unable to assess';}}
     save(report,principal);return report;
   }
@@ -92,7 +98,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
   });
   }
   app.get('/api/security/status',async()=>{
-    const c=await getConfig();return {version:'0.4.1',scoringPolicy:'muse-evidence-v3-structured-facts',aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,sourceVerification:!!c.sourceVerification,monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
+    const c=await getConfig();return {version:'0.4.1',scoringPolicy:'muse-evidence-v4-fact-selection',aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,sourceVerification:!!c.sourceVerification,monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
   });
   if(!hosted){
   app.get('/api/security/examples',async()=>securityExamples.map(({id,name,request})=>({id,name,request})));

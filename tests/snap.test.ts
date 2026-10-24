@@ -55,6 +55,24 @@ test('signature hook forwards unsigned message with unknown current chain and us
   }finally{globalThis.fetch=original;(globalThis as any).snap=oldSnap;}
 });
 
+test('transaction and signature insights distinguish abstention from rejected output and model transport errors',async()=>{
+ const {onSignature}=await import('../snap/src/index.js');const original=globalThis.fetch,oldSnap=(globalThis as any).snap;
+ (globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
+ try{
+  const base={...evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'}),id:'outcome-test',score:null,scoreSource:'none'};
+  const states=[
+   {ai:{status:'completed',message:'Insufficient observed evidence',result:{score:null,assessment:'unknown',summary:'Evidence could not support a number',reasons:[],suggested_action:'Review the evidence'}},label:'Evidence insufficient for a score'},
+   {ai:{status:'failed',failureKind:'validation',message:'A cited observation did not support the claim'},label:'Model output rejected'},
+   {ai:{status:'failed',failureKind:'transport',message:'Model request timed out'},label:'Model connection failed'}
+  ];
+  for(const state of states){
+   globalThis.fetch=async()=>new Response(JSON.stringify({...base,ai:state.ai}));
+   const tx=JSON.stringify(await invoke()),signature=JSON.stringify(await onSignature({signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign',data:'hello'}}));
+   assert.ok(tx.includes(state.label),state.label);assert.ok(signature.includes(state.label),state.label);assert.ok(!tx.includes('AI risk indicator:'),'A no-score state must never present a numeric risk indicator');
+  }
+ }finally{globalThis.fetch=original;(globalThis as any).snap=oldSnap;}
+});
+
 test('Snap pairing verifies backend health before storing token and never returns credentials',async()=>{
  const {onRpcRequest}=await import('../snap/src/index.js');const previous=(globalThis as any).snap,original=globalThis.fetch;let state:any=null,stored=0,lookups=0;
  (globalThis as any).snap={request:async(value:any)=>{if(value.params.operation==='get')return state;state=value.params.newState;stored++;return null;}};

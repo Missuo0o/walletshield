@@ -3,10 +3,11 @@ import {z} from 'zod';
 import {formatEther} from 'viem';
 import type {SecurityConfig} from '../security/config.js';
 import {readBoundedText} from '../security/evidence.js';
+import {normalizeTrace} from '../security/trace.js';
 const names:Record<number,{name:string;testnet:boolean}>={1:{name:'Ethereum Mainnet',testnet:false},11155111:{name:'Sepolia',testnet:true},10:{name:'Optimism',testnet:false},56:{name:'BNB Smart Chain',testnet:false},137:{name:'Polygon',testnet:false},8453:{name:'Base',testnet:false},42161:{name:'Arbitrum One',testnet:false}};
 export function networkList(config:SecurityConfig){return [...new Set([11155111,1,...Object.keys(config.rpc).map(Number).filter(id=>id!==31337)])].map(chainId=>({chainId,name:names[chainId]?.name??`EVM ${chainId}`,testnet:names[chainId]?.testnet??null,configured:!!config.rpc[chainId]}));}
 const quantity=(v:unknown):v is string=>typeof v==='string'&&/^0x[\da-f]{1,64}$/i.test(v);
-export type NetworkSnapshot={chainId:number;network:string;checkedAt:string;blockNumber:string;blockHash:string;blockTime:string;latencyMs:number;account?:{address:string;balanceWei:string;balanceEth:string;hasCode:boolean;delegatedCode:boolean};capabilities?:{pinnedCall:'observed'|'unavailable';historicalState:'observed'|'unavailable';historicalBlock:string;callTrace:'observed'|'unavailable';scope:string}};
+export type NetworkSnapshot={chainId:number;network:string;checkedAt:string;blockNumber:string;blockHash:string;blockTime:string;latencyMs:number;account?:{address:string;balanceWei:string;balanceEth:string;hasCode:boolean;delegatedCode:boolean};capabilities?:{pinnedCall:'observed'|'unavailable';historicalState:'observed'|'unavailable';historicalBlock:string;callTrace:'observed'|'unavailable';callTraceMethod?:'debug_traceCall'|'trace_call';scope:string}};
 export type NetworkProbe=(url:string,chainId:number,address?:string)=>Promise<NetworkSnapshot>;
 /** Read-only trusted endpoint. Never exposes URL/key, accepts arbitrary RPC
  * methods, signs, estimates, submits transactions or calls a model. */
@@ -30,9 +31,21 @@ export async function probeNetwork(url:string,chainId:number,address?:string,fet
  // method, target, calldata or block. One result is not a general RPC guarantee.
  const historical=BigInt(block.number)>128n?BigInt(block.number)-128n:0n,zero='0x0000000000000000000000000000000000000000';
  const call={from:zero,to:zero,data:'0x',gas:'0x5208',value:'0x0'};
- const probes=await Promise.allSettled([rpc('eth_call',[call,block.number]),rpc('eth_getBalance',[zero,`0x${historical.toString(16)}`]),rpc('debug_traceCall',[call,block.number,{tracer:'callTracer',timeout:'1s',reexec:0}])]);
+ const traceProbe=async()=>{
+  for(const method of ['debug_traceCall','trace_call'] as const){
+   try{
+    const value=await rpc(method,method==='debug_traceCall'?[call,block.number,{tracer:'callTracer',timeout:'1s',reexec:0}]:[call,['trace'],block.number]);
+    const trace=normalizeTrace(value,method,call);if(!trace||trace.rootReverted||trace.gaps.length)continue;
+    const after=await rpc('eth_getBlockByNumber',[block.number,false]);
+    if(!after||after.number!==block.number||after.hash?.toLowerCase()!==block.hash.toLowerCase())return null;
+    return method;
+   }catch{/* Independently try the other known dialect within the same budget. */}
+  }return null;
+ };
+ const probes=await Promise.allSettled([rpc('eth_call',[call,block.number]),rpc('eth_getBalance',[zero,`0x${historical.toString(16)}`]),traceProbe()]);
  const probeSucceeded=(index:number,valid:(value:unknown)=>boolean)=>{const probe=probes[index];return probe.status==='fulfilled'&&valid(probe.value);};
- result.capabilities={pinnedCall:probeSucceeded(0,value=>typeof value==='string'&&/^0x(?:[\da-f]{2})*$/i.test(value))?'observed':'unavailable',historicalState:probeSucceeded(1,quantity)?'observed':'unavailable',historicalBlock:String(historical),callTrace:probeSucceeded(2,value=>!!value&&typeof value==='object'&&String((value as any).type).toUpperCase()==='CALL'&&String((value as any).to).toLowerCase()===zero&&!('error' in (value as any)))?'observed':'unavailable',scope:'Fixed zero-value probes only. Historical balance at one height does not establish full archive retention; one trace does not prove complete asset coverage. Unavailable may mean unsupported, disabled, rate-limited or timed out.'};
+ const trace=probes[2],method=trace.status==='fulfilled'&&['debug_traceCall','trace_call'].includes(String(trace.value))?trace.value as 'debug_traceCall'|'trace_call':undefined;
+ result.capabilities={pinnedCall:probeSucceeded(0,value=>typeof value==='string'&&/^0x(?:[\da-f]{2})*$/i.test(value))?'observed':'unavailable',historicalState:probeSucceeded(1,quantity)?'observed':'unavailable',historicalBlock:String(historical),callTrace:method?'observed':'unavailable',...(method?{callTraceMethod:method}:{}),scope:'Fixed zero-value probes only. The primary endpoint is tried with debug_traceCall then trace_call; the block hash is rechecked on success. Historical balance at one height does not establish full archive retention; one trace does not prove complete asset coverage. Unavailable may mean unsupported, disabled, rate-limited or timed out. Dedicated trace endpoints are independently verified during transaction analysis.'};
  result.latencyMs=Date.now()-start;return result;
 }
 export function registerNetworks(app:FastifyInstance,getConfig:()=>Promise<SecurityConfig>,probe:NetworkProbe=probeNetwork,policy:{origins?:string[];authorize?:(req:FastifyRequest,address?:string,chainId?:number)=>boolean}={}){

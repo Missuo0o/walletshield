@@ -9,6 +9,7 @@ export function planRequest(request:SecurityRequest,op:Operation,config?:Securit
   add('rpc_context',true,'Verify network, block, balance, code and token interfaces',config?!!config.rpc[request.chainId||Number(op.fields.domainChainId??op.fields.chainId)]:null);
   add('contract_controls',request.kind==='transaction'||request.kind==='signature'&&!!op.fields.verifyingContract,'Read code hashes, proxy slots, owner and pause state; interfaces do not establish identity');
   add('isolated_simulation',request.kind==='transaction','Execute in an isolated fork and compare recognized asset changes',config?!!config.forkEnabled:null);
+  add('call_trace',request.kind==='transaction','Try bounded debug_traceCall / trace_call at a verified primary snapshot; an optional dedicated endpoint must match its chain and block hash',config?!!config.rpc[request.chainId]:null);
   add('round_trip',['swap','swap_v3'].includes(op.category),'Buy then sell through selected V2 and eight canonical V3 single/path exact-input/output variants; unsupported routes remain unknown, with no guarantee of future exits',config?!!config.forkEnabled:null);
   add('signature_verification',request.kind==='signature','EIP-712 encoding, domain, selected Permit nonces and replay scope');
   add('login_envelope',op.category==='siwe','Inspect supported SIWE fields, URI/source binding and local time conditions; server nonce use and signature acceptance remain unknown');

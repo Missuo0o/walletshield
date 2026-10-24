@@ -71,6 +71,7 @@ export function dimensionsForEvidence(check:Evidence,report:SecurityReport):Dime
   if(matches(id,/^(?:vault_(?:context|asset_context|limit)|lending_context|liquidation_risk|position_.+|native_balance)$/))add('exposure');
   if(matches(id,/^(?:signature_(?:signer_account|verifier_code|delegate_code)|delegated_account|target_delegate_code|account_(?:code|authority_code_\d+)|contract_controls|new_controller)$/))add('authority','protocol');
   if(matches(id,/^(?:basic_call|transaction_nonce|transaction_pending_nonce|transaction_base_fee)$/))add('execution');
+  if(id==='call_trace'&&check.data?.traceAvailable===true)add('execution');
   if(id==='transaction_base_fee')add('exposure');
   if(matches(id,/^(?:order_status|order_counter|order_authorization_state|order_time|order_deployment)$/))add('authority','execution','protocol');
   if(/^order_asset_\d+$/.test(id))add('authority','exposure','protocol');

@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 export const META_MODEL = 'muse-wonder-1.0';
 export const META_RESPONSES_URL = 'https://api.meta.ai/v1/responses';
-export type SecurityConfig = { apiKey: string; model: string; aiEnabled: boolean; aiDailyLimit?:number; lookups: boolean; goPlusToken: string; rpc: Record<number,string>; forkEnabled?:boolean; monitorEnabled?:boolean; snapToken?:string;sourceVerification?:boolean };
+export type SecurityConfig = { apiKey: string; model: string; aiEnabled: boolean; aiDailyLimit?:number; lookups: boolean; goPlusToken: string; rpc: Record<number,string>; traceRpc?:Record<number,string>; forkEnabled?:boolean; monitorEnabled?:boolean; snapToken?:string;sourceVerification?:boolean };
 
 async function readEnv(path: string) {
   const values: Record<string,string> = {};
@@ -43,6 +43,15 @@ export async function loadSecurityConfig(options: {root?: string; env?: NodeJS.P
       if (!url.username && !url.password && (url.protocol === 'https:' || (url.protocol === 'http:' && ['127.0.0.1','localhost','[::1]'].includes(url.hostname)))) rpc[id] = candidate;
     } catch { /* Invalid configuration stays unavailable. */ }
   }
+  // Dedicated tracing is optional and backend-only. It never defines the
+  // canonical network/header and cannot override owned local-chain funding.
+  const traceRpc:Record<number,string>={};
+  for(const key of Object.keys({...legacy,...meta,...network,...env})){
+    const id=Number(key.match(/^TRACE_RPC_(\d+)_URL$/)?.[1]);
+    if(!Number.isSafeInteger(id)||id<=0||id===31337||!rpc[id])continue;
+    const candidate=get(key);if(!candidate)continue;
+    try{const url=new URL(candidate);if(!url.username&&!url.password&&(url.protocol==='https:'||url.protocol==='http:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname)))traceRpc[id]=candidate;}catch{/* Invalid configuration stays unavailable. */}
+  }
   const tokenPath = resolve(root,'.local/snap.token');
   await mkdir(resolve(root,'.local'),{recursive:true});
   try { await writeFile(tokenPath,randomBytes(32).toString('hex'),{flag:'wx',mode:0o600}); }
@@ -53,7 +62,7 @@ export async function loadSecurityConfig(options: {root?: string; env?: NodeJS.P
     apiKey: getMeta('MODEL_API_KEY').trim(), model: META_MODEL,
     aiEnabled: (getMeta('ENABLE_META_AI') || getMeta('ENABLE_AI') || '1') !== '0',
     aiDailyLimit:/^\d+$/.test(getMeta('AI_DAILY_LIMIT'))&&Number(getMeta('AI_DAILY_LIMIT'))>=1&&Number(getMeta('AI_DAILY_LIMIT'))<=1000?Number(getMeta('AI_DAILY_LIMIT')):100,
-    lookups: get('ENABLE_EXTERNAL_LOOKUPS') === '1', goPlusToken: get('GOPLUS_TOKEN'), rpc,
+    lookups: get('ENABLE_EXTERNAL_LOOKUPS') === '1', goPlusToken: get('GOPLUS_TOKEN'), rpc,...(Object.keys(traceRpc).length?{traceRpc}:{}),
     forkEnabled: get('ENABLE_FORK_SIMULATION') === '1',
     monitorEnabled: false, // v0.4.1 remains pre-sign advice only.
     snapToken,

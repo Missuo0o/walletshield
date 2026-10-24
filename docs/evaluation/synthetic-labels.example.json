@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "walletshield-external-labels-v1",
+  "datasetId": "synthetic-format-example-only",
+  "frozenAt": "2026-10-20T00:00:00.000Z",
+  "task": "expert-adverse-risk",
+  "labelPolicyReference": "Synthetic workflow example, not an externally reviewed risk policy or benchmark.",
+  "samplingDescription": "Three hand-written format examples. No actual user request, reviewer, model or accuracy sample.",
+  "provenance": "synthetic-workflow-example",
+  "cases": [
+    {
+      "id": "example-adverse",
+      "groupId": "example-adverse",
+      "evidenceSha256": "f52a59e98ce727bb5b29dba9b033b676eb617cf03ce68a29ec8e98d0e99b7e65",
+      "split": "holdout",
+      "label": "adverse",
+      "labelBasis": "expert-review",
+      "rationale": "Fabricated label for demonstrating the file format only.",
+      "sourceReference": "docs/INDEPENDENT-EVALUATION.md — synthetic format example.",
+      "reviewers": [
+        {
+          "id": "fictional-reviewer-format-example",
+          "kind": "human-expert",
+          "reviewedAt": "2026-10-20T00:00:00.000Z"
+        }
+      ],
+      "independentOfEvaluatedModel": true,
+      "usedForPromptTuning": false
+    },
+    {
+      "id": "example-benign",
+      "groupId": "example-benign",
+      "evidenceSha256": "f6198657abd8a21c552ddacab331eb87795caf3c875f8e29e3613efbcd96c8e3",
+      "split": "holdout",
+      "label": "benign",
+      "labelBasis": "expert-review",
+      "rationale": "Fabricated label for demonstrating the file format only.",
+      "sourceReference": "docs/INDEPENDENT-EVALUATION.md — synthetic format example.",
+      "reviewers": [
+        {
+          "id": "fictional-reviewer-format-example",
+          "kind": "human-expert",
+          "reviewedAt": "2026-10-20T00:00:00.000Z"
+        }
+      ],
+      "independentOfEvaluatedModel": true,
+      "usedForPromptTuning": false
+    },
+    {
+      "id": "example-unknown",
+      "groupId": "example-unknown",
+      "evidenceSha256": "dd51a9842a24ebd8fd7dedb16b3a449a33546967cdeebb4fe45c06a5e21e389e",
+      "split": "holdout",
+      "label": "indeterminate",
+      "labelBasis": "expert-review",
+      "rationale": "Fabricated label for demonstrating the file format only.",
+      "sourceReference": "docs/INDEPENDENT-EVALUATION.md — synthetic format example.",
+      "reviewers": [
+        {
+          "id": "fictional-reviewer-format-example",
+          "kind": "human-expert",
+          "reviewedAt": "2026-10-20T00:00:00.000Z"
+        }
+      ],
+      "independentOfEvaluatedModel": true,
+      "usedForPromptTuning": false
+    }
+  ]
+}
