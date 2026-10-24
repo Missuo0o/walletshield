@@ -60,13 +60,20 @@ export function registerNetworks(app:FastifyInstance,getConfig:()=>Promise<Secur
   if(!local(req.headers.origin))return reply.code(403).send({error:'Network reads require the configured workbench origin.'});
   const parsed=z.object({chainId:z.number().int().positive().max(Number.MAX_SAFE_INTEGER).refine(id=>id!==31337),address:z.string().regex(/^0x[\da-f]{40}$/i).optional()}).strict().safeParse(req.body);
   if(!parsed.success)return reply.code(400).send({error:'Select a public network and optionally the connected public account address. Custom RPC input is not accepted.'});
-  const {chainId,address}=parsed.data;if(policy.authorize){const authorization=policy.authorize(req,address,chainId);if(authorization!==true)return authorization===403?reply.code(403).send({error:'This verified identity does not permit querying that account or network. Select its account/network or verify a new identity.'}):reply.code(401).send({error:'Verify the current wallet identity on this network first.'});}const config=await getConfig(),url=config.rpc[chainId];if(!url)return reply.code(409).send({error:'The backend has no RPC for this network. Configure its server-side rpc.env.'});
+  const {chainId,address}=parsed.data;
+  // Credentials can expire or be revoked while configuration or RPC work is
+  // awaiting I/O. Reauthorize before cache/probe access and again before any
+  // result is cached or returned; a previous authorization is not a lease.
+  const denied=()=>{if(!policy.authorize)return;const authorization=policy.authorize(req,address,chainId);if(authorization!==true)return authorization===403?reply.code(403).send({error:'This verified identity does not permit querying that account or network. Select its account/network or verify a new identity.'}):reply.code(401).send({error:'Verify the current wallet identity on this network first.'});};
+  const initialDenial=denied();if(initialDenial)return initialDenial;
+  const config=await getConfig();const preReadDenial=denied();if(preReadDenial)return preReadDenial;
+  const url=config.rpc[chainId];if(!url)return reply.code(409).send({error:'The backend has no RPC for this network. Configure its server-side rpc.env.'});
   reply.header('Cache-Control','no-store');const key=JSON.stringify([url,chainId,address?.toLowerCase()]),now=Date.now(),cached=cache.get(key);
   if(cached&&cached.expires>now)return {...cached.value,cached:true};
   while(recent.length&&now-recent[0]>=60000)recent.shift();
   if(active||recent.length>=12)return reply.code(429).send({error:'Too many network queries. Retry shortly.'});active=true;recent.push(now);
-  try{const result=await probe(url,chainId,address);if(cache.size>=64)cache.delete(cache.keys().next().value!);cache.set(key,{expires:Date.now()+15000,value:result});return {...result,cached:false};}
-  catch(e){return reply.code(502).send({error:e instanceof Error&&e.message==='wrong_chain'?'The RPC returned a different chain ID. No account data was read.':'The RPC query did not complete. A configured endpoint does not establish connectivity.'});}
+  try{const result=await probe(url,chainId,address);const resultDenial=denied();if(resultDenial)return resultDenial;if(cache.size>=64)cache.delete(cache.keys().next().value!);cache.set(key,{expires:Date.now()+15000,value:result});return {...result,cached:false};}
+  catch(e){const errorDenial=denied();if(errorDenial)return errorDenial;return reply.code(502).send({error:e instanceof Error&&e.message==='wrong_chain'?'The RPC returned a different chain ID. No account data was read.':'The RPC query did not complete. A configured endpoint does not establish connectivity.'});}
   finally{active=false;}
  });
 }

@@ -1,6 +1,7 @@
 import {RUNTIME} from '../../src/runtime.generated';
 import {setWebSession,webSession,subscribeWebSession,watchCredentialExpiry,type WebSession} from './session';
-import {authenticateWallet} from './identity';
+import {createWalletAction} from './walletAction';
+import {connectWalletSetup,readWalletSnapSetup,verifyWalletSetupIdentity,installWalletSetup} from './walletSetup';
 import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Shield,ShieldCheck,FileText,Plug,Wallet,ChevronRight,FlaskConical,X,Loader2,Check,Globe} from 'lucide-react';
@@ -11,7 +12,7 @@ import type {LabInventory} from '../../src/testing/contracts';
 import {createLabInventoryController,emptyLabInventory,type LabInventoryState} from './labInventoryState';
 import {requestPreparedAssetDisplay} from './labAssetActions';
 import {createLocalWalletGuard} from './localWallet';
-import {SNAP_ID,requestWalletShieldSnap,snapInstallationError,discoverWallets,defaultWallet,walletAccounts,walletChain,type DiscoveredWallet,type WalletProvider,type SnapSetupStage} from './wallet';
+import {SNAP_ID,snapInstallationError,discoverWallets,defaultWallet,walletAccounts,walletChain,type DiscoveredWallet,type WalletProvider,type SnapSetupStage} from './wallet';
 import './styles.css';
 declare global{interface Window{ethereum?:WalletProvider}}
 type Page='lab'|'network'|'history'|'setup';
@@ -22,6 +23,7 @@ function App(){
  const [page,setPage]=useState<Page>(hosted?'network':'lab'),[account,setAccount]=useState(''),[snapReady,setSnapReady]=useState(false),[preparing,setPreparing]=useState(false),[clearing,setClearing]=useState(false),[walletBusy,setWalletBusy]=useState(false),[notice,setNotice]=useState(''),[online,setOnline]=useState(false),[wallets,setWallets]=useState<DiscoveredWallet[]>([]),[walletId,setWalletId]=useState(''),[walletChainId,setWalletChainId]=useState<number|null>(null);
  const selectedWallet=wallets.find(w=>w.id===walletId)??defaultWallet(wallets),provider=selectedWallet?.provider,providerRef=useRef(provider),busyRef=useRef(false);providerRef.current=provider;
  const identityEpoch=useRef(0);
+ const setupAction=useRef<{kind:'connect'|'identity'|'install';provider:WalletProvider;action:ReturnType<typeof createWalletAction>}|null>(null);
  const [identityGeneration,setIdentityGeneration]=useState(0);
  const [inventoryState,setInventoryState]=useState<LabInventoryState<LabInventory>>(()=>emptyLabInventory('',''));
  const inventoryController=useRef<ReturnType<typeof createLabInventoryController<LabInventory>>|null>(null);
@@ -29,25 +31,25 @@ function App(){
  const setBusy=(value:boolean)=>{busyRef.current=value;setWalletBusy(value);};
  const short=(address:string)=>`${address.slice(0,6)}…${address.slice(-4)}`;
  const stillSelected=(p:WalletProvider)=>{if(providerRef.current!==p)throw Error('The selected wallet changed. Reconnect before continuing.');};
- async function readSnap(p=provider):Promise<boolean>{
-  const epoch=identityEpoch.current;
-  if(!p){setSnapReady(false);return false;}
-  try{
-   const snaps=await p.request({method:'wallet_getSnaps'}) as Record<string,{enabled:boolean;blocked:boolean}>;
-   if(!snaps?.[SNAP_ID]?.enabled||snaps[SNAP_ID].blocked){if(providerRef.current===p&&epoch===identityEpoch.current)setSnapReady(false);return false;}
-   const health=await p.request({method:'wallet_invokeSnap',params:{snapId:SNAP_ID,request:{method:'walletshield_status'}}}) as {paired?:boolean;address?:string;chainId?:number;expiresAt?:string|null};
-   const accounts=walletAccounts(await p.request({method:'eth_accounts'}));
-   const currentChain=health?.chainId!==undefined?walletChain(await p.request({method:'eth_chainId'})):undefined;
-   const expires=typeof health?.expiresAt==='string'?Date.parse(health.expiresAt):null;
-   const expiryValid=expires===null?!hosted:Number.isFinite(expires)&&expires>Date.now();
-   const ready=health?.paired===true&&expiryValid&&(!health.address||health.address.toLowerCase()===accounts[0]?.toLowerCase())&&(health.chainId===undefined||health.chainId===currentChain);
-   if(providerRef.current===p&&epoch===identityEpoch.current){setSnapReady(ready);setSnapExpiresAt(ready?expires:null);}return ready;
-  }catch{if(providerRef.current===p&&epoch===identityEpoch.current)setSnapReady(false);return false;}
+ async function readSnap(p=provider,sharedAction?:ReturnType<typeof createWalletAction>):Promise<boolean>{
+  const epoch=identityEpoch.current,contextCurrent=()=>providerRef.current===p&&epoch===identityEpoch.current;
+  if(!p){setSnapReady(false);setSnapExpiresAt(null);return false;}
+  const action=sharedAction??createWalletAction(p,{isCurrent:contextCurrent,timeoutMs:25000});
+  try{const status=await readWalletSnapSetup(action,hosted);action.guard();if(!contextCurrent())return false;setSnapReady(status.ready);setSnapExpiresAt(status.expires);return status.ready;}
+  catch{if(contextCurrent()){setSnapReady(false);setSnapExpiresAt(null);}return false;}
+  finally{if(!sharedAction)action.cancel();}
  }
- function clearIdentity(){identityEpoch.current++;setIdentityGeneration(identityEpoch.current);inventoryController.current?.reset('','');setWebSession(null);setIdentityBound(false);}
+
+ function clearIdentity(){const current=setupAction.current;if(current&&(current.kind!=='connect'||providerRef.current!==current.provider))current.action.cancel();identityEpoch.current++;setIdentityGeneration(identityEpoch.current);inventoryController.current?.reset('','');setWebSession(null);setIdentityBound(false);}
  function walletNetworkChanged(next:number|null){const bound=webSession()?.chainId;if(bound!==undefined&&bound!==next){clearIdentity();setSnapReady(false);setNotice('The contract-wallet network changed. Verify this wallet identity and pair the Snap again on the current network.');}setWalletChainId(next);}
  async function refreshInventory(){await inventoryController.current?.refresh((address,signal)=>labApi<LabInventory>(`/api/lab/inventory?address=${encodeURIComponent(address)}`,undefined,signal));}
- async function bindIdentity(){if(!provider||!account||busyRef.current)return;const epoch=identityEpoch.current;setBusy(true);try{const verified=await authenticateWallet(provider,account,()=>identityEpoch.current===epoch&&providerRef.current===provider,labApi);if(identityEpoch.current!==epoch||providerRef.current!==provider)throw Error('The wallet account changed before verification finished. Start again.');setWebSession(verified);setIdentityBound(true);setNotice(verified.chainId!==undefined?`Contract-wallet identity verified on chain ${verified.chainId}. Sign in and pair again after switching networks.`:'Wallet identity verified. This login signature gives access to your own reports. Next, install and pair the Snap.');}catch(e){clearIdentity();setNotice((e as {code?:number}).code===4001?'Identity verification canceled.':e instanceof Error?e.message:'Identity verification did not complete.');}finally{setBusy(false);}}
+ async function bindIdentity(){
+  if(!provider||!account||busyRef.current)return;const p=provider,epoch=identityEpoch.current,action=createWalletAction(p,{isCurrent:()=>identityEpoch.current===epoch&&providerRef.current===p,timeoutMs:180000});setupAction.current={kind:'identity',provider:p,action};setBusy(true);
+  try{const verified=await verifyWalletSetupIdentity(action,account,labApi);action.guard();setWebSession(verified);setIdentityBound(true);setNotice(verified.chainId!==undefined?`Contract-wallet identity verified on chain ${verified.chainId}. Sign in and pair again after switching networks.`:'Wallet identity verified. This login signature gives access to your own reports. Next, install and pair the Snap.');}
+  catch(e){if(identityEpoch.current===epoch&&providerRef.current===p){clearIdentity();setNotice((e as {code?:number}).code===4001?'Identity verification canceled.':e instanceof Error?e.message:'Identity verification did not complete.');}}
+  finally{action.cancel();if(setupAction.current?.action===action)setupAction.current=null;setBusy(false);}
+ }
+
 
  async function revokeIdentity(){if(busyRef.current)return;setBusy(true);try{await labApi('/api/wallet-auth/revoke',{});clearIdentity();setSnapReady(false);setNotice('Website and Snap sessions for this identity were revoked. Sign in and pair again to restore access.');}catch(e){setNotice(e instanceof Error?e.message:'Sign out did not complete.');}finally{setBusy(false);}}
  async function deleteReports(){if(busyRef.current||!window.confirm('Delete stored reports and revoke sessions for this verified identity? A contract-wallet identity is limited to its verified chain. This cannot recall data already sent to providers or remove backups.'))return;setBusy(true);try{const result=await labApi<{reportsDeleted:number}>('/api/wallet-auth/reports/delete',{confirm:true});clearIdentity();setSnapReady(false);setNotice(`Deleted ${result.reportsDeleted} stored reports. This identity’s sessions were revoked; sign in and pair again.`);}catch(e){setNotice(e instanceof Error?e.message:'Report deletion did not complete.');}finally{setBusy(false);}}
@@ -56,6 +58,7 @@ function App(){
  useEffect(()=>subscribeWebSession(change=>{
   setIdentitySession(change.session);setIdentityBound(!!change.session);
   if(change.reason==='expired'||change.reason==='rejected'){
+   if(setupAction.current?.kind!=='connect')setupAction.current?.action.cancel();
    identityEpoch.current++;setIdentityGeneration(identityEpoch.current);inventoryController.current?.reset('','');
    setNotice(change.reason==='expired'?'Your website login expired. Verify this wallet again to access private reports. Snap pairing has its own expiry.':'Your website login was rejected or revoked. Verify this wallet again to access private reports.');
   }
@@ -72,11 +75,12 @@ function App(){
  },[snapReady,snapExpiresAt]);
  useEffect(()=>{
   let active=true;clearIdentity();const epoch=identityEpoch.current;setAccount('');setSnapReady(false);setWalletChainId(null);if(!provider)return;
-  void provider.request({method:'eth_accounts'}).then(value=>{if(active&&epoch===identityEpoch.current)setAccount(walletAccounts(value)[0]??'');}).catch(()=>{});
-  void provider.request({method:'eth_chainId'}).then(value=>{if(active)setWalletChainId(walletChain(value));}).catch(()=>{});void readSnap(provider);
-  const changed=(value:unknown)=>{clearIdentity();setSnapReady(false);try{setAccount(walletAccounts(value)[0]??'');}catch{setAccount('');}};const chain=(value:unknown)=>{walletNetworkChanged(walletChain(value));};const disconnected=()=>{clearIdentity();setSnapReady(false);setAccount('');setWalletChainId(null);};
+  const background=createWalletAction(provider,{isCurrent:()=>active&&providerRef.current===provider&&epoch===identityEpoch.current,timeoutMs:10000});
+  void background.request({method:'eth_accounts'}).then(value=>{if(active&&epoch===identityEpoch.current)setAccount(walletAccounts(value)[0]??'');}).catch(()=>{});
+  void background.request({method:'eth_chainId'}).then(value=>{if(active&&epoch===identityEpoch.current)setWalletChainId(walletChain(value));}).catch(()=>{});void readSnap(provider);
+  const changed=(value:unknown)=>{clearIdentity();setSnapReady(false);try{setAccount(walletAccounts(value)[0]??'');}catch{setAccount('');}};const chain=(value:unknown)=>{walletNetworkChanged(walletChain(value));};const disconnected=()=>{setupAction.current?.action.cancel();clearIdentity();setSnapReady(false);setAccount('');setWalletChainId(null);};
   provider.on?.('accountsChanged',changed);provider.on?.('chainChanged',chain);provider.on?.('disconnect',disconnected);
-  return()=>{active=false;provider.removeListener?.('accountsChanged',changed);provider.removeListener?.('chainChanged',chain);provider.removeListener?.('disconnect',disconnected);};
+  return()=>{active=false;background.cancel();setupAction.current?.action.cancel();provider.removeListener?.('accountsChanged',changed);provider.removeListener?.('chainChanged',chain);provider.removeListener?.('disconnect',disconnected);};
  },[provider]);
  useEffect(()=>{
   const controller=createLabInventoryController<LabInventory>(`${selectedWallet?.id??'none'}:${account.toLowerCase()}:${identityGeneration}`,account,setInventoryState);
@@ -84,23 +88,27 @@ function App(){
   if(!hosted&&account)void controller.refresh((address,signal)=>labApi<LabInventory>(`/api/lab/inventory?address=${encodeURIComponent(address)}`,undefined,signal));
   return()=>{controller.dispose();if(inventoryController.current===controller)inventoryController.current=null;};
  },[provider,account,identityGeneration]);
- async function connect(){if(busyRef.current)return;if(!provider){setNotice('No compatible wallet found. Open this page in a desktop browser with MetaMask Flask installed.');return;}if(selectedWallet)setWalletId(selectedWallet.id);setBusy(true);try{const accounts=walletAccounts(await provider.request({method:'eth_requestAccounts'}));stillSelected(provider);setAccount(accounts[0]??'');walletNetworkChanged(walletChain(await provider.request({method:'eth_chainId'})));await readSnap(provider);setNotice(page==='network'?'Wallet connected. Check the selected network and Snap status. Connecting an account does not generate a risk score.':'Wallet connected. Install or reload the Snap, then prepare local test assets.');}catch(e){setNotice((e as {code?:number}).code===4001?'Wallet connection canceled.':e instanceof Error?e.message:'Wallet connection did not complete.');}finally{setBusy(false);}}
+ async function connect(){
+  if(busyRef.current)return;if(!provider){setNotice('No compatible wallet found. Open this page in a desktop browser with MetaMask Flask installed.');return;}const p=provider;
+  if(selectedWallet)setWalletId(selectedWallet.id);
+  // eth_requestAccounts normally emits accountsChanged during initial consent.
+  // Permit that event here, then compare its result with a fresh account read.
+  const action=createWalletAction(p,{isCurrent:()=>providerRef.current===p,timeoutMs:180000});setupAction.current={kind:'connect',provider:p,action};setBusy(true);
+  try{const connected=await connectWalletSetup(action);action.guard();setAccount(connected.accounts[0]??'');walletNetworkChanged(connected.chainId);await readSnap(p,action);action.guard();setNotice(page==='network'?'Wallet connected. Check the selected network and Snap status. Connecting an account does not generate a risk score.':'Wallet connected. Install or reload the Snap, then prepare local test assets.');}
+  catch(e){setNotice((e as {code?:number}).code===4001?'Wallet connection canceled.':e instanceof Error?e.message:'Wallet connection did not complete.');}
+  finally{action.cancel();if(setupAction.current?.action===action)setupAction.current=null;setBusy(false);}
+ }
  async function install(){
   if(!provider||busyRef.current)return;
   if(hosted&&(!identityBound||webSession()?.address.toLowerCase()!==account.toLowerCase())){setNotice('Verify the current wallet identity before installing and pairing the Snap.');return;}
   if(selectedWallet)setWalletId(selectedWallet.id);
-  const epoch=identityEpoch.current;
-  const guard=()=>{stillSelected(provider);if(epoch!==identityEpoch.current)throw Error('The account changed during pairing. Start again.');};
+  const p=provider,epoch=identityEpoch.current,action=createWalletAction(p,{isCurrent:()=>providerRef.current===p&&epoch===identityEpoch.current,timeoutMs:300000});setupAction.current={kind:'install',provider:p,action};
   let stage:SnapSetupStage='install';setBusy(true);
-  try{
-   const installed=await requestWalletShieldSnap(provider);guard();
-   stage='pair-token';const pairing=await labApi<{token:string}>('/api/security/pair',{});guard();
-   stage='pair-backend';await provider.request({method:'wallet_invokeSnap',params:{snapId:SNAP_ID,request:{method:'walletshield_configure',params:{token:pairing.token}}}});guard();
-   stage='verify';const ready=await readSnap(provider);guard();
-   if(!ready)throw Error('The wallet did not confirm a backend connection for this account. Reload and pair the Snap again.');
-   setNotice(`WalletShield ${installed.version} is installed and its backend connection is verified. Open Public networks to check the network and test the signing insight.`);
-  }catch(e){setSnapReady(false);setNotice(snapInstallationError(e,stage));}finally{setBusy(false);}
+  try{const result=await installWalletSetup(action,hosted,labApi,next=>{stage=next;});action.guard();setSnapReady(result.status.ready);setSnapExpiresAt(result.status.expires);setNotice(`WalletShield ${result.installed.version} is installed and its backend connection is verified. Open Public networks to check the network and test the signing insight.`);}
+  catch(e){if(identityEpoch.current===epoch&&providerRef.current===p){setSnapReady(false);setSnapExpiresAt(null);setNotice(snapInstallationError(e,stage));}}
+  finally{action.cancel();if(setupAction.current?.action===action)setupAction.current=null;setBusy(false);}
  }
+
  async function switchLocal(){
   if(!provider)throw Error('No wallet found.');const epoch=identityEpoch.current;
   const guard=createLocalWalletGuard(provider,account,{isCurrent:()=>providerRef.current===provider&&identityEpoch.current===epoch});

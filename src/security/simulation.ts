@@ -105,6 +105,24 @@ function forkSnapshot(fork:ForkSession){return {chainId:fork.chainId,blockNumber
 type Asset={kind:'erc20'|'erc721'|'erc1155';contract:`0x${string}`;tokenId?:string};
 const transferTopic=keccak256(toHex('Transfer(address,address,uint256)'));
 export const SIMULATION_LIMITS={receiptLogs:256,discoveredAssets:32,erc1155IdsPerEvent:64,traceDepth:20,traceCalls:128} as const;
+export const FORK_SNAPSHOT_LIMITS={verificationMs:2200} as const;
+/** A fork lazily fetches upstream state while executing. Trace-time binding
+ * alone cannot establish that the source stayed canonical for the later
+ * execution, asset reads and derived reverse-swap experiment. */
+async function finalizeForkSnapshot(fork:ForkSession,chainId:number,checks:Evidence[]){
+ let timer:ReturnType<typeof setTimeout>|undefined;
+ try{
+  if(fork.chainId!==chainId||!/^\d+$/.test(fork.blockNumber)||!/^0x[\da-f]{64}$/i.test(fork.blockHash)||!fork.blockTimestampSeconds||!/^\d+$/.test(fork.blockTimestampSeconds)||!fork.verifyTraceSource)throw Error('Incomplete source binding');
+  const signal=AbortSignal.timeout(FORK_SNAPSHOT_LIMITS.verificationMs);
+  const verified=await Promise.race([Promise.resolve().then(()=>fork.verifyTraceSource!(signal)),new Promise<false>(resolve=>{timer=setTimeout(()=>resolve(false),FORK_SNAPSHOT_LIMITS.verificationMs);})]);
+  if(verified!==true)throw Error('Source snapshot changed');
+  for(const check of checks)if(check.source==='isolated-fork'&&(check.data?.blockHash===fork.blockHash||check.data?.baseBlockHash===fork.blockHash))check.data={...check.data,sourceSnapshotConsistency:'verified_after_execution'};
+ }catch{
+  // No successful execution, asset delta, protocol comparison or sell result
+  // from this private fork may survive under an unverified source hash.
+  checks.splice(0,checks.length,evidence('asset_simulation','unknown','Isolated fork source snapshot could not be verified','The source chain or base header changed, was incomplete, timed out, or could not be rechecked after execution. All observations from this fork were discarded; no execution, asset, permission or sellability conclusion is retained. No upstream transaction was sent.','isolated-fork',{chainId,requestedBlockNumber:fork.blockNumber,sourceSnapshotConsistent:false}),evidence('fork_source_snapshot','unknown','Fork observations discarded after source verification failed','The complete fork group, including any earlier call trace and reverse-swap experiment, requires a canonical source header after the related work. Missing or inconsistent state is not a safety pass.','isolated-fork',{chainId,requestedBlockNumber:fork.blockNumber,sourceSnapshotConsistent:false}));
+ }finally{if(timer!==undefined)clearTimeout(timer);}
+}
 function discoverAssets(logs:unknown){
   const assets:Asset[]=[],entries=Array.isArray(logs)?logs:[];let identifierEventsTruncated=0;
   for(const log of entries.slice(0,SIMULATION_LIMITS.receiptLogs)){
@@ -154,7 +172,7 @@ export async function simulateRequest(request:SecurityRequest,op:Operation,confi
   const unsupported=executionLimitations(request.transaction);
   if(unsupported.length)return [evidence('asset_simulation','unknown','Special transaction envelope cannot be simulated completely','Delegation, blob, or other unsupported execution fields are not silently removed to execute a substitute transaction.','coverage',{unsupportedFields:unsupported})];
   if(!config.forkEnabled)return [evidence('asset_simulation','unknown','Isolated fork simulation is disabled','This request has not been executed on an isolated chain fork.','configuration')];
-  let fork:ForkSession|undefined;let retainedProtocol:Evidence[]=[];let retainedTrace:Evidence[]=[];let retainedExecution:Evidence|undefined;
+  let fork:ForkSession|undefined,output:Evidence[]|undefined;let retainedProtocol:Evidence[]=[];let retainedTrace:Evidence[]=[];let retainedExecution:Evidence|undefined;
   try {
     fork=await factory(config,request.chainId);const rpc=fork.rpc;
     retainedTrace=await isolatedForkTraceEvidence(request,fork);
@@ -164,7 +182,7 @@ export async function simulateRequest(request:SecurityRequest,op:Operation,confi
     retainedProtocol=[...forkProtocolEvidence(protocolBefore,null),...forkAuthorityEvidence(authorityBefore,null)];
     const beforeNative=BigInt(await rpc('eth_getBalance',[request.transaction.from,'latest']));
     let executed;
-    try{executed=await send(rpc,request.transaction);}catch{return [...retainedTrace,...retainedProtocol,evidence('simulation_execution','unknown','Fork execution incomplete','The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.','isolated-fork',{...forkSnapshot(fork)})];}
+    try{executed=await send(rpc,request.transaction);}catch{return output=[...retainedTrace,...retainedProtocol,evidence('simulation_execution','unknown','Fork execution incomplete','The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.','isolated-fork',{...forkSnapshot(fork)})];}
     const {hash,receipt}=executed;
     retainedExecution=evidence('simulation_execution','pass','Original transaction executed on the isolated fork','The original transaction has a successful receipt on the temporary fork. Some balance, protocol-state or trace observations may still be unavailable; no upstream transaction was sent.','isolated-fork',{...forkSnapshot(fork),status:'success',executionBlockNumber:typeof receipt.blockNumber==='string'?String(BigInt(receipt.blockNumber)):null});
     const afterTag=typeof receipt.blockNumber==='string'?receipt.blockNumber:'latest';
@@ -192,9 +210,9 @@ export async function simulateRequest(request:SecurityRequest,op:Operation,confi
     if(op.category==='native_transfer'&&gas!==null&&afterNative-beforeNative+gas < -BigInt(request.transaction.value??'0x0'))facts.push(evidence('excess_native_spend','risk','Native-asset decrease exceeds the declared value','After accounting for observed gas, the account still decreased by more than the declared value.','isolated-fork',forkSnapshot(fork)));
     if(['swap','swap_v3'].includes(op.category))facts.push(...await roundTrip(request,op,fork,config));
     else if(op.category==='batch')facts.push(evidence('round_trip','unknown','Dependent router buy/sell experiment is unavailable','Opaque aggregator commands and arbitrary nested wrappers have no authenticated reverse route. The original transaction may have fork observations, but no synthetic sell is invented.','coverage'));
-    return facts;
-  }catch{return [...retainedTrace,...retainedProtocol,...(retainedExecution?[retainedExecution]:[]),evidence('asset_simulation','unknown','Isolated fork simulation failed','The node, historical state, or executor was unavailable. Asset simulation was not completed.','isolated-fork')];}
-  finally{if(fork)await fork.close();}
+    return output=facts;
+  }catch{return output=[...retainedTrace,...retainedProtocol,...(retainedExecution?[retainedExecution]:[]),evidence('asset_simulation','unknown','Isolated fork simulation failed','The node, historical state, or executor was unavailable. Asset simulation was not completed.','isolated-fork')];}
+  finally{if(fork){try{if(output)await finalizeForkSnapshot(fork,request.chainId,output);}finally{await fork.close();}}}
 }
 async function roundTrip(request:Extract<SecurityRequest,{kind:'transaction'}>,op:Operation,fork:ForkSession,config:SecurityConfig):Promise<Evidence[]>{
  const experiment=swapExperiment(request,op),snapshot=forkSnapshot(fork);

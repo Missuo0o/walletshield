@@ -20,6 +20,7 @@ import {matchLabReport} from '../testing/sessions.js';
 import {sanitizeRpcParams} from './rpc-redaction.js';
 import {executionLimitations} from './transaction-fields.js';
 import {readOnlyAssetRiskExemption} from './read-only.js';
+import {SCORING_POLICY} from './scoring-policy.js';
 export type SecurityOptions={access?:{service:ServiceConfig;auth:WalletAuth};config?:()=>Promise<SecurityConfig>;collect?:Collector;score?:(report:SecurityReport,config:SecurityConfig)=>Promise<AIState>};
 export function registerSecurity(app:FastifyInstance,store:Store,options:SecurityOptions={}) {
   const hosted=options.access?.service.mode==='hosted',auth=options.access?.auth;
@@ -98,7 +99,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
   });
   }
   app.get('/api/security/status',async()=>{
-    const c=await getConfig();return {version:'0.4.1',scoringPolicy:'muse-evidence-v5-observable-score-basis',aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,sourceVerification:!!c.sourceVerification,monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
+    const c=await getConfig();return {version:'0.4.1',scoringPolicy:SCORING_POLICY,aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,sourceVerification:!!c.sourceVerification,monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
   });
   if(!hosted){
   app.get('/api/security/examples',async()=>securityExamples.map(({id,name,request})=>({id,name,request})));

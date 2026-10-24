@@ -1,5 +1,5 @@
 import {authHeaders,handleWebAuthFailure} from './session';
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import {Activity,Wallet,Loader2,RotateCcw,ShieldCheck} from 'lucide-react';
 import type {WalletCase} from '../../src/testing/cases';
 import type {LabSession} from '../../src/testing/sessions';
@@ -10,37 +10,43 @@ import type {LabInventory} from '../../src/testing/contracts';
 import {LabAssets} from './LabAssets';
 import {SNAP_ID,type WalletProvider} from './wallet';
 import {scoreStatusLabel} from '../../src/security/score-disposition';
+import {createWalletAction} from './walletAction';
 type Status={ready:boolean;message:string;cases:WalletCase[];caseCount:number;walletProfileCount:number;analysisProfileCount:number;transactionCount:number;signatureCount:number;aiConfigured:boolean;aiDailyLimit:number;aiCallsToday:number;unavailable:{name:string;reason:string}[]};
 type Session=Omit<LabSession,'tokenHash'>&{report?:SecurityReport|null};
 export async function labApi<T>(path:string,body?:unknown,signal?:AbortSignal):Promise<T>{const timeout=AbortSignal.timeout(85000),headers=authHeaders();const r=await fetch(path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...headers},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:signal?AbortSignal.any([signal,timeout]):timeout});handleWebAuthFailure(r.status,headers.Authorization,path);const data=await r.json();if(!r.ok)throw Error(data.error??'The backend request did not complete.');return data;}
 const outcomes={pending:'Waiting for wallet',signed:'Signature returned (not uploaded or used)',submitted:'Transaction submitted · Awaiting receipt',rejected:'Canceled in wallet',error:'Wallet request incomplete',confirmed:'Confirmed on local chain',reverted:'Reverted on local chain'};
 export function WalletLab({provider,externalBusy,account,snapReady,inventory,inventoryLoading,inventoryError,preparing,clearing,onPrepare,onClear,onRefreshInventory,onSetup,onBusy,switchLocal}:{provider?:WalletProvider;externalBusy:boolean;account:string;snapReady:boolean;inventory:LabInventory|null;inventoryLoading:boolean;inventoryError:string;preparing:boolean;clearing:boolean;onPrepare:()=>Promise<void>;onClear:()=>Promise<void>;onRefreshInventory:()=>Promise<void>;onSetup:()=>void;onBusy:(value:boolean)=>void;switchLocal:()=>Promise<void>}){
  const [status,setStatus]=useState<Status|null>(null),[selected,setSelected]=useState('approve-unlimited'),[group,setGroup]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[sessions,setSessions]=useState<Session[]>([]),[activeId,setActiveId]=useState('');
+ const identity=useRef({provider,account,generation:0});if(identity.current.provider!==provider||identity.current.account!==account)identity.current={provider,account,generation:identity.current.generation+1};
+ const mounted=useRef(true),actionRef=useRef<ReturnType<typeof createWalletAction>|null>(null);
+ useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;actionRef.current?.cancel();};},[]);
+ useEffect(()=>{actionRef.current?.cancel();setActiveId('');setError('');},[provider,account]);
  const active=sessions.find(s=>s.id===activeId),test=status?.cases.find(c=>c.id===selected);
  async function refresh(includeInventory=true){if(includeInventory)void onRefreshInventory();try{const [s,history]=await Promise.all([labApi<Status>('/api/lab/status'),labApi<Session[]>('/api/lab/sessions')]);setStatus(s);setGroup(current=>s.cases.some(c=>c.group===current)?current:s.cases.find(c=>c.id===selected)?.group??s.cases[0]?.group??'');setSessions(history);setError('');}catch(e){setError(e instanceof Error?e.message:'Could not connect to the service.');}}
  useEffect(()=>{void refresh(false);},[]);
- useEffect(()=>{if(!activeId)return;const timer=setInterval(()=>{labApi<Session>(`/api/lab/sessions/${activeId}`).then(s=>setSessions(all=>[s,...all.filter(x=>x.id!==s.id)])).catch(()=>{});},2500);return()=>clearInterval(timer);},[activeId]);
+ useEffect(()=>{if(!activeId)return;let current=true;const generation=identity.current.generation;const timer=setInterval(()=>{labApi<Session>(`/api/lab/sessions/${activeId}`).then(s=>{if(current&&mounted.current&&identity.current.generation===generation)setSessions(all=>[s,...all.filter(x=>x.id!==s.id)]);}).catch(()=>{});},2500);return()=>{current=false;clearInterval(timer);};},[activeId,provider,account]);
  async function run(){
-  if(!provider||externalBusy||!account||!test)return;setBusy(true);onBusy(true);setError('');
+  if(!provider||externalBusy||!account||!test||actionRef.current)return;
+  const generation=identity.current.generation,action=createWalletAction(provider,{isCurrent:()=>mounted.current&&identity.current.generation===generation});actionRef.current=action;setBusy(true);onBusy(true);setError('');
   try{
-   await switchLocal();const accounts=await provider.request({method:'eth_accounts'}) as string[];if(accounts[0]?.toLowerCase()!==account.toLowerCase())throw Error('The selected account changed. Reconnect to continue.');
-   const session=await labApi<Session&{token:string}>('/api/lab/begin',{caseId:test.id,address:account});setActiveId(session.id);setSessions(all=>[session,...all]);
+   await action.wait(switchLocal);await action.checkIdentity(account,31337);
+   const session=await action.wait(()=>labApi<Session&{token:string}>('/api/lab/begin',{caseId:test.id,address:account}));setActiveId(session.id);setSessions(all=>[session,...all]);
    let walletStatus:'signed'|'submitted'|'rejected'|'error'='error',transactionHash:string|undefined;
    try{
-    try{await provider.request({method:'wallet_invokeSnap',params:{snapId:SNAP_ID,request:{method:'walletshield_test_session',params:{id:session.id}}}});}catch{throw Error('Open Wallet setup, reload and pair the current Snap, then try again.');}
-    if(await provider.request({method:'eth_chainId'})!=='0x7a69')throw Error('Lab requests are restricted to local chain 31337.');
+    try{await action.request({method:'wallet_invokeSnap',params:{snapId:SNAP_ID,request:{method:'walletshield_test_session',params:{id:session.id}}}});}catch(error){action.guard();throw Error('Open Wallet setup, reload and pair the current Snap, then try again.');}
+    await action.checkIdentity(account,31337);
     if(session.request.kind==='transaction'){
-     const hash=await provider.request({method:'eth_sendTransaction',params:[{...session.request.transaction,chainId:'0x7a69'}]});
+     const hash=await action.request({method:'eth_sendTransaction',params:[{...session.request.transaction,chainId:'0x7a69'}]},true);
      if(typeof hash!=='string'||!/^0x[\da-f]{64}$/i.test(hash))throw Error('The wallet did not return a transaction hash.');transactionHash=hash;walletStatus='submitted';
     }else if(session.request.kind==='signature'){
-     const s=session.request.signature,result=await provider.request({method:s.method,params:s.method==='personal_sign'?[s.data,s.from]:[s.from,JSON.stringify(s.data)]});
+     const s=session.request.signature,result=await action.request({method:s.method,params:s.method==='personal_sign'?[s.data,s.from]:[s.from,JSON.stringify(s.data)]},true);
      if(typeof result!=='string'||!/^0x(?:[\da-f]{128}|[\da-f]{130})$/i.test(result))throw Error('The wallet did not return a valid signature format.');walletStatus='signed';
      // Never upload, log, persist or consume the generated signature.
     }
-   }catch(e){walletStatus=(e as {code?:number}).code===4001?'rejected':'error';if(walletStatus==='error')setError(e instanceof Error?e.message:'The wallet request did not complete. A check is not verified unless the Snap receives the request.');}
-   await labApi(`/api/lab/sessions/${session.id}/result`,{token:session.token,status:walletStatus,...(transactionHash?{transactionHash}:{})});
-   const final=await labApi<Session>(`/api/lab/sessions/${session.id}`);setSessions(all=>[final,...all.filter(x=>x.id!==final.id)]);void onRefreshInventory();
-  }catch(e){setError(e instanceof Error?e.message:'The request failed.');}finally{setBusy(false);onBusy(false);}
+   }catch(e){action.guard();walletStatus=(e as {code?:number}).code===4001?'rejected':'error';if(walletStatus==='error')setError(e instanceof Error?e.message:'The wallet request did not complete. A check is not verified unless the Snap receives the request.');}
+   await action.wait(()=>labApi(`/api/lab/sessions/${session.id}/result`,{token:session.token,status:walletStatus,...(transactionHash?{transactionHash}:{})}));
+   const final=await action.wait(()=>labApi<Session>(`/api/lab/sessions/${session.id}`));setSessions(all=>[final,...all.filter(x=>x.id!==final.id)]);void onRefreshInventory();
+  }catch(e){if(mounted.current&&identity.current.generation===generation)setError(e instanceof Error?e.message:'The request failed.');}finally{if(actionRef.current===action){actionRef.current=null;if(mounted.current)setBusy(false);onBusy(false);}action.cancel();}
  }
  return <><div className="page-heading"><div><div className="eyebrow"><span/> WALLET TEST LAB</div><h1>Every request. <span>Test it in your wallet.</span></h1><p>Run actual local wallet requests and inspect the Snap and Muse responses. Analysis may take tens of seconds. Use a dedicated test account on chain 31337.</p></div><button className="button secondary" onClick={()=>void refresh()} disabled={busy||externalBusy}><RotateCcw size={15}/>Refresh</button></div>
  <div className="lab-stats"><div><strong>{status?.caseCount??'—'}</strong><span>Wallet test cases</span></div><div><strong>{status?.transactionCount??'—'} / {status?.signatureCount??'—'}</strong><span>Transactions / Messages</span></div><div><strong>{status?.walletProfileCount??'—'} / {status?.analysisProfileCount??30}</strong><span>Represented profiles / Analysis profiles</span></div></div>

@@ -12,6 +12,7 @@ import {buildApp} from '../src/server/app.js';
 import {createStore} from '../src/server/store.js';
 import type {SecurityConfig} from '../src/security/config.js';
 import type {AIResult,AIState,SecurityRequest} from '../src/security/types.js';
+import {SCORING_POLICY} from '../src/security/scoring-policy.js';
 
 const address='0x2222222222222222222222222222222222222222';
 const config:SecurityConfig={apiKey:'offline-fixture-key',model:'muse-wonder-1.0',aiEnabled:true,lookups:false,goPlusToken:'',rpc:{}};
@@ -44,6 +45,15 @@ test('historical failure diagnostics receive conservative display labels without
  assert.equal(securityHistoryMatches(report,'Evidence insufficient'),true);
  const rendered=renderToStaticMarkup(React.createElement(SecurityReportView,{report}));
  assert.match(rendered,/AI analysis: Evidence insufficient for a score/);assert.doesNotMatch(rendered,/AI analysis: Complete</);
+});
+
+test('historical AI assessments are identified without changing saved scores or claiming current revalidation',()=>{
+ const base={...finitePermitReport(),score:42,scoreSource:'ai' as const};
+ for(const scoringPolicy of [undefined,'muse-evidence-v5-observable-score-basis',SCORING_POLICY]){
+  const ai=completed(42);assert.ok(ai.result);ai.result.scoringPolicy=scoringPolicy;
+  const report={...base,ai},original=structuredClone(report),html=renderToStaticMarkup(React.createElement(SecurityReportView,{report}));
+  assert.equal(html.includes('Historical assessment policy'),scoringPolicy!==SCORING_POLICY);assert.match(html,/42/);assert.deepEqual(report,original);
+ }
 });
 
 test('read-only exemptions require a recognized method, canonical parameters and the wallet_rpc envelope',()=>{

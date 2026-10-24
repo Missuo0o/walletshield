@@ -15,7 +15,7 @@ const native=():Extract<SecurityRequest,{kind:'transaction'}>=>({kind:'transacti
 const transfer=keccak256(toHex('Transfer(address,address,uint256)'));
 function forkFixture(options:{logs?:unknown[];trace?:unknown;assetRead?:(reverted:boolean)=>string}={}) {
  let sent:Record<string,string>|undefined,reverted=false;
- const factory:ForkFactory=async()=>({chainId:31337,blockNumber:'6',blockHash:'0xabc',close:async()=>{},rpc:async(method,params=[])=>{
+ const factory:ForkFactory=async()=>({chainId:31337,blockNumber:'6',blockHash:`0x${'a'.repeat(64)}`,blockTimestampSeconds:'1900000000',verifyTraceSource:async()=>true,close:async()=>{},rpc:async(method,params=[])=>{
   if(method==='evm_snapshot')return '1';
   if(method==='eth_getBalance')return '0x64';
   if(method==='eth_sendTransaction'){sent=(params[0] as Record<string,string>);if(BigInt(sent.gas)<30000n)throw Error('fixture gas too low');return '0xabc';}

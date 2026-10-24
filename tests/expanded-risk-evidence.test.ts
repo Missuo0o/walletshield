@@ -16,11 +16,11 @@ const owner=address(1),input=address(2),output=address(3),router=address(4),othe
 const config:SecurityConfig={apiKey:'',model:'not-used',aiEnabled:false,lookups:true,goPlusToken:'',rpc:{},forkEnabled:true};
 const v3Abi=(deadline:boolean)=>parseAbi([`function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,${deadline?'uint256 deadline,':''}uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96) params)`]);
 function v3Request(deadline:boolean):Extract<SecurityRequest,{kind:'transaction'}>{return {kind:'transaction',chainId:1,origin:'https://source.example',transaction:{from:owner,to:router,value:'0x0',gas:'0x186a0',nonce:'0x5',maxFeePerGas:'0x64',maxPriorityFeePerGas:'0xa',data:encodeFunctionData({abi:v3Abi(deadline),functionName:'exactInputSingle',args:[{tokenIn:input,tokenOut:output,fee:3000,recipient:owner,...(deadline?{deadline:2000000000n}:{}),amountIn:100n,amountOutMinimum:1n,sqrtPriceLimitX96:123n}]})}};}
-function forkFixture(deadline:boolean,options:{sellFails?:boolean;acquired?:bigint}={}){
+function forkFixture(deadline:boolean,options:{sellFails?:boolean;acquired?:bigint;reorgAfterSell?:boolean}={}){
  const sent:Record<string,string>[]=[],balances=new Map([[input.toLowerCase(),1000n],[output.toLowerCase(),0n]]);
  let nonce=5n,snapshot:Map<string,bigint>|undefined,closed=0;
  const receipts=new Map<string,any>();
- const factory:ForkFactory=async()=>({chainId:1,blockNumber:'40',blockHash:`0x${'a'.repeat(64)}`,blockTimestampSeconds:'1900000000',close:async()=>{closed++;},rpc:async(method,params=[])=>{
+ const factory:ForkFactory=async()=>({chainId:1,blockNumber:'40',blockHash:`0x${'a'.repeat(64)}`,blockTimestampSeconds:'1900000000',verifyTraceSource:async()=>!options.reorgAfterSell||sent.length<4,close:async()=>{closed++;},rpc:async(method,params=[])=>{
   if(method==='evm_snapshot'){snapshot=new Map(balances);return '0x1';}
   if(method==='evm_revert'){balances.clear();for(const [key,value] of snapshot!)balances.set(key,value);nonce=5n;return true;}
   if(method==='anvil_impersonateAccount')return true;
@@ -57,6 +57,12 @@ test('both canonical V3 exactInputSingle variants replay the original buy and us
   assert.match(semantics.detail,/separate round_trip evidence/);
   assert.doesNotMatch(semantics.detail,/Dependent V3 buy\/sell testing is unavailable/);
  }
+});
+
+test('a source change during the derived reverse sell discards the complete fork group',async()=>{
+ const request=v3Request(true),fixture=forkFixture(true,{reorgAfterSell:true}),checks=await simulateRequest(request,decodeRequest(request),config,fixture.factory);
+ assert.equal(fixture.sent.length,4,'The original replay, approval and sell were exercised before the final source check.');
+ assert.equal(fixture.closed(),1);assert.ok(checks.some(check=>check.id==='fork_source_snapshot'));assert.ok(checks.every(check=>check.status==='unknown'));assert.ok(!checks.some(check=>check.id==='round_trip'||check.id==='simulation_execution'));
 });
 
 test('failed V3 reverse selling is a warning, zero acquired balance is adverse, unsupported recipient/native funding stays explicit',async()=>{

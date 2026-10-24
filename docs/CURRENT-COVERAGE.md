@@ -2,7 +2,7 @@
 
 [English](CURRENT-COVERAGE.md) · [简体中文](CURRENT-COVERAGE-zh.md)
 
-Latest repair and validation: [24 October 2026 repair report](REPAIR-VALIDATION-2026-10-24.md). It covers claim validation, RPC snapshot consistency, bounded local wallet waits and hosted session UI lifecycle. The [earlier order and trace follow-up](ORDER-TRACE-FOLLOWUP-2026-10-23.md) remains a dated historical record; its outcomes are not reused as this repair’s validation counts.
+Earlier repair and validation: [24 October 2026 repair report](REPAIR-VALIDATION-2026-10-24.md). It covers claim validation, RPC snapshot consistency, bounded local wallet waits and hosted session UI lifecycle. The [earlier order and trace follow-up](ORDER-TRACE-FOLLOWUP-2026-10-23.md) remains a dated historical record; its outcomes are not reused as this repair’s validation counts.
 
 This describes the current v0.4.1 implementation after the correctness, validation, identity and dependency repair. It is a capability matrix, not an accuracy certification. Install/configure/run instructions are in the [README](../README.md) and [user manual](USER-MANUAL.md); exact per-profile extraction is in the [generated coverage guide](AI-COVERAGE-GUIDE.md).
 
@@ -10,6 +10,16 @@ WalletShield provides **pre-sign risk advice** for one unsigned EVM request. It 
 
 Current checks use the wallet-supplied unsigned request, source origin/network metadata and successfully collected RPC, intelligence and simulation evidence. Muse assesses observable request signals, including supported source/message/request inconsistencies. Chain/provider/execution context means technical observations. Historical reports and acceptance artifacts retain their original recorded data.
 
+
+## Independent implementation recheck · 24 October 2026
+
+The [independent recheck report](INDEPENDENT-RECHECK-2026-10-24.md) records this separate review and its validation results. Older dated reports keep their original counts and observations; they are not evidence that the new policy was applied retroactively.
+
+- **Field-bound model evidence.** New structured assessments record `scoringPolicy: muse-evidence-v6-field-bound-facts`. A native balance from `chain_context` belongs to the captured sender/signing account, not the recipient or verifier. Each selected fact must support its particular dimension: a chain identifier, code hash, generic address, NFT ID or unit metadata cannot become financial exposure merely because its collector also returned a balance. Actual quantities, comparisons and observed NFT ownership retain their bounded meaning; code presence can support execution only where explicitly allowed. Muse still supplies the number without fixed points, weights or fallback scores.
+- **Final fork-source verification.** The original-call trace, original fork execution, asset/permission/protocol changes and any derived reverse-swap experiment share a final canonical source-chain/header check. A missing, changed, malformed or uncheckable source binding discards the complete fork group. Earlier trace success cannot excuse later execution under an unverified source. The private fork is still a separate state space; no upstream transaction is submitted and future safety is not established.
+- **Wallet actions stay bound to the visible selection.** Local tests and public signing checks validate the captured provider, actual account and network before creating the signature/transaction prompt and across asynchronous preparation. Setup actions, including connection, identity verification and Snap pairing, have bounded waits. An account/provider/network change or timeout closes the action so a late result cannot start a new prompt or restore stale UI state. A timeout does not cancel a request already open inside MetaMask; review and approve or cancel it there before trying again.
+- **Hosted authorization is rechecked after waits.** Network reads, scans and other protected asynchronous work revalidate the credential and its scope before returning private data or accepting a result. Revocation while an upstream request is in flight does not authorize its later completion. An authenticated scope mismatch remains distinct from an expired/revoked credential. Requests already sent to an external provider cannot be recalled.
+- **Historical scores remain historical.** A saved result from an older or unstated scoring policy carries a historical-policy notice. Reading it does not re-score it or certify it under v6. A new analysis collects its own evidence and can give a different number, reject an unsupported output or legitimately abstain. Neither replay validation nor new regression tests measure independent Muse accuracy.
 
 ## Snapshot, claim and interface safeguards
 

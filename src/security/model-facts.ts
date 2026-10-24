@@ -39,10 +39,32 @@ const fields=new Set((
  'traceAvailable traceTruncated traceGaps retainedTraceCalls rootReverted completeAssetCoverage '+
  'sourceChainId destinationChainId sourceBridge destinationBridge sourceMessenger destinationMessenger sourceChainRole destinationChainRole roleVersionsCompatible routeBindingEstablished anyObservedPaused snapshotsSynchronized arrivalProven proofVerified runtimeVersion runtimeCodeMatched versionMatchesRegistry adapterVersionSupported trustedGetterSemantics observedOther expectedOther observedMessenger expectedMessenger pointerMatches paused nextMessageNonce nonceProvesThisMessage observationComplete callerMatchesMessenger expectedMessenger declaredAssetSender activeCrossDomainSenderVerified declaredRemoteToken declaredBridge expectedRemoteToken expectedBridge maintainedMintableBinding pairMatches tokenValueEstablished localChainId otherChainId otherToken bothTokenCodeObserved maintainedMintableCount maintainedDeclarationsMatch tokenPairBindingEstablished'
 ).split(/\s+/));
-const metadataOnly=new Set(['status','standard','declared','interfaceId','interfaceSupported','hasCode','codeHash','identityVerified','cryptographicSignerVerified','signingNetworkVerified','referenceOnly','sourceCodeAudit','fullWalletInventory','completeAssetCoverage','semanticsVerified','protocolDecoded']);
+const metadataOnly=new Set(['status','standard','declared','interfaceId','interfaceSupported','hasCode','poolHasCode','codeObservation','identityVerified','cryptographicSignerVerified','signingNetworkVerified','referenceOnly','sourceCodeAudit','fullWalletInventory','completeAssetCoverage','semanticsVerified','protocolDecoded','chainId','domainChainId','readChainId','requestChainId','declaredChainId','sourceChainId','destinationChainId','authorizationChainId','localChainId','otherChainId','digest','domainHash','signingHash','orderHash','witnessHash','witnessTypeHash']);
+// These fields may describe authority, routing, units or other observations,
+// but are not an amount, balance, charge or observed economic relation. They
+// must not inherit financial exposure merely from their collector's ID.
+const nonFinancialFields=new Set('token tokenIn tokenOut asset localToken address account owner holder signer spender operator recipient receiver to from verifier verifyingContract target executionTarget newController newAuthority newOwner newThreshold module guard fallbackHandler entryPoint sender factory paymaster delegate authority recoveredAuthority payer pool manager token0 token1 poolToken0 poolToken1 poolFactory decimals shareDecimals underlyingDecimals assetDecimals priceDecimals tokenId tokenIds identifierOrCriteria nonce declaredNonce currentNonce requestedNonce expectedNonceAtThisTuple counter nonceKey nonceSequence type category method action selector callSelector callType version protocol runtimeVersion sourceMethod pathIndex interfaceBindingConsistent'.split(' '));
+function factDimensions(check:SecurityReport['checks'][number],field:string,value:unknown,dimensions:AIDimension['dimension'][]):AIDimension['dimension'][] {
+ const key=field.split('.').at(-1)!.replace(/\[\d+\]$/,'');
+ if(metadataOnly.has(key)||/(?:CodeHash|blockHash|BlockHash)$/.test(key)||key==='codeHash')return [];
+ if(check.id==='chain_context'){
+  if(field==='data.nativeBalanceWei')return dimensions.filter(dimension=>dimension==='exposure');
+  if(field==='data.targetHasCode')return dimensions.filter(dimension=>dimension==='execution');
+  return [];
+ }
+ const observedNftOwner=check.source==='rpc'&&(/^nft_position_\d+_\d+$/.test(check.id)&&field==='data.owner'||/^order_asset_\d+$/.test(check.id)&&field==='data.currentOwner');
+ const financialMetadata=!observedNftOwner&&(nonFinancialFields.has(key)||key==='targetHasCode'||address(value));
+ return financialMetadata?dimensions.filter(dimension=>dimension!=='exposure'):dimensions;
+}
 function stable(value:unknown):string{return JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);}
 function subjectFor(check:SecurityReport['checks'][number],field:string,report:SecurityReport):ModelFact['subject']{
  const data=check.data??{};
+ // basicCollector reads the sender/signer's native balance. Its "target" is
+ // the recipient or verifier and must never become the balance owner.
+ if(check.id==='chain_context'&&field==='data.nativeBalanceWei'){
+  const owner=report.request.kind==='transaction'?report.request.transaction.from:report.request.kind==='signature'?report.request.signature.from:undefined;
+  return address(owner)?{role:'account',value:owner.toLowerCase()}:{role:'evidence',value:check.id};
+ }
  const subjects=data.subjects as Record<string,unknown>|undefined;
  const traceFrame=['call_trace','call_trace_fork'].includes(check.id)&&/^data\.calls\[(\d+)\]\.(\w+)$/.exec(field);
  if(traceFrame&&Array.isArray(data.calls)){
@@ -91,7 +113,7 @@ export function modelFactCandidates(report:SecurityReport):{version:typeof FACT_
   const base:Omit<ModelFact,'id'>={evidence_id:check.id,subject:subjectFor(check,field,report),field,value,scope:check.status==='unknown'?'unresolved-check':/^rules(?:\/|$)/.test(check.source)||['eip712','request','calldata/batch-v1'].includes(check.source)?'decoded-request':check.source==='isolated-fork'?'isolated-fork':['reference','sourcify'].includes(check.source)?'reference-observation':'reported-observation',provenance:{source:check.source,chain_id:Number.isSafeInteger(chain)&&chain>0?chain:null,block_number:typeof block==='string'&&/^\d+$/.test(block)?block:null,block_hash:typeof hash==='string'&&/^0x[\da-f]{64}$/i.test(hash)?hash.toLowerCase():null,observed_at:check.observedAt}};
   const fact={id:`fact_${createHash('sha256').update(stable(base)).digest('hex').slice(0,24)}`,...base};
   if(!modelFactSchema.safeParse(fact).success)return;
-  if(candidates.length>=FACT_LIMITS.candidates){omitted++;return;}candidates.push({fact,admissible_dimensions:dimensions});
+  if(candidates.length>=FACT_LIMITS.candidates){omitted++;return;}candidates.push({fact,admissible_dimensions:factDimensions(check,field,value,dimensions)});
  };
  for(const check of report.checks){
   const dimensions=dimensionsForEvidence(check,report);let count=0;

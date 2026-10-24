@@ -12,10 +12,10 @@ const native:SecurityRequest={kind:'transaction',chainId:31337,transaction:{from
 const transfer=keccak256(toHex('Transfer(address,address,uint256)'));
 test('fork simulation executes only through the injected child session, restores its snapshot and closes even on failure',async()=>{
  let closed=0;const methods:string[]=[];
- const factory:ForkFactory=async()=>({chainId:31337,blockNumber:'6',blockHash:'0xabc',close:async()=>{closed++;},rpc:async(method)=>{
+ const factory:ForkFactory=async()=>({chainId:31337,blockNumber:'6',blockHash:`0x${'a'.repeat(64)}`,blockTimestampSeconds:'1900000000',verifyTraceSource:async()=>true,close:async()=>{closed++;},rpc:async(method)=>{
   methods.push(method);if(method==='evm_snapshot')return '1';if(method==='eth_getBalance')return methods.filter(v=>v==='eth_getBalance').length===1?'0x64':'0x62';if(method==='eth_getTransactionReceipt')return {status:'0x1',gasUsed:'0x1',effectiveGasPrice:'0x1',logs:[]};if(method==='debug_traceTransaction')return {type:'CALL',from:owner,to:other,value:'0x1',input:'0x'};if(method==='evm_revert')return true;return '0xabc';}});
  const facts=await simulateRequest(native,decodeRequest(native),config,factory);assert.equal(closed,1);assert.ok(methods.includes('evm_revert'));assert.equal(facts.find(e=>e.id==='simulation_execution')?.data?.status,'success');assert.equal(facts.find(e=>e.id==='asset_simulation')?.status,'unknown');
- const failing:ForkFactory=async()=>({chainId:31337,blockNumber:'6',blockHash:'0xabc',close:async()=>{closed++;},rpc:async()=>{throw Error('private rpc url');}});
+ const failing:ForkFactory=async()=>({chainId:31337,blockNumber:'6',blockHash:`0x${'a'.repeat(64)}`,blockTimestampSeconds:'1900000000',verifyTraceSource:async()=>true,close:async()=>{closed++;},rpc:async()=>{throw Error('private rpc url');}});
  const unknown=await simulateRequest(native,decodeRequest(native),config,failing);assert.equal(closed,2);assert.equal(unknown[0].status,'unknown');assert.ok(!JSON.stringify(unknown).includes('private rpc url'));
 });
 test('event discovery distinguishes ERC20 amounts from NFT IDs and bounds discovery',()=>{

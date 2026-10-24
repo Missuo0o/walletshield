@@ -130,7 +130,7 @@ test('unavailable common control interfaces remain explicit without discarding c
 
 test('missing receipt price retains raw balances but cannot fabricate a zero fee or gas-adjusted native loss',async()=>{
  const request=native();let closed=false,reads=0;
- const factory:ForkFactory=async()=>({chainId:31337,blockNumber:'42',blockHash,close:async()=>{closed=true;},rpc:async method=>{
+ const factory:ForkFactory=async()=>({chainId:31337,blockNumber:'42',blockHash,blockTimestampSeconds:'1900000000',verifyTraceSource:async()=>true,close:async()=>{closed=true;},rpc:async method=>{
   if(method==='eth_getBalance')return reads++===0?'0x64':'0x5a';
   if(method==='eth_sendTransaction')return blockHash;
   if(method==='eth_getTransactionReceipt')return {status:'0x1',blockNumber:'0x2b',gasUsed:'0x1',logs:[]};

@@ -1,0 +1,161 @@
+{
+  "date": "2026-10-24",
+  "baselineCommit": "c81c5af41e3aedbe9d9f323d44e544a73385cac0",
+  "reviewType": "Fresh internal code recheck and cross-review; not external certification",
+  "baselineTests": {
+    "passed": 558,
+    "failed": 0
+  },
+  "finalTests": {
+    "tests": 592,
+    "passed": 592,
+    "failed": 0,
+    "skipped": 0
+  },
+  "newTests": 34,
+  "scoringPolicy": "muse-evidence-v6-field-bound-facts",
+  "findingGroups": [
+    "native balance subject attribution",
+    "field-level evidence admissibility",
+    "post-execution fork source consistency",
+    "stale wallet request contexts and bounded setup",
+    "network authorization across asynchronous revocation"
+  ],
+  "build": "passed",
+  "v3StateIntegration": {
+    "tests": 1,
+    "passed": 1,
+    "scenarios": 23,
+    "sourceStateUnchanged": true
+  },
+  "traceIntegration": {
+    "tests": 1,
+    "passed": 1
+  },
+  "devPrivateFilesIntegration": {
+    "tests": 1,
+    "passed": 1
+  },
+  "offlineValidator": {
+    "cases": 12,
+    "validAbstentions": 12,
+    "adversarialRejected": 120,
+    "adversarialTotal": 120,
+    "modelCalls": 0
+  },
+  "priorOriginalOutputReplay": {
+    "total": 6,
+    "accepted": 4,
+    "rejected": 2,
+    "results": [
+      {
+        "response": 1,
+        "case": "canonical-order",
+        "accepted": false,
+        "reason": "Structured dimension lacks relevant fact"
+      },
+      {
+        "response": 2,
+        "case": "canonical-order",
+        "accepted": false,
+        "reason": "Structured dimension lacks relevant fact"
+      },
+      {
+        "response": 3,
+        "case": "opaque-order",
+        "accepted": true,
+        "score": null,
+        "originalScorePreserved": true
+      },
+      {
+        "response": 4,
+        "case": "opaque-order",
+        "accepted": true,
+        "score": null,
+        "originalScorePreserved": true
+      },
+      {
+        "response": 5,
+        "case": "opaque-order",
+        "accepted": true,
+        "score": null,
+        "originalScorePreserved": true
+      },
+      {
+        "response": 6,
+        "case": "fork-trace-approval",
+        "accepted": true,
+        "score": 22,
+        "originalScorePreserved": true
+      }
+    ]
+  },
+  "liveMuse": {
+    "providerRequests": 4,
+    "analyses": 3,
+    "sourceStateUnchangedDuringAnalysis": true,
+    "analysisUpstreamWrites": 0,
+    "externalThreatLookups": false,
+    "runs": [
+      {
+        "case": "canonical-order",
+        "status": "completed",
+        "score": 38,
+        "attempts": 2,
+        "repaired": true,
+        "scoringPolicy": "muse-evidence-v6-field-bound-facts"
+      },
+      {
+        "case": "opaque-order",
+        "status": "completed",
+        "score": null,
+        "attempts": 1,
+        "repaired": false,
+        "scoringPolicy": "muse-evidence-v6-field-bound-facts"
+      },
+      {
+        "case": "fork-trace-approval",
+        "status": "completed",
+        "score": 22,
+        "attempts": 1,
+        "repaired": false,
+        "scoringPolicy": "muse-evidence-v6-field-bound-facts"
+      }
+    ],
+    "rawOutputValidation": [
+      {
+        "attempt": 1,
+        "case": "canonical-order",
+        "accepted": false,
+        "reason": "Unsupported signature verification claim"
+      },
+      {
+        "attempt": 2,
+        "case": "canonical-order",
+        "accepted": true,
+        "score": 38,
+        "policy": "muse-evidence-v6-field-bound-facts"
+      },
+      {
+        "attempt": 3,
+        "case": "opaque-order",
+        "accepted": true,
+        "score": null,
+        "policy": "muse-evidence-v6-field-bound-facts"
+      },
+      {
+        "attempt": 4,
+        "case": "fork-trace-approval",
+        "accepted": true,
+        "score": 22,
+        "policy": "muse-evidence-v6-field-bound-facts"
+      }
+    ]
+  },
+  "realMetaMaskPopupAcceptanceThisPass": false,
+  "independentAccuracyMeasured": false,
+  "historicalReportsRewritten": false,
+  "publishedPrivateKeys": false,
+  "publishedPpt": false,
+  "runtime": "Node.js 24.22.1"
+}

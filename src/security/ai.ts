@@ -8,6 +8,7 @@ import {FACT_SCHEMA_VERSION,modelFactCandidates,modelFactSchema,validateModelFac
 import {executionLimitations} from './transaction-fields.js';
 import {decodeSeaportOrder} from './orders.js';
 import {typedRequest} from './signatures.js';
+import {SCORING_POLICY} from './scoring-policy.js';
 import { META_MODEL, META_RESPONSES_URL, type SecurityConfig } from './config.js';
 import { AI_DIMENSIONS, type SecurityReport, type AIResult, type AIState } from './types.js';
 const citedIds=z.array(z.string().min(1).max(150)).min(1).max(8);
@@ -222,7 +223,7 @@ export function evidencePacket(report:SecurityReport) {
   const transaction=report.request.kind==='transaction'?report.request.transaction:undefined;
   const fees=transaction?Object.fromEntries(['gas','gasPrice','maxFeePerGas','maxPriorityFeePerGas','nonce'].filter(k=>(transaction as any)[k]!==undefined).map(k=>[k,String(BigInt((transaction as any)[k]))])):undefined;
   const scope=assessmentScope(report),gaps=scope.criticalMissingData;
-  return {version:report.version,createdAt:report.createdAt,reportSource:report.source,evidenceComplete:gaps.length===0,chainId:report.request.chainId,origin,feeParameters:fees,
+  return {version:report.version,scoringPolicy:SCORING_POLICY,createdAt:report.createdAt,reportSource:report.source,evidenceComplete:gaps.length===0,chainId:report.request.chainId,origin,feeParameters:fees,
     quality:evidenceQuality(report),assessment_scope:scope,numeric_assessment_basis:numericAssessmentBasis(report),evidence_admissibility:evidenceAdmissibility(report),claim_support:claimSupport(report),structured_fact_candidates:modelFactCandidates(report),requestSummary,unsupportedTransactionFields:transaction?executionLimitations(transaction):[],operation:report.operation,checks:report.checks,missing_checks:gaps,
     request_data_scope:'Only allowlisted decoded summaries are provided, not full calldata, generated signatures, full RPC parameters or wallet history. A decoded ABI shape is a candidate, not verified protocol identity or complete understanding. Message previews and parameter/batch extraction can be truncated. Demo and demo-fixture sources are synthetic observations, not real-network facts.',
     snapshot_consistency:'Collectors pin their own reads and can observe different blocks. Use each observation’s network, block and time; do not merge different assets or snapshots as if atomic. Fork execution blocks are distinct from upstream state. The quality inventory is not an accuracy or confidence percentage.',
@@ -275,7 +276,10 @@ export function validateAI(value:unknown,report:SecurityReport,model:string,opti
   const facts=validateModelFacts(data,report,options.requireStructuredFacts);
   const basis=numericAssessmentBasis(report);
   if(data.score!==null&&basis.requires_substantive_support&&!data.dimensions.some(d=>!['unknown','not_applicable'].includes(d.assessment)&&d.fact_ids?.some(id=>basis.eligible_fact_ids.includes(id))))throw Error('Numeric score lacks substantive request evidence');
-  return {...data,...(facts?{facts}:{}),missing_data:missing,model,generatedAt:new Date().toISOString()};
+  // The compatibility path accepts unstructured historical objects for local
+  // inspection. It has not passed field-bound fact validation and must not be
+  // relabeled as a current-policy assessment.
+  return {...data,...(facts?{facts,scoringPolicy:SCORING_POLICY}:{}),missing_data:missing,model,generatedAt:new Date().toISOString()};
 }
 function repairFeedback(error:unknown):string|undefined {
   if(error instanceof z.ZodError||error instanceof SyntaxError)return 'Return one complete object matching the exact JSON schema: six distinct dimensions, valid citations, reasons, missing_data and English advice. No extra prose.';

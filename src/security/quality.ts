@@ -1,4 +1,5 @@
 import type {EvidenceQuality,SecurityReport} from './types.js';
+import {SCORING_POLICY} from './scoring-policy.js';
 
 /** This is an evidence inventory, not a risk score or confidence percentage.
  * Observation time is when our collector recorded a result, not the upstream
@@ -50,8 +51,11 @@ export function evidenceQuality(report:SecurityReport):EvidenceQuality {
   'Counts describe collected checks, not detection accuracy or a confidence percentage.',
   'A recorded observation time is not a guarantee of provider freshness; examine its block and source.',
   'Independent interface failures preserve other observed facts only when the related snapshot verifies consistently; missing or changed headers discard all state-derived conclusions in that group.',
-  'pinnedRpc prefers canonical block-hash selectors. Numeric confirmed-state groups verify complete chain/header state before and after collection and discard the related state group if verification fails. This is not a global atomic snapshot or proof of provider honesty, and fork execution is distinct from upstream and future state.'
+  'pinnedRpc prefers canonical block-hash selectors. Numeric confirmed-state groups verify complete chain/header state before and after collection and discard the related state group if verification fails. This is not a global atomic snapshot or proof of provider honesty, and fork execution is distinct from upstream and future state.',
+  'Structured fact support is field-specific: a sender balance is not a recipient balance, and network, address, code-hash, NFT-ID or unit metadata is not financial exposure merely because the same collector returned a balance.'
  ];
+ if(report.checks.some(check=>check.source==='isolated-fork'))caveats.push('Current isolated-fork collection requires a final canonical source-chain/header recheck after execution and derived experiments; failure discards the entire fork group. Earlier trace success does not verify later execution. Historical reports do not acquire this verification retroactively.');
+ if(report.ai.status==='completed'&&report.ai.result&&report.ai.result.scoringPolicy!==SCORING_POLICY)caveats.push('This saved model result uses an older or unstated scoring policy. Reading its evidence does not re-score it or certify it under the current field-bound validation policy.');
  if(report.request.kind==='signature'&&!report.request.chainId)caveats.push('The signature hook did not supply a request-bound network. A domain or separate provider snapshot does not establish it.');
  if(stale.length)caveats.push('Some observations were recorded more than five minutes before report creation; this is a freshness flag, not a risk-score threshold.');
  if(future.length||missing.length)caveats.push('Some observation timestamps are missing, invalid, or more than 30 seconds ahead of report creation.');
