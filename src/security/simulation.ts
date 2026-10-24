@@ -12,17 +12,18 @@ import {captureForkProtocolState,forkProtocolEvidence} from './fork-protocol-sta
 import {swapFundingBinding} from './swap-trust.js';
 import {captureForkAuthorityState,forkAuthorityEvidence} from './fork-authority-state.js';
 import {executionLimitations} from './transaction-fields.js';
+import {isolatedForkTraceEvidence,TRACE_LIMITS,type ForkTraceContext} from './trace.js';
 type Rpc=(method:string,params?:unknown[])=>Promise<any>;
-export type ForkSession={rpc:Rpc;chainId:number;blockNumber:string;blockHash:string;blockTimestampSeconds?:string;close:()=>Promise<void>};
+export type ForkSession=ForkTraceContext&{rpc:Rpc;close:()=>Promise<void>};
 export type ForkFactory=(config:SecurityConfig,chainId:number)=>Promise<ForkSession>;
 const nftAbi=parseAbi(['function ownerOf(uint256) view returns (address)','function balanceOf(address,uint256) view returns(uint256)','function getApproved(uint256) view returns(address)','function isApprovedForAll(address,address) view returns(bool)','event TransferSingle(address indexed operator,address indexed from,address indexed to,uint256 id,uint256 value)','event TransferBatch(address indexed operator,address indexed from,address indexed to,uint256[] ids,uint256[] values)']);
 const eq=(a:string,b:string)=>a.toLowerCase()===b.toLowerCase();
 const isAddress=(s:unknown):s is `0x${string}`=>typeof s==='string'&&/^0x[\da-f]{40}$/i.test(s);
-const rawRpc=(url:string,signal:AbortSignal):Rpc=>async(method,params=[])=>{
+const rawRpc=(url:string,signal:AbortSignal,responseBytes=8000000):Rpc=>async(method,params=[])=>{
   const r=await fetch(url,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});
   if(!r.ok)throw Error('RPC unavailable');
   const reader=r.body?.getReader();if(!reader)throw Error('RPC response unavailable');const parts:Uint8Array[]=[];let size=0;
-  for(;;){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>8000000){await reader.cancel();throw Error('RPC response too large');}parts.push(part.value);}
+  for(;;){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>responseBytes){await reader.cancel();throw Error('RPC response too large');}parts.push(part.value);}
   const b=JSON.parse(Buffer.concat(parts).toString('utf8'));if(b.jsonrpc!=='2.0'||b.id!==1||b.error||b.result===undefined)throw Error('RPC operation failed');return b.result;
 };
 function observedGasCost(receipt:any):bigint|null {
@@ -87,7 +88,17 @@ export const openFork:ForkFactory=async(config,chainId)=>{
       try {if(Number(BigInt(await rpc('eth_chainId')))!==chainId)throw Error('Wrong child');const block=await rpc('eth_getBlockByNumber',[base.number,false]);if(typeof block?.hash!=='string'||block.hash.toLowerCase()!==base.hash.toLowerCase())throw Error('Fork mismatch');ready=true;break;}catch{await new Promise(ok=>setTimeout(ok,60));}
     }
     if(!ready)throw Error('Fork unavailable');
-    return {rpc,chainId,blockNumber:String(BigInt(base.number)),blockHash:base.hash,...(typeof base.timestamp==='string'&&/^0x[\da-f]+$/i.test(base.timestamp)?{blockTimestampSeconds:String(BigInt(base.timestamp))}:{}),close};
+    const traceMethods=new Set(['eth_chainId','eth_getBlockByNumber','debug_traceCall']);
+    const traceRpc=async(method:string,params:unknown[],signal:AbortSignal)=>{
+      if(!traceMethods.has(method))throw Error('Read-only fork trace method required');
+      return rawRpc(`http://127.0.0.1:${port}`,AbortSignal.any([controller.signal,signal]),TRACE_LIMITS.responseBytes)(method,params);
+    };
+    const verifyTraceSource=async(signal:AbortSignal)=>{
+      const read=rawRpc(upstream,AbortSignal.any([controller.signal,signal,AbortSignal.timeout(TRACE_LIMITS.requestMs)]),TRACE_LIMITS.responseBytes);
+      const [observedChain,header]=await Promise.all([read('eth_chainId'),read('eth_getBlockByNumber',[base.number,false])]);
+      return typeof observedChain==='string'&&/^0x[\da-f]{1,64}$/i.test(observedChain)&&BigInt(observedChain)===BigInt(chainId)&&typeof header?.number==='string'&&/^0x[\da-f]{1,64}$/i.test(header.number)&&BigInt(header.number)===BigInt(base.number)&&typeof header.hash==='string'&&header.hash.toLowerCase()===base.hash.toLowerCase()&&typeof header.timestamp==='string'&&/^0x[\da-f]{1,64}$/i.test(header.timestamp)&&BigInt(header.timestamp)===BigInt(base.timestamp);
+    };
+    return {rpc,chainId,blockNumber:String(BigInt(base.number)),blockHash:base.hash,...(typeof base.timestamp==='string'&&/^0x[\da-f]+$/i.test(base.timestamp)?{blockTimestampSeconds:String(BigInt(base.timestamp))}:{}),traceRpc,verifyTraceSource,close};
   }catch{await close();throw Error('Isolated fork unavailable');}
 };
 function forkSnapshot(fork:ForkSession){return {chainId:fork.chainId,blockNumber:fork.blockNumber,blockHash:fork.blockHash,...(fork.blockTimestampSeconds!==undefined?{blockTimestampSeconds:fork.blockTimestampSeconds}:{})};}
@@ -143,16 +154,17 @@ export async function simulateRequest(request:SecurityRequest,op:Operation,confi
   const unsupported=executionLimitations(request.transaction);
   if(unsupported.length)return [evidence('asset_simulation','unknown','Special transaction envelope cannot be simulated completely','Delegation, blob, or other unsupported execution fields are not silently removed to execute a substitute transaction.','coverage',{unsupportedFields:unsupported})];
   if(!config.forkEnabled)return [evidence('asset_simulation','unknown','Isolated fork simulation is disabled','This request has not been executed on an isolated chain fork.','configuration')];
-  let fork:ForkSession|undefined;let retainedProtocol:Evidence[]=[];let retainedExecution:Evidence|undefined;
+  let fork:ForkSession|undefined;let retainedProtocol:Evidence[]=[];let retainedTrace:Evidence[]=[];let retainedExecution:Evidence|undefined;
   try {
     fork=await factory(config,request.chainId);const rpc=fork.rpc;
+    retainedTrace=await isolatedForkTraceEvidence(request,fork);
     const snapshot=await rpc('evm_snapshot');
     const baseTag=`0x${BigInt(fork.blockNumber).toString(16)}`;
     const [protocolBefore,authorityBefore]=await Promise.all([captureForkProtocolState(rpc,request,op,'before',forkSnapshot(fork),baseTag).catch(()=>null),captureForkAuthorityState(rpc,request,op,'before',forkSnapshot(fork),baseTag).catch(()=>null)]);
     retainedProtocol=[...forkProtocolEvidence(protocolBefore,null),...forkAuthorityEvidence(authorityBefore,null)];
     const beforeNative=BigInt(await rpc('eth_getBalance',[request.transaction.from,'latest']));
     let executed;
-    try{executed=await send(rpc,request.transaction);}catch{return [...retainedProtocol,evidence('simulation_execution','unknown','Fork execution incomplete','The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.','isolated-fork',{...forkSnapshot(fork)})];}
+    try{executed=await send(rpc,request.transaction);}catch{return [...retainedTrace,...retainedProtocol,evidence('simulation_execution','unknown','Fork execution incomplete','The request reverted, had insufficient gas, or the fork was unavailable. This alone does not establish a honeypot.','isolated-fork',{...forkSnapshot(fork)})];}
     const {hash,receipt}=executed;
     retainedExecution=evidence('simulation_execution','pass','Original transaction executed on the isolated fork','The original transaction has a successful receipt on the temporary fork. Some balance, protocol-state or trace observations may still be unavailable; no upstream transaction was sent.','isolated-fork',{...forkSnapshot(fork),status:'success',executionBlockNumber:typeof receipt.blockNumber==='string'?String(BigInt(receipt.blockNumber)):null});
     const afterTag=typeof receipt.blockNumber==='string'?receipt.blockNumber:'latest';
@@ -171,7 +183,7 @@ export async function simulateRequest(request:SecurityRequest,op:Operation,confi
     const before=await Promise.all(assets.map(a=>readAsset(rpc,a,request.transaction.from)));
     const deltas=assets.map((asset,i)=>({...asset,owner:request.transaction.from,before:before[i],after:after[i],delta:asset.kind!=='erc721'&&before[i]!==null&&after[i]!==null?String(BigInt(after[i]!)-BigInt(before[i]!)):null}));
     const gas=observedGasCost(receipt);
-    const facts=[...retainedProtocol,evidence('simulation_execution','pass','Isolated fork execution completed','Execution occurred only on a temporary local fork; no transaction was sent upstream. Supplied transaction type, gas, fees, and nonce were preserved; a fork cap was used if gas was absent. The fork mines from the stated base block, so this is not a guarantee of future execution.','isolated-fork',{...forkSnapshot(fork),executionBlockNumber:receipt.blockNumber?String(BigInt(receipt.blockNumber)):null,gasLimit:request.transaction.gas??'0xb71b00',gasLimitSource:request.transaction.gas?'request':'simulation_default',status:'success',native:{before:String(beforeNative),after:String(afterNative),deltaIncludingGas:String(afterNative-beforeNative),gasWei:gas===null?null:String(gas),deltaExcludingGas:gas===null?null:String(afterNative-beforeNative+gas)},assets:deltas,calls,traceAvailable,traceTruncated:traceGaps.length>0,traceGaps,assetDiscovery:{...discovery.inventory,retainedAssetCount:assets.length},limits:SIMULATION_LIMITS}),evidence('asset_simulation','unknown','Asset discovery has coverage limits','Before/after state was read for identified assets and assets found in Transfer events. Assets without events, nonstandard storage, future proxy changes, and cross-chain results may be missed.','isolated-fork')];
+    const facts=[...retainedTrace,...retainedProtocol,evidence('simulation_execution','pass','Isolated fork execution completed','Execution occurred only on a temporary local fork; no transaction was sent upstream. Supplied transaction type, gas, fees, and nonce were preserved; a fork cap was used if gas was absent. The fork mines from the stated base block, so this is not a guarantee of future execution.','isolated-fork',{...forkSnapshot(fork),executionBlockNumber:receipt.blockNumber?String(BigInt(receipt.blockNumber)):null,gasLimit:request.transaction.gas??'0xb71b00',gasLimitSource:request.transaction.gas?'request':'simulation_default',status:'success',native:{before:String(beforeNative),after:String(afterNative),deltaIncludingGas:String(afterNative-beforeNative),gasWei:gas===null?null:String(gas),deltaExcludingGas:gas===null?null:String(afterNative-beforeNative+gas)},assets:deltas,calls,traceAvailable,traceTruncated:traceGaps.length>0,traceGaps,assetDiscovery:{...discovery.inventory,retainedAssetCount:assets.length},limits:SIMULATION_LIMITS}),evidence('asset_simulation','unknown','Asset discovery has coverage limits','Before/after state was read for identified assets and assets found in Transfer events. Assets without events, nonstandard storage, future proxy changes, and cross-chain results may be missed.','isolated-fork')];
     const extractionGaps=[...(!traceAvailable?['trace_unavailable']:traceGaps),...(!discovery.inventory.receiptLogsAvailable?['receipt_logs_unavailable']:[]),...(discovery.inventory.logsTruncated?['receipt_log_limit']:[]),...(discovery.inventory.identifierEventsTruncated?['erc1155_identifier_limit']:[]),...(discovery.inventory.assetsTruncated?['discovered_asset_limit']:[])];
     if(extractionGaps.length)facts.push(evidence('simulation_extraction_limits','unknown','Some fork trace or asset observations are unavailable','A successful receipt does not make this bounded trace and asset inventory complete. Unavailable or truncated calls, receipt logs and asset identifiers were not inspected; absence from the retained summary is not evidence of absence.','isolated-fork',{...forkSnapshot(fork),gaps:extractionGaps,traceAvailable,retainedTraceCalls:calls.length,assetDiscovery:{...discovery.inventory,retainedAssetCount:assets.length},limits:SIMULATION_LIMITS}));
     if(gas===null)facts.push(evidence('simulation_fee','unknown','Execution fee could not be measured','The receipt lacks a usable gas-used or effective-gas-price value. Raw native balance changes are retained; gas-adjusted native changes are not guessed using a zero fee.','isolated-fork',{...forkSnapshot(fork)}));
@@ -181,7 +193,7 @@ export async function simulateRequest(request:SecurityRequest,op:Operation,confi
     if(['swap','swap_v3'].includes(op.category))facts.push(...await roundTrip(request,op,fork,config));
     else if(op.category==='batch')facts.push(evidence('round_trip','unknown','Dependent router buy/sell experiment is unavailable','Opaque aggregator commands and arbitrary nested wrappers have no authenticated reverse route. The original transaction may have fork observations, but no synthetic sell is invented.','coverage'));
     return facts;
-  }catch{return [...retainedProtocol,...(retainedExecution?[retainedExecution]:[]),evidence('asset_simulation','unknown','Isolated fork simulation failed','The node, historical state, or executor was unavailable. Asset simulation was not completed.','isolated-fork')];}
+  }catch{return [...retainedTrace,...retainedProtocol,...(retainedExecution?[retainedExecution]:[]),evidence('asset_simulation','unknown','Isolated fork simulation failed','The node, historical state, or executor was unavailable. Asset simulation was not completed.','isolated-fork')];}
   finally{if(fork)await fork.close();}
 }
 async function roundTrip(request:Extract<SecurityRequest,{kind:'transaction'}>,op:Operation,fork:ForkSession,config:SecurityConfig):Promise<Evidence[]>{

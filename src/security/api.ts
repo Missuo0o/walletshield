@@ -98,7 +98,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
   });
   }
   app.get('/api/security/status',async()=>{
-    const c=await getConfig();return {version:'0.4.1',scoringPolicy:'muse-evidence-v4-fact-selection',aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,sourceVerification:!!c.sourceVerification,monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
+    const c=await getConfig();return {version:'0.4.1',scoringPolicy:'muse-evidence-v5-observable-score-basis',aiProvider:'Meta',aiConfigured:!!c.apiKey,aiEnabled:c.aiEnabled,model:c.model,externalLookups:c.lookups,forkSimulation:!!c.forkEnabled,sourceVerification:!!c.sourceVerification,monitorEnabled:!!c.monitorEnabled,serviceMode:hosted?'hosted':'local',configuredChains:Object.keys(c.rpc).map(Number),coverage:COVERAGE};
   });
   if(!hosted){
   app.get('/api/security/examples',async()=>securityExamples.map(({id,name,request})=>({id,name,request})));

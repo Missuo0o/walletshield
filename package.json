@@ -26,6 +26,7 @@
     "test:extensions": "node --import tsx scripts/test-extensions.ts",
     "test:asset-cleanup": "node --import tsx scripts/test-asset-cleanup.ts",
     "test:v3": "node --import tsx --test tests/v3-isolated-execution.integration.ts",
+    "test:trace": "node --import tsx --test tests/fork-trace.integration.ts",
     "test:dev-server": "node --import tsx --test tests/dev-private-files.integration.ts",
     "evaluate:ai": "node --import tsx scripts/evaluate-ai.ts",
     "evaluate:independent": "node --import tsx scripts/evaluate-independent.ts",

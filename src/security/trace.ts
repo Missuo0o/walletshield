@@ -11,6 +11,10 @@ const callTypes=new Set(['CALL','STATICCALL','DELEGATECALL','CALLCODE','CREATE',
 export const TRACE_LIMITS={frames:128,depth:20,responseBytes:750000,totalMs:14000,requestMs:1800} as const;
 export type TraceFrame={type:string;depth:number;from?:string;to?:string;value?:string;selector?:string;reverted:boolean};
 export type TraceSummary={calls:TraceFrame[];gaps:string[];rootReverted:boolean};
+/** The bounded read-only transport is supplied by the already-opened private
+ * fork. It never exposes an RPC URL or permits an upstream write. */
+export type ForkTraceContext={chainId:number;blockNumber:string;blockHash:string;blockTimestampSeconds?:string;traceRpc?:(method:string,params:unknown[],signal:AbortSignal)=>Promise<any>;verifyTraceSource?:(signal:AbortSignal)=>Promise<boolean>};
+export const FORK_TRACE_LIMITS={...TRACE_LIMITS,totalMs:6000} as const;
 type TraceTransaction={from:string;to?:string|null;data:string;value?:string};
 function rootMatches(frame:any,tx:TraceTransaction){return eq(frame.from,tx.from)&&(tx.to?String(frame.type).toUpperCase()==='CALL'&&eq(frame.to,tx.to):['CREATE','CREATE2'].includes(String(frame.type).toUpperCase()))&&bytes(frame.input)&&eq(frame.input,tx.data)&&quantity(frame.value)&&BigInt(frame.value)===BigInt(tx.value??'0x0');}
 function retainedFrame(frame:any,depth:number):TraceFrame{return {type:String(frame.type).toUpperCase(),depth,...(address(frame.from)?{from:frame.from}:{}),...(address(frame.to)?{to:frame.to}:{}),...(quantity(frame.value)?{value:frame.value}:{}),...(bytes(frame.input)?{selector:frame.input.slice(0,10)}:{}),reverted:!!frame.error};}
@@ -76,6 +80,33 @@ function transport(url:string,signal:AbortSignal,fetcher:typeof fetch):Rpc{
 }
 const usableHeader=(header:any)=>!!header&&quantity(header.number)&&quantity(header.timestamp)&&typeof header.hash==='string'&&/^0x[\da-f]{64}$/i.test(header.hash);
 
+/** Trace at the existing fork's base block before any simulation transaction.
+ * The source and local headers must still match that base before and after the
+ * read. This fallback needs ordinary historical RPC reads, not provider tracing.
+ * It is not a replay of the later mined simulation block or an asset inventory. */
+export async function isolatedForkTraceEvidence(request:SecurityRequest,fork:ForkTraceContext):Promise<Evidence[]>{
+ if(request.kind!=='transaction')return [];
+ const snapshot={chainId:fork.chainId,blockNumber:fork.blockNumber,blockHash:fork.blockHash,...(fork.blockTimestampSeconds!==undefined?{blockTimestampSeconds:fork.blockTimestampSeconds}:{})};
+ const unavailable=(reason:string)=>[evidence('call_trace_fork','unknown','Isolated fork call trace unavailable','No usable request-bound base-block call trace was obtained. Other available observations are retained; missing trace frames are not evidence that internal calls do not exist.','isolated-fork',{...snapshot,traceAvailable:false,reason,completeAssetCoverage:false,limits:FORK_TRACE_LIMITS})];
+ if(executionLimitations(request.transaction).length)return unavailable('unsupported_execution_envelope');
+ if(!fork.traceRpc||!fork.verifyTraceSource)return unavailable('bounded_trace_transport_unavailable');
+ if(fork.chainId!==request.chainId||!/^\d+$/.test(fork.blockNumber)||!/^0x[\da-f]{64}$/i.test(fork.blockHash)||!fork.blockTimestampSeconds||!/^\d+$/.test(fork.blockTimestampSeconds))return unavailable('invalid_fork_snapshot');
+ const signal=AbortSignal.timeout(FORK_TRACE_LIMITS.totalMs),tag=`0x${BigInt(fork.blockNumber).toString(16)}`;
+ const rpc=(method:string,params:unknown[]=[])=>fork.traceRpc!(method,params,AbortSignal.any([signal,AbortSignal.timeout(FORK_TRACE_LIMITS.requestMs)]));
+ const sameHeader=(value:any)=>usableHeader(value)&&BigInt(value.number)===BigInt(fork.blockNumber)&&eq(value.hash,fork.blockHash)&&BigInt(value.timestamp)===BigInt(fork.blockTimestampSeconds!);
+ try{
+  if(!await fork.verifyTraceSource(signal))return unavailable('source_snapshot_mismatch');
+  const chain=await rpc('eth_chainId');if(!quantity(chain)||BigInt(chain)!==BigInt(request.chainId))return unavailable('fork_chain_mismatch');
+  if(!sameHeader(await rpc('eth_getBlockByNumber',[tag,false])))return unavailable('fork_snapshot_mismatch');
+  const tx=request.transaction,fields=Object.fromEntries((['gas','gasPrice','maxFeePerGas','maxPriorityFeePerGas','nonce','type'] as const).filter(key=>tx[key]!==undefined).map(key=>[key,tx[key]]));
+  const call={from:tx.from,...(tx.to?{to:tx.to}:{}),data:tx.data,value:tx.value??'0x0',...fields};
+  const raw=await rpc('debug_traceCall',[call,tag,{tracer:'callTracer',timeout:'1s',reexec:0}]),trace=normalizeTrace(raw,'debug_traceCall',tx);
+  if(!trace)return unavailable('unusable_response');
+  if(!sameHeader(await rpc('eth_getBlockByNumber',[tag,false]))||!await fork.verifyTraceSource(signal))return unavailable('snapshot_changed');
+  return [evidence('call_trace_fork',trace.rootReverted?'warning':trace.gaps.length?'unknown':'pass','Bounded call trace observed on the isolated fork','The original call was traced read-only at the temporary fork base block before local execution. Source and child chain/header bindings were checked before and after. No upstream transaction was sent. Retained frames are not complete asset deltas, verified contract identity, transaction inclusion, or a future execution guarantee.','isolated-fork',{...snapshot,method:'debug_traceCall',endpoint:'isolated-fork',calls:trace.calls,retainedTraceCalls:trace.calls.length,traceAvailable:true,traceTruncated:trace.gaps.length>0,traceGaps:trace.gaps,rootReverted:trace.rootReverted,limits:FORK_TRACE_LIMITS,completeAssetCoverage:false})];
+ }catch(error){return unavailable(signal.aborted?'budget_exhausted':error instanceof Error&&['AbortError','TimeoutError'].includes(error.name)?'timed_out':'unavailable');}
+}
+
 /** At most two trusted endpoints and two dialects, all at the primary's exact
  * height/hash. This is a trace of the supplied call, not a submitted transaction
  * or a complete asset-state simulation. No endpoint is accepted from a client. */
@@ -117,5 +148,5 @@ export async function transactionTraceEvidence(request:SecurityRequest,config:Se
    if(signal.aborted)break;
   }
  }catch{attempts.push({endpoint:'primary',result:'network_or_snapshot_unavailable'});}
- return [evidence('call_trace','unknown','Call trace unavailable','No usable request-bound trace was obtained within the bounded provider attempts. Unsupported, disabled, rate-limited, inconsistent and timed-out tracing remain unknown; available independent calls and isolated-fork evidence are retained.','rpc',{...snapshot,attempts,traceAvailable:false,completeAssetCoverage:false,limits:TRACE_LIMITS})];
+ return [evidence('call_trace','unknown','Provider call trace unavailable','No usable request-bound trace was obtained from the bounded provider attempts. Unsupported, disabled, rate-limited, inconsistent and timed-out provider tracing remain unknown. A separately retained isolated-fork call trace can still supply execution evidence when enabled and available.','rpc',{...snapshot,attempts,traceAvailable:false,completeAssetCoverage:false,limits:TRACE_LIMITS})];
 }

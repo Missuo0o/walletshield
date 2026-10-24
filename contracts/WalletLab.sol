@@ -131,6 +131,22 @@ contract LabWrapped is LocalOnly {
 }
 contract LabOwned is LocalOnly {address public owner;constructor(address who){owner=who;}}
 
+// Read-only order-state fixture for the wallet lab. It deliberately has no
+// fulfillment, signature validation, cancellation or nonce-consumption method.
+// Matching these getters is not evidence of a genuine Seaport deployment.
+contract LabOrderVerifier is LocalOnly {
+    bytes32 public immutable DOMAIN_SEPARATOR;
+    constructor() {
+        DOMAIN_SEPARATOR=keccak256(abi.encode(
+            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+            keccak256("WalletShield Lab Orders"),keccak256("1"),block.chainid,address(this)
+        ));
+    }
+    function information() external view returns(string memory,bytes32,address) {return ("1",DOMAIN_SEPARATOR,address(0));}
+    function getCounter(address) external pure returns(uint256) {return 0;}
+    function getOrderStatus(bytes32) external pure returns(bool,bool,uint256,uint256) {return (false,false,0,0);}
+}
+
 // Local interface fixture ONLY. This is not Safe, a multisig, a module executor,
 // a guard enforcement implementation or an ERC-1271 signature validator.
 // Any listed owner may call directly regardless of the displayed threshold.

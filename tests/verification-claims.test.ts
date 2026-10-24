@@ -74,6 +74,24 @@ test('uncertainty, scoped questions, conditional advice and attributed claims ar
  ])assert.doesNotThrow(()=>assert.equal(validateAI(write(model(),'reason',text),report,'test').score,23),text);
 });
 
+test('an unfinished until-condition can span a comma-separated noun list without exempting a subsequent assertion',()=>{
+ const report=finitePermitReport();report.checks.filter(c=>/^signature_(?:nonce|domain)$/.test(c.id)).forEach(c=>{c.status='unknown';});
+ for(const text of [
+  'Do not sign until the exact order protocol, committed asset, recipient, amount, deadline and cancellation or nonce semantics are independently decoded and verified in the wallet.',
+  'Please do not proceed until the protocol, committed asset and domain conditions are independently verified.',
+  'Do not approve until the recipient, amount and nonce conditions have been checked and verified.'
+ ])for(const slot of ['reason','dimension','summary','action','missing'] as const)assert.doesNotThrow(()=>validateAI(write(model(),slot,text),report,'test'),`${slot}: ${text}`);
+ for(const text of [
+  'Do not sign until checked; the nonce is verified.',
+  'Do not sign until the spender is checked, the nonce is verified.',
+  'Do not sign until checked, the domain matches.',
+  'Do not sign until the recipient, but the nonce is verified.',
+  'Do not sign until the recipient, then the nonce is verified.',
+  'Do not sign until the recipient, because the nonce is verified.',
+  'Do not sign until the recipient. The domain is verified.'
+ ])assert.throws(()=>validateAI(write(model(),'action',text),report,'test'),error,text);
+});
+
 test('match and mismatch assertions need the corresponding cited RPC observation in the same direction',()=>{
  for(const kind of ['nonce','domain'] as const) {
   const id=`signature_${kind}`,report=finitePermitReport();

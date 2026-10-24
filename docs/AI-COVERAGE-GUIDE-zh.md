@@ -1,23 +1,23 @@
 # WalletShield：工具、证据、AI 评估与覆盖范围
 
-**适用版本：0.4.1 · 人工翻译日期：2026-10-22**
+**适用版本：0.4.1 · 人工翻译日期：2026-10-23**
 
 本文人工翻译自当前自动生成的[英文能力与覆盖指南](AI-COVERAGE-GUIDE.md)。英文指南由网页与 Snap 共用的覆盖配置生成，是当前生成源的参照；本文不是自动生成文件。以后修改覆盖配置时，应先运行 `npm run docs:coverage` 更新英文指南，再同步修订本文。安装与命令见[中文 README](../README.zh-CN.md)，操作步骤见[中文使用手册](USER-MANUAL-zh.md)。本轮修复及已实现/部分实现/手动入口/未覆盖对照见[当前覆盖范围](CURRENT-COVERAGE-zh.md)。
 
-本指南说明已实现的路径及其限制。当前有 **30 个分析配置（analysis profiles）**，以及 **66 个本地钱包案例**（51 个交易请求、15 个消息请求），案例涉及 **25 个配置**。**30 个配置不等于 30 个完整协议集成；案例数量不代表检测准确率、安全评级，也不证明每种方法都已测试。**
+本指南说明已实现的路径及其限制。当前有 **30 个分析配置（analysis profiles）**，以及 **67 个本地钱包案例**（51 个交易请求、16 个消息请求），案例涉及 **25 个配置**。**30 个配置不等于 30 个完整协议集成；案例数量不代表检测准确率、安全评级，也不证明每种方法都已测试。**
 
 当前检查使用钱包提供的未签名请求、来源 origin/网络元数据，以及成功取得的 RPC、情报和模拟证据。Muse 评价可观察请求信号，包括支持范围内的来源、消息和请求不一致。链/provider/执行上下文指技术观察。历史报告与验收文件保留原始记录，不被删除或改写。
 
 
 ## 当前证据与接入新增能力
 
-Muse 返回精简 `walletshield-selection-v1` 事实 ID，后端解析原始服务器事实、保存 `walletshield-facts-v1` 并保留严格引用和语义校验。历史完整事实仍可读，数字仍只由 Muse 给出，没有固定权重、下限或兜底。[可靠性改进](RELIABILITY-FOLLOWUP-2026-10-23-zh.md)说明评分分类、trace 回退和独立标签评估；没有真实外部标签时仍不能声称测得准确率。
+Muse 返回精简 `walletshield-selection-v1` 事实 ID，后端解析原始服务器事实、保存 `walletshield-facts-v1` 并保留严格引用和语义校验。历史完整事实仍可读，数字仍只由 Muse 给出，没有固定权重、下限或兜底。未解释语义的 typed 请求通过 numeric_assessment_basis 限定数值依据：哈希、代码存在、泛化权限标签和无关余额不能单独支持数字；需要本请求绑定的实际不利证据，否则保留 null/unknown。已解析范围可支持有条件评分，但不强迫模型出分。[可靠性改进](RELIABILITY-FOLLOWUP-2026-10-23-zh.md)说明评分分类、trace 回退和独立标签评估；没有真实外部标签时仍不能声称测得准确率。
 
-交易 trace 依次尝试 debug_traceCall、trace_call，可配置后端专用 TRACE_RPC_<CHAIN_ID>_URL，但必须与主端点的链/区块/哈希/时间一致。有界调用帧只支持 execution 维度，不证明完整资产覆盖或安全；供应商不支持的方法仍保留缺口。严格白名单只读请求标记无需资产评分、不调用 Muse，隐私仍未评估。
+交易 trace 依次尝试 debug_traceCall、trace_call，可配置后端专用 TRACE_RPC_<CHAIN_ID>_URL，但必须与主端点的链/区块/哈希/时间一致。有界调用帧只支持 execution 维度，不证明完整资产覆盖或安全；启用隔离分叉模拟时，已有临时 Anvil 分叉会在本地执行之前追踪原始调用，并在前后核对来源链及基础区块哈希/时间。该路径不要求上游提供 trace，但要求 Anvil、所需历史状态和有界分叉预算可用。服务商与分叉 trace 分开记录。严格白名单只读请求标记无需资产评分、不调用 Muse，隐私仍未评估。
 
 后端部署登记/代码匹配、USD 参考价格源和维护式两链桥接路线核对已移除。已有 `.local/registry.json` 不再读取。基础交易/授权/签名解析、配置的 RPC 状态、部分 V2 路径（含已有原生币路径）、代币出资 V3 与通用分叉模拟、可选 GoPlus 和 Muse 评分保留。`ENABLE_SOURCE_VERIFICATION=1` 仍独立启用有界 Sourcify 源码匹配观察；它不是官方部署登记或代码审计。
 
-有界证据包括 Seaport 签入承诺、Permit2 witness 外层承诺、UserOperation 参数/代码/费用观察、EIP-7702 元组密码学/有条件状态、原始分叉交易前后部分权限/金库/借贷状态、代币出资的 V3 路线实验和候选池状态。原来依赖登记的 Seaport counter/status/直接授权与 EntryPoint keyed nonce/deposit 检查不再提供。dApp 包装器须主动接入，不是全局钱包拦截；托管 ERC-1271 只验证本次登录，不验证未来资产签名。
+有界证据包括 Seaport 签入承诺、候选域哈希/数量/所有权比较、Permit2 witness 外层承诺、UserOperation 参数/代码/费用观察、EIP-7702 元组密码学/有条件状态、原始分叉交易前后部分权限/金库/借贷状态、代币出资的 V3 路线实验和候选池状态。Seaport 候选 counter/status getter 可读取为未认证观察，不据此认定当前协议取消、成交或 nonce 语义有效；不猜测实际 spender 或直接授权。EntryPoint keyed nonce/deposit 检查未提供。dApp 包装器须主动接入，不是全局钱包拦截；托管 ERC-1271 只验证本次登录，不验证未来资产签名。
 
 Wallet and network 页面提供有界只读 RPC 能力观察：固定区块调用、一次历史余额和固定 trace 探测。成功不是完整 archive/trace 保证。源码核对仍是独立可选后端配置，公网页面不显示其状态。Public networks 的切换按钮通过选定钱包 provider 直接调用 `wallet_switchEthereumChain`，不调用接入 SDK、风险扫描或 Muse，由钱包处理确认。
 
@@ -301,7 +301,7 @@ DAI allowed 是参考语义推导，不是另一签入数量。ERC-3009 为单�
 
 - **入口：** 支持的钱包消息实际交付时自动进入。
 - **当前范围：** 规范 Seaport OrderComponents 签入承诺；不读取经认证当前订单状态，其他 typed 仍部分理解。
-- **取得后提供的字段/证据：** offer/consideration itemType/token/ID或criteria/raw起止数量/recipient；时间/counter/conduit/orderHash/digest；签入的 counter/时间与零接收人提示；不再读取当前 counter/填充/取消和直接 verifier 资产授权。
+- **取得后提供的字段/证据：** offer/consideration itemType/token/ID或criteria/raw起止数量/recipient；时间/counter/conduit/orderHash/digest；候选 information() 域哈希比较、counter/status 返回值、固定区块时间，前八个 offer 的余额/数量端点或 NFT 所有权比较。候选返回值不认证协议或实际成交/取消语义；不猜测直接 verifier 资产授权。自定义签入标量字段保留为语义未知。
 - **仍未知：** criteria证明、非零conduit/controller/channel、任意订单、签名接受、履约/费用/舍入和公平价格未完整覆盖。
 - **可扩展方向与边界：** 增加审查的conduit/criteria/消费方及履约情景；结构正确不保证未来接受。
 
@@ -449,3 +449,6 @@ GoPlus 仍需显式开启。它从已识别的外层/路径/Permit2/批量字段
 - [ERC-4626](https://eips.ethereum.org/EIPS/eip-4626)、[ERC-1967](https://eips.ethereum.org/EIPS/eip-1967)、[ERC-4494](https://eips.ethereum.org/EIPS/eip-4494) 与 [Aave Pool](https://aave.com/docs/aave-v3/smart-contracts/pool)：接口参考，不是候选部署身份的证明。
 
 修改共享配置后，运行 `npm run docs:coverage` 重新生成英文指南，同步修订本文，再重新构建/加载网页与 Snap。本指南陈述能力边界；有日期的验收文件是另行记录的观察结果。
+
+
+本次订单解析、明确弃权门槛与隔离 trace 改进见[订单与 trace 修复记录](ORDER-TRACE-FOLLOWUP-2026-10-23-zh.md)。执行 `npm run test:trace` 可验证上游不提供 trace 时的本地分叉回退；它不调用 Muse 或真实钱包。

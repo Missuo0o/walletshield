@@ -1,0 +1,119 @@
+{
+  "date": "2026-10-23",
+  "node": "24.19.0",
+  "scope": "Order evidence and source-matched isolated-fork trace reliability; advisory pre-sign only",
+  "automated": {
+    "unitRegression": {
+      "passed": 516,
+      "failed": 0,
+      "modelCalls": 0
+    },
+    "v3AndStateInternalScenarios": 23,
+    "forkTraceRealDisposableIntegration": {
+      "passed": 1,
+      "upstreamWrites": 0,
+      "upstreamTraceSupported": false
+    },
+    "devPrivateFileIntegration": {
+      "passed": 1
+    },
+    "typecheck": "passed",
+    "webBuild": "passed",
+    "snapBuild": "passed",
+    "offlineSyntheticValidator": {
+      "validOutputs": 12,
+      "adversarialRejections": 120,
+      "modelCalls": 0
+    }
+  },
+  "live": {
+    "model": "muse-wonder-1.0",
+    "finalBatch": {
+      "analyses": 5,
+      "providerAttempts": 6,
+      "outputRepairs": 1,
+      "accepted": 5,
+      "numeric": 3,
+      "validAbstentions": 2,
+      "results": [
+        {
+          "case": "canonical-order",
+          "repeat": 0,
+          "score": 38,
+          "status": "completed",
+          "attempts": 1,
+          "packetSha256": "1fab8f314ab17a19aa189c9ab4879eab0076159136f5f2beaf1c8f40cb130781"
+        },
+        {
+          "case": "canonical-order",
+          "repeat": 1,
+          "score": 38,
+          "status": "completed",
+          "attempts": 1,
+          "packetSha256": "1fab8f314ab17a19aa189c9ab4879eab0076159136f5f2beaf1c8f40cb130781"
+        },
+        {
+          "case": "opaque-order",
+          "repeat": 0,
+          "score": null,
+          "status": "completed",
+          "attempts": 2,
+          "packetSha256": "40722eb8a35b9d16024fa322d7a8ba7865929267ed3d8dfe04e237e0f7be6080"
+        },
+        {
+          "case": "opaque-order",
+          "repeat": 1,
+          "score": null,
+          "status": "completed",
+          "attempts": 1,
+          "packetSha256": "40722eb8a35b9d16024fa322d7a8ba7865929267ed3d8dfe04e237e0f7be6080"
+        },
+        {
+          "case": "fork-trace-approval",
+          "repeat": 0,
+          "score": 22,
+          "status": "completed",
+          "attempts": 1,
+          "packetSha256": "884fbce16c41b3ce831e1f8778a53037261405e76fafe5f7c5cf7b409a42b351"
+        }
+      ]
+    },
+    "earlierBatch": {
+      "providerAttempts": 2,
+      "analyses": 1,
+      "status": "timed_out_after_output_repair",
+      "accepted": 0
+    },
+    "totalProviderAttempts": 8,
+    "originalProviderOutputsRevalidatedWithFinalValidators": {
+      "accepted": 6,
+      "modelCalls": 0,
+      "scoresUnchanged": true
+    },
+    "method": "Fresh disposable local-chain evidence; repeated inputs within each case have identical captured evidence-packet hashes. Proxy rejects provider trace methods and all writes. Source block, nonce and balance unchanged. Backend+Muse checks; no browser-wallet acceptance claim."
+  },
+  "configuredMainnetReadOnlyTrace": {
+    "chainId": 1,
+    "providerTraceAvailable": false,
+    "forkTraceAvailable": true,
+    "baseBlock": "26259075",
+    "retainedFrames": 1,
+    "realNetworkTransactionsSubmitted": 0,
+    "method": "Fixed zero-value unsigned call traced locally on a source-matched Anvil fork; not a contract coverage benchmark"
+  },
+  "currentLocalCatalog": {
+    "cases": 67,
+    "transactions": 51,
+    "messages": 16,
+    "profilesRepresented": 25,
+    "analysisProfiles": 30
+  },
+  "boundaries": [
+    "No independent accuracy or probability calibration measured",
+    "Not all requests can meaningfully receive a number",
+    "Trace is execution-only bounded evidence, not full asset coverage or safety",
+    "Order getter returns do not authenticate marketplace/conduit, cancellation, fill or future acceptance",
+    "No new MetaMask popup acceptance was performed in this follow-up",
+    "Secrets, databases, original model bodies and presentations stay local"
+  ]
+}

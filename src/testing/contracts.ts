@@ -36,11 +36,12 @@ export async function deployLab(){
  // An explicit deploy:lab may add optional fixtures to a verified older lab.
  // Keep its existing contracts, addresses, artifacts and balances intact.
  const previous=existing?await labArtifacts().catch(()=>({} as Record<string,Artifact>)):{};
- const artifacts:Record<string,Artifact>={...compiled,...previous,LabAccount:compiled.LabAccount};
+ const artifacts:Record<string,Artifact>={...compiled,...previous,LabAccount:compiled.LabAccount,LabOrderVerifier:compiled.LabOrderVerifier};
  const d:LabDeployment=existing??{version:1,chainId:31337,baseToken:base.deployment.token,owner,recipient,deployedAt:new Date().toISOString(),contracts:{}};
  async function deploy(key:string,name:string,args:unknown[]=[]){const a=artifacts[name];const hash=await wallet.deployContract({account:owner,abi:a.abi,bytecode:a.bytecode,args});const r=await labClient.waitForTransactionReceipt({hash});if(r.status!=='success'||!r.contractAddress)throw Error('Test contract deployment failed.');const code=await labClient.getCode({address:r.contractAddress});if(!code)throw Error('Test contract code is missing.');d.contracts[key]={address:r.contractAddress,codeHash:keccak256(code)};return r.contractAddress;}
  if(existing){
   if(!d.contracts.account)await deploy('account','LabAccount',[recipient]);
+  if(!d.contracts.orders)await deploy('orders','LabOrderVerifier');
   await mkdir(resolve(process.cwd(),'.local'),{recursive:true});
   await writeFile(resolve(process.cwd(),'.local/lab-artifacts.json'),JSON.stringify(artifacts));await writeFile(file(),JSON.stringify(d,null,2));return d;
  }
@@ -51,6 +52,7 @@ export async function deployLab(){
  const router=await deploy('router','LabRouter');await deploy('vault','LabVault',[token]);await deploy('lending','LabLending',[token]);const actions=await deploy('actions','LabActions',[token]);
  await deploy('control','LabControl');await deploy('permit2','LabPermit2');await deploy('wrapped','LabWrapped');
  await deploy('account','LabAccount',[recipient]);
+ await deploy('orders','LabOrderVerifier');
  async function write(address:Address,name:string,args:unknown[]){const hash=await wallet.writeContract({account:owner,address,abi:artifacts.LabToken.abi,functionName:name,args});await labClient.waitForTransactionReceipt({hash});}
  for(const t of [token,quote,honey])await write(t,'seed',[router,1000000n*10n**6n]);
  await write(token,'seed',[actions,1000000n*10n**6n]);await write(honey,'blockRecipient',[router]);

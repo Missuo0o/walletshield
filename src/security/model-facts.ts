@@ -30,7 +30,7 @@ const fields=new Set((
  'tickLower tickUpper tick feeGrowthInside0LastX128 feeGrowthInside1LastX128 tokensOwed0 tokensOwed1 amount0Min amount1Min amount0Desired amount1Desired amount0Max amount1Max '+
  'pathIndex selector category callType abiShapeDecoded executionContextVerified fullWalletInventory runtimeMatch referenceOnly sourceCodeAudit verifiedMatch implementation implementationCodeHash protocol version role subject '+
  'priceRaw priceDecimals currency assetDecimals updatedAtSeconds feed counter counterMatches cancelled filled totalFilled totalSize isValidated isCancelled orderHash witnessHash witnessTypeHash witnessCommitted maximumCommitted '+
- 'matched expectedCodeHash implementationChecked safetyCertified offerer zone itemType itemIndices identifierOrCriteria startAmount endAmount startTime endTime orderType conduitKey fullyFilled deploymentMatched signedDomainMatchesInformation codeAudited balanceRaw allowanceRaw currentOwner operatorApproved witnessType consumerVerified '+
+ 'matched expectedCodeHash implementationChecked safetyCertified offerer zone itemType itemIndices identifierOrCriteria startAmount endAmount startTime endTime orderType conduitKey fullyFilled deploymentMatched signedDomainMatchesInformation codeAudited balanceRaw allowanceRaw currentOwner operatorApproved witnessType consumerVerified balanceBelowMinimum balanceCoversMaximum protocolDecoded semanticsVerified '+
  'totalAssetsRaw totalSharesRaw shareDecimals ownerSharesRaw receiverSharesRaw maxOwnerWithdrawRaw maxOwnerRedeemRaw requestPreviewRaw underlyingDecimals callerUnderlyingRaw receiverUnderlyingRaw callerUnderlyingAllowanceToVaultRaw callerUnderlyingAllowanceToPoolRaw totalCollateralBaseRaw totalDebtBaseRaw availableBorrowsBaseRaw currentLiquidationThresholdRaw ltvRaw healthFactor1e18 assetSame assetUnitsSame shareUnitsSame simulationOnly caller '+
  'entryPoint sender factory paymaster nonceKey nonceSequence callGasLimit verificationGasLimit preVerificationGas maxFeePerGasWei maxPriorityFeePerGasWei paymasterVerificationGasLimit paymasterPostOpGasLimit callDataBytes callSelector factoryDataBytes paymasterDataBytes signaturePresent signatureBytes gasValuesWithinUint120 priorityWithinMaximum requestedNonce currentNonce matches payer payerRole depositWei declaredRequiredGas declaredPrefundWei depositCoversDeclaredPrefund actualCostKnown tokenFeesKnown baseFeePerGasWei maxFeeCoversCurrentBaseFee '+
  'type authorizationCount typeExplicitlySet destinationPresent envelopeShapeSupported tupleIndex delegate action authorizationChainId chainMatches crossChainAuthorization nonceWithinProcessingRange signatureRecovered recoveredAuthority authorityIsOuterSender authority expectedNonceAtThisTuple authorityCodeEligible tupleEligibleAtSnapshot assumesOuterTransactionAccepted outerEnvelopeShapeSupported outerDeclaredNonceMatchesCurrent codeObservation authorityCodeHash currentDelegate declaredOuterNonce declaredNonceMatchesCurrent conditional confirmedChanges registryMatched resolutionHopsChecked implementationPolicyVerified '+
@@ -39,12 +39,12 @@ const fields=new Set((
  'traceAvailable traceTruncated traceGaps retainedTraceCalls rootReverted completeAssetCoverage '+
  'sourceChainId destinationChainId sourceBridge destinationBridge sourceMessenger destinationMessenger sourceChainRole destinationChainRole roleVersionsCompatible routeBindingEstablished anyObservedPaused snapshotsSynchronized arrivalProven proofVerified runtimeVersion runtimeCodeMatched versionMatchesRegistry adapterVersionSupported trustedGetterSemantics observedOther expectedOther observedMessenger expectedMessenger pointerMatches paused nextMessageNonce nonceProvesThisMessage observationComplete callerMatchesMessenger expectedMessenger declaredAssetSender activeCrossDomainSenderVerified declaredRemoteToken declaredBridge expectedRemoteToken expectedBridge maintainedMintableBinding pairMatches tokenValueEstablished localChainId otherChainId otherToken bothTokenCodeObserved maintainedMintableCount maintainedDeclarationsMatch tokenPairBindingEstablished'
 ).split(/\s+/));
-const metadataOnly=new Set(['status','standard','declared','interfaceId','interfaceSupported','hasCode','codeHash','identityVerified','cryptographicSignerVerified','signingNetworkVerified','referenceOnly','sourceCodeAudit','fullWalletInventory','completeAssetCoverage']);
+const metadataOnly=new Set(['status','standard','declared','interfaceId','interfaceSupported','hasCode','codeHash','identityVerified','cryptographicSignerVerified','signingNetworkVerified','referenceOnly','sourceCodeAudit','fullWalletInventory','completeAssetCoverage','semanticsVerified','protocolDecoded']);
 function stable(value:unknown):string{return JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);}
 function subjectFor(check:SecurityReport['checks'][number],field:string,report:SecurityReport):ModelFact['subject']{
  const data=check.data??{};
  const subjects=data.subjects as Record<string,unknown>|undefined;
- const traceFrame=check.id==='call_trace'&&/^data\.calls\[(\d+)\]\.(\w+)$/.exec(field);
+ const traceFrame=['call_trace','call_trace_fork'].includes(check.id)&&/^data\.calls\[(\d+)\]\.(\w+)$/.exec(field);
  if(traceFrame&&Array.isArray(data.calls)){
   const frame=data.calls[Number(traceFrame[1])] as Record<string,unknown>|undefined;
   if(traceFrame[2]==='valueWei')return {role:'asset',value:'native'};
@@ -111,7 +111,7 @@ export function modelFactCandidates(report:SecurityReport):{version:typeof FACT_
    for(const [name,flag] of Object.entries(value))if(fields.has(name))append(`data.flags.${name}`,flag,dimensions);
   }else if(['values','differences','subjects','beforeValues','afterValues'].includes(key)&&value&&typeof value==='object'&&!Array.isArray(value)){
    for(const [name,item] of Object.entries(value))if(fields.has(name)){if(Array.isArray(item)){omitted+=Math.max(0,item.length-FACT_LIMITS.arrayItems);item.slice(0,FACT_LIMITS.arrayItems).forEach((entry,index)=>append(`data.${key}.${name}[${index}]`,entry,dimensions));}else append(`data.${key}.${name}`,item,dimensions);}
-  }else if(check.id==='call_trace'&&key==='calls'&&Array.isArray(value)){
+  }else if(['call_trace','call_trace_fork'].includes(check.id)&&key==='calls'&&Array.isArray(value)){
    omitted+=Math.max(0,value.length-FACT_LIMITS.traceFrames);
    value.slice(0,FACT_LIMITS.traceFrames).forEach((item,index)=>{
     if(!item||typeof item!=='object'||Array.isArray(item))return;

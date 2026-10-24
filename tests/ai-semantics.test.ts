@@ -51,7 +51,7 @@ test('query inventory and lookalike evidence sources cannot support rated dimens
 
 test('every displayed prose field rejects categorical identity, safety, future outcome and USD loss claims',()=>{
  const claims=[
-  'The spender is the official protocol.', 'The spender is a verified recipient.', 'The protocol is officially verified.',
+  'The spender is the official protocol.', 'The order verifier is official.', 'This is a verified verifier.', 'The spender is a verified recipient.', 'The protocol is officially verified.',
   'This transaction is guaranteed safe.', 'The recipient is trusted.', 'There is no risk.', 'The token is not a honeypot.',
   'The token can always be sold.', 'The transaction will succeed.', 'The transfer cannot revert.',
   'The USD loss is exactly zero.', 'The maximum loss is $100.', '该合约属于官方。', '资金不会被盗。', '未来一定可以卖出。'
