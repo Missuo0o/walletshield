@@ -29,7 +29,7 @@ test('split and legacy candidates retain code/fee evidence without assuming Entr
   assert.equal(find(checks,'userop_entrypoint').status,'unknown');assert.equal(find(checks,'userop_entrypoint').data?.semanticsVerified,false);assert.equal(find(checks,'userop_entrypoint_code').data?.identityVerified,false);assert.equal(find(checks,'userop_fee').status,'pass');assert.equal(find(checks,'userop_semantics').status,'unknown');assert.equal(find(checks,'userop_request').data?.rawSignatureIncluded,false);
   assert.ok(!checks.some(check=>check.id==='userop_nonce'||check.id==='userop_deposit'));assert.ok(!JSON.stringify(checks).includes('declaredPrefundWei'));
   for(const check of checks.filter(value=>value.source==='rpc')){assert.equal(check.data?.blockNumber,'42');assert.equal(check.data?.blockHash,hash);}
-  for(const call of fixture.calls.filter(call=>call.method==='eth_getCode'))assert.equal(call.params.at(-1),'0x2a');assert.ok(!fixture.calls.some(call=>call.method==='eth_call'||call.method.startsWith('eth_send')));
+  for(const call of fixture.calls.filter(call=>call.method==='eth_getCode'))assert.deepEqual(call.params.at(-1),{blockHash:hash,requireCanonical:true});assert.ok(!fixture.calls.some(call=>call.method==='eth_call'||call.method.startsWith('eth_send')));
   assert.ok(!JSON.stringify(checks).includes(common.signature));assert.ok(!JSON.stringify(checks).includes(common.callData));
  }
 });

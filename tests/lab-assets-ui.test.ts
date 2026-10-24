@@ -58,3 +58,15 @@ test('an identity change stops display prompts even when the account later looks
  await assert.rejects(requestPreparedAssetDisplay(provider,displayInventory(),async()=>{if(epoch!==capturedEpoch)throw Error('Identity epoch changed');}),/Identity epoch/);
  assert.equal(prompts,1);
 });
+test('stalled or already-pending display stops without retrying and preserves successful funding semantics',async()=>{
+ for(const code of [undefined,-32002]){
+  let prompts=0;const provider:WalletProvider={request:async()=>{prompts++;if(code!==undefined)throw{code};return new Promise(()=>{});}};
+  const result=await requestPreparedAssetDisplay(provider,displayInventory(),async()=>{},{requestTimeoutMs:10});
+  assert.equal(prompts,1);assert.equal(result.pending,true);assert.equal(result.displayed,0);assert.match(result.message,/cannot cancel/);assert.match(result.message,/do not change on-chain balances/);
+ }
+});
+test('late display approval after timeout cannot enqueue further display prompts',async()=>{
+ let prompts=0,resolve!:(value:unknown)=>void;const provider:WalletProvider={request:async()=>{prompts++;return new Promise(yes=>{resolve=yes;});}};
+ const result=await requestPreparedAssetDisplay(provider,displayInventory(),async()=>{},{requestTimeoutMs:10});assert.equal(result.pending,true);
+ resolve(true);await new Promise(yes=>setTimeout(yes,2));assert.equal(prompts,1);assert.equal(result.displayed,0);
+});

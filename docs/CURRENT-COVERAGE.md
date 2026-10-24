@@ -2,7 +2,7 @@
 
 [English](CURRENT-COVERAGE.md) · [简体中文](CURRENT-COVERAGE-zh.md)
 
-See the [Order and trace follow-up](ORDER-TRACE-FOLLOWUP-2026-10-23.md) for current order evidence, numeric-evidence eligibility and isolated-fork tracing. Earlier dated test outcomes remain historical and are not reused as this change’s validation counts.
+Latest repair and validation: [24 October 2026 repair report](REPAIR-VALIDATION-2026-10-24.md). It covers claim validation, RPC snapshot consistency, bounded local wallet waits and hosted session UI lifecycle. The [earlier order and trace follow-up](ORDER-TRACE-FOLLOWUP-2026-10-23.md) remains a dated historical record; its outcomes are not reused as this repair’s validation counts.
 
 This describes the current v0.4.1 implementation after the correctness, validation, identity and dependency repair. It is a capability matrix, not an accuracy certification. Install/configure/run instructions are in the [README](../README.md) and [user manual](USER-MANUAL.md); exact per-profile extraction is in the [generated coverage guide](AI-COVERAGE-GUIDE.md).
 
@@ -10,6 +10,14 @@ WalletShield provides **pre-sign risk advice** for one unsigned EVM request. It 
 
 Current checks use the wallet-supplied unsigned request, source origin/network metadata and successfully collected RPC, intelligence and simulation evidence. Muse assesses observable request signals, including supported source/message/request inconsistencies. Chain/provider/execution context means technical observations. Historical reports and acceptance artifacts retain their original recorded data.
 
+
+## Snapshot, claim and interface safeguards
+
+- `pinnedRpc` prefers EIP-1898 block-hash selectors with `requireCanonical: true`. Only a provider's invalid-parameters response enables numeric-block fallback for that method. Numeric reads verify the chain and complete block header before and after reads, and the complete related collector group is finalized against its original chain, height, hash and timestamp. Other numeric confirmed-state groups also check before/after consistency. A missing, malformed, changed or uncheckable header discards that group's RPC values and state-derived conclusions; the report retains request/cryptographic evidence separately and records the gap.
+- A failed contract interface may leave other independently obtained facts available only when the related snapshot passes consistency checks. An unverifiable snapshot does not permit those successful values to survive under the old hash. Separate collectors can use different blocks, the pending nonce remains an explicitly unpinned node view, and fork execution has its own state. These checks do not create one atomic global snapshot, prove an RPC honest or guarantee future execution.
+- Certainty validation examines assertion-level clauses. Adding “you should approve” or a cautious sentence cannot exempt an adjacent unsupported claim of official identity, safety, future execution/sellability or factual USD loss. Genuine uncertainty and conditional verification advice remain allowed. This is a bounded language safeguard, not proof that every model sentence or score is correct.
+- Local preparation/clearing keeps the captured account/provider and a shared 120-second wallet-action deadline, with 5-second account/chain reads and 60-second wallet prompts. A timeout releases the page and never automatically resubmits a switch/add request. An unknown local network may be added once using chain 31337 and the loopback RPC, then must be confirmed. Wallet display stops after a timeout or already-pending error. Successful funding is separate from wallet display: declining, unsupported or pending display does not remove funded assets. Open MetaMask to approve or cancel any remaining prompt; the page cannot cancel it. Inventory refresh follows separately.
+- Hosted web login lasts eight hours and Snap pairing has a separate 30-day expiry. Known expiry updates the corresponding UI state; web expiry clears the verified web identity and private history without treating the separate Snap credential as expired. A matching `401` from a protected web route invalidates only the credential sent with that request, even before response JSON parsing; a stale rejection cannot clear a newer login. A scope-related `403` retains the credential. Focus/visibility checks recheck expiry after browser suspension. Undelivered revocation information still requires an authenticated response or health check.
 
 ## Current evidence and integration additions
 
@@ -72,7 +80,7 @@ The same 30 profile groups now additionally route DAI-style Permit, ERC-3009 tra
 ## What this repair changes
 
 - Equivalent supported unsigned EIP-712 integer representations (decimal, hexadecimal or leading zeros) now normalize before interpretation while retaining the signed digest. Extra uncommitted JSON properties still cannot create signed authority.
-- On-chain Permit2 reads keep its two allowance layers separate; failure of one does not erase or substitute the other. Neither read authenticates the contract.
+- On-chain Permit2 reads keep its two allowance layers separate; if the related snapshot verifies consistently, failure of one interface does not erase or substitute the other. Failed snapshot verification discards the complete related RPC group. Neither read authenticates the contract.
 - Zero addresses are interpreted according to their role. Supported NFT approval/Permit revocation is not mislabeled as burning the NFT. Actual transfer/burn/ownership-change meanings remain separate.
 - transferFrom distinguishes asset owner, caller and recipient. A current balance shortfall is an execution/exposure issue, not proof of approval over future deposits.
 - AI nonce/domain assertions are validated throughout summary, reasons, dimensions, suggested action and missing-data text, including indexed entries, direction, negation and conditional advice. Required evidence must actually match the claim. **These natural-language guards are partial; they cannot prove every sentence true.**

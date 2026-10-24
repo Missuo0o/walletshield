@@ -3,7 +3,7 @@ import type {SecurityRequest,Operation,Evidence} from './types.js';
 import type {SecurityConfig} from './config.js';
 import {typedRequest} from './signatures.js';
 import {evidence} from './evidence.js';
-import {pinnedRpc} from './trusted-rpc.js';
+import {pinnedRpc,type PinnedRpc} from './trusted-rpc.js';
 const orderFields=['offerer:address','zone:address','offer:OfferItem[]','consideration:ConsiderationItem[]','orderType:uint8','startTime:uint256','endTime:uint256','zoneHash:bytes32','salt:uint256','conduitKey:bytes32','counter:uint256'];
 const offerFields=['itemType:uint8','token:address','identifierOrCriteria:uint256','startAmount:uint256','endAmount:uint256'];
 const canonical=(types:any,name:string,expected:string[])=>Array.isArray(types[name])&&types[name].map((f:any)=>`${f.name}:${f.type}`).join('|')===expected.join('|');
@@ -58,8 +58,9 @@ export async function orderEvidence(request:SecurityRequest,op:Operation,config:
  if(zeroRecipients.length)out.push(evidence('order_zero_recipient','warning','Signed order names a zero-address consideration recipient','The zero address is an actual committed recipient. Review the requested asset routing; execution, token-specific burn behavior and successful fulfillment are not inferred.','eip712',{itemIndices:zeroRecipients.map(({index})=>index),recipient:zeroAddress,transferExecuted:false}));
  if(order.offerer.toLowerCase()!==request.signature.from.toLowerCase())out.push(evidence('order_offer_owner','warning','Offerer differs from signing account','This difference requires account-policy verification; it is not proof of malicious intent or signature validity.','eip712',{offerer:order.offerer,signer:request.signature.from}));
  const declared=Number(order.data.domain.chainId),chainId=request.chainId||(Number.isSafeInteger(declared)&&declared>0?declared:0);
+ let pinned:PinnedRpc|undefined;
  try{
-  const client=await pinnedRpc(config,chainId,fetcher),snapshot={...client.snapshot,verifyingContract:order.verifier,orderHash:order.orderHash,offerer:order.offerer};
+  const client=pinned=await pinnedRpc(config,chainId,fetcher),snapshot={...client.snapshot,verifyingContract:order.verifier,orderHash:order.orderHash,offerer:order.offerer};
   if(await client.code(order.verifier)==='0x')throw Error('No verifier code');
   let runtimeVersion:string|undefined,domainMatches:boolean|null=null;
   const expected=hashDomain({domain:order.data.domain,types:{EIP712Domain:getTypesForEIP712Domain({domain:order.data.domain})}});
@@ -82,5 +83,6 @@ export async function orderEvidence(request:SecurityRequest,op:Operation,config:
   }));
   if(order.offer.length>8)out.push(evidence('order_asset_limit','unknown','Offered asset checks truncated','Only the first eight offered items were queried; remaining ownership and permissions are not verified.','coverage',{declared:order.offer.length,checked:8}));
  }catch{out.push(evidence('order_state','unknown','Order chain-state checks incomplete','Trusted RPC, code, pinned header or status reads were unavailable. Successfully collected signed fields and independent observations are retained.','rpc',{chainId}));}
+ finally{if(pinned)await pinned.finalize(out,'order');}
  return out;
 }

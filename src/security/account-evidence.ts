@@ -1,7 +1,8 @@
+import {rpcSnapshotGuard} from './trusted-rpc.js';
 import {decodeFunctionResult,encodeFunctionData,keccak256,parseAbi} from 'viem';
 import type {Evidence,Operation,SecurityRequest} from './types.js';
 import type {SecurityConfig} from './config.js';
-import {evidence,readBoundedText,snapshotMetadata,validateAccountCode} from './evidence.js';
+import {evidence,readBoundedText,validateAccountCode} from './evidence.js';
 
 export const accountStateAbi=parseAbi([
  'function getOwners() view returns(address[])',
@@ -20,7 +21,7 @@ export async function accountEvidence(request:SecurityRequest,op:Operation,confi
  if(request.kind!=='transaction'||!request.transaction.to||!['account_control','account_execution'].includes(op.category))return [];
  const target=request.transaction.to,out:Evidence[]=[evidence('account_semantics','unknown','Smart-account implementation and full authority graph unverified','Safe-shaped methods do not authenticate a deployment. Complete module/guard/fallback configuration, owner contract policies, signature acceptance, nonce/preapproved-hash use and nested execution remain unverified. No getGuard public getter is assumed.','coverage',{account:target,identityVerified:false,fullModuleGraphChecked:false,guardStateChecked:false,fallbackStateChecked:false,signaturesVerified:false})];
  const url=config.rpc[request.chainId];if(!url)return [...out,evidence('account_state','unknown','Smart-account state unavailable','No trusted RPC is configured for this network.','configuration')];
- let serial=0;
+ let serial=0;let guard:ReturnType<typeof rpcSnapshotGuard>|undefined;
  const rpc=async(method:string,params:unknown[])=>{
   const id=++serial,response=await fetcher(url,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id,method,params}),signal:AbortSignal.timeout(2200)});
   if(!response.ok)throw Error('RPC unavailable');const body=JSON.parse(await readBoundedText(response,100000));if(body.jsonrpc!=='2.0'||body.id!==id||body.error||body.result===undefined)throw Error('RPC failed');return body.result;
@@ -28,8 +29,9 @@ export async function accountEvidence(request:SecurityRequest,op:Operation,confi
  try{
   const chain=await rpc('eth_chainId',[]);if(typeof chain!=='string'||!/^0x[\da-f]+$/i.test(chain)||BigInt(chain)!==BigInt(request.chainId))throw Error('Wrong chain');
   const block=await rpc('eth_blockNumber',[]);if(typeof block!=='string'||!/^0x[\da-f]{1,64}$/i.test(block))throw Error('Invalid block');
-  let header;try{const value=await rpc('eth_getBlockByNumber',[block,false]);if(value&&typeof value.number==='string'&&/^0x[\da-f]+$/i.test(value.number)&&BigInt(value.number)===BigInt(block)&&typeof value.timestamp==='string'&&/^0x[\da-f]+$/i.test(value.timestamp))header={number:BigInt(value.number),hash:value.hash,timestamp:BigInt(value.timestamp)};}catch{/* Other independently observed facts survive a missing header. */}
-  const snapshot=snapshotMetadata(request.chainId,BigInt(block),header);
+  const header=await rpc('eth_getBlockByNumber',[block,false]);
+  guard=rpcSnapshotGuard(request.chainId,BigInt(block),header,async()=>{const [chain,header]=await Promise.all([rpc('eth_chainId',[]),rpc('eth_getBlockByNumber',[block,false])]);return {chain,header};});
+  const snapshot=guard.snapshot;
   const read=async(name:'getOwners'|'getThreshold'|'isModuleEnabled',args:readonly unknown[]=[])=>{const value=await rpc('eth_call',[{to:target,data:encodeFunctionData({abi:accountStateAbi,functionName:name,args:args as never})},block]);if(typeof value!=='string'||!/^0x(?:[\da-f]{2})*$/i.test(value))throw Error('Malformed result');return decodeFunctionResult({abi:accountStateAbi,functionName:name,data:value as `0x${string}`});};
   const authorities=[op.fields.newAuthority,op.fields.executionTarget].filter(isAddress).filter(value=>![zero,sentinel,target.toLowerCase()].includes(value.toLowerCase()));
   const unique=[...new Map(authorities.map(value=>[value.toLowerCase(),value])).values()].slice(0,2);
@@ -52,5 +54,6 @@ export async function accountEvidence(request:SecurityRequest,op:Operation,confi
   if(typeof op.fields.threshold==='string'&&/^\d+$/.test(op.fields.threshold)&&threshold!==undefined){const proposed=BigInt(op.fields.threshold);out.push(evidence('account_threshold_change',proposed<threshold?'warning':'pass','Requested threshold compared with observed state','This compares candidate calldata with the returned current threshold only. Owner-count validity, authorization and actual execution are not established.','rpc',{account:target,currentThreshold:String(threshold),requestedThreshold:String(proposed),relation:proposed<threshold?'lower':proposed>threshold?'higher':'unchanged',...snapshot,identityVerified:false}));}
   if(op.category==='account_execution'&&op.fields.executionOperation==='unsupported')out.push(evidence('account_execution_type','unknown','Unsupported account execution operation','The uint8 value is outside the supported CALL/DELEGATECALL candidates. Equivalent execution is not claimed.','coverage'));
  }catch{out.push(evidence('account_state','unknown','Smart-account network or snapshot unavailable','The configured node failed, returned a different chain, or supplied no usable fixed block. No account state is inferred.','rpc'));}
+ finally{if(guard)await guard.finish(out,'account');}
  return out;
 }

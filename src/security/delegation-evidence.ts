@@ -32,6 +32,7 @@ export async function delegationEvidence(request:SecurityRequest,_op:Operation,c
  });
  let client;try{client=await pinnedRpc(config,request.chainId,fetcher);}catch{return [...out,evidence('delegation_state','unknown','Delegation network snapshot unavailable','Only the supplied signatures were checked. Trusted chain, nonce, authority-code eligibility and delegate code could not be observed; no zero nonce or empty code is substituted.','rpc',{chainId:request.chainId})];}
  const pinned=client,snapshot=pinned.snapshot;
+ try{
  type State={nonce?:bigint;codeEligible?:boolean;code?:Hex};
  const states=new Map<string,State>(),authorities=[...new Set([tx.from.toLowerCase(),...recovered.filter((value):value is Hex=>!!value).map(value=>value.toLowerCase())])];
  // At most 17 authorities and 16 selected delegates; no arbitrary URLs or
@@ -59,4 +60,5 @@ export async function delegationEvidence(request:SecurityRequest,_op:Operation,c
   out.push(evidence(`delegation_target_${index}`,code==='0x'?'warning':'pass','Selected delegate code observed','Code presence/hash does not audit delegate authority. Empty code can include precompile behavior; a delegate designator is not recursively followed because EIP-7702 resolves only one hop.','rpc',{...snapshot,delegate:at,hasCode:code!=='0x',...(code!=='0x'?{codeHash:keccak256(code)}:{}),delegateIsDesignator:/^0xef0100[\da-f]{40}$/i.test(code),resolutionHopsChecked:1,implementationPolicyVerified:false,identityVerified:false}));
  }catch{out.push(evidence(`delegation_target_${index}`,'unknown','Selected delegate code unavailable','No empty implementation or trusted code is inferred from a failed read.','rpc',{...snapshot,delegate:at}));}}));
  return out;
+ }finally{await pinned.finalize(out,'delegation');}
 }

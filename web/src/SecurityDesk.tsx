@@ -1,4 +1,4 @@
-import {authHeaders} from './session';
+import {authHeaders,handleWebAuthFailure} from './session';
 import React,{useEffect,useRef,useState} from 'react';
 import {RotateCcw,Search} from 'lucide-react';
 import type {SecurityReport} from '../../src/security/types';
@@ -9,7 +9,7 @@ import {scoreStatusLabel} from '../../src/security/score-disposition';
 export function SecurityDesk({identityKey='local',enabled=true}:{identityKey?:string;enabled?:boolean}={}){
  const [history,setHistory]=useState<HistoryState<SecurityReport>>(()=>emptyHistory(identityKey)),[query,setQuery]=useState('');
  const current=useRef<ReturnType<typeof createHistoryController<SecurityReport>>|null>(null);
- async function load(signal:AbortSignal){const response=await fetch('/api/security/records',{headers:authHeaders(),signal,cache:'no-store'});if(!response.ok)throw Error('History unavailable');return (await response.json() as SecurityReport[]).filter(r=>r.source==='rpc');}
+ async function load(signal:AbortSignal){const headers=authHeaders();const response=await fetch('/api/security/records',{headers,signal,cache:'no-store'});handleWebAuthFailure(response.status,headers.Authorization,'/api/security/records');if(!response.ok)throw Error('History unavailable');return (await response.json() as SecurityReport[]).filter(r=>r.source==='rpc');}
  function refresh(){if(enabled)void current.current?.refresh(load);}
  useEffect(()=>{const controller=createHistoryController<SecurityReport>(identityKey,setHistory);current.current=controller;setHistory(emptyHistory(identityKey));setQuery('');if(enabled)void controller.refresh(load);return()=>{controller.dispose();if(current.current===controller)current.current=null;};},[identityKey,enabled]);
  // Hide old state during the render before the new identity's effect executes.

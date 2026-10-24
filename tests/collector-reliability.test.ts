@@ -62,12 +62,13 @@ test('pending nonce stays a separate unpinned node view; replacement candidates,
  }
 });
 
-test('failed code and mismatched header are unknown without erasing a known native balance or successful call',async()=>{
- const request=native();request.transaction.value='0x65';const rpc=fixture(call=>{if(call.method==='eth_getCode')throw Error('Missing code');if(call.method==='eth_getBlockByNumber')return {...header,number:'0x2b'};});
- const checks=await usingFetch(rpc.fetcher,()=>collector(config,rpc.fetcher)(request,decodeRequest(request)));
- const context=checks.find(e=>e.id==='chain_context')!;
- assert.equal(context.data?.nativeBalanceWei,'100');assert.equal(context.data?.targetHasCode,undefined);assert.equal(context.data?.blockHash,undefined);assert.equal(context.data?.blockTimestampSeconds,undefined);
- assert.ok(checks.some(e=>e.id==='native_balance'&&e.status==='risk'));assert.equal(checks.find(e=>e.id==='basic_call')?.status,'pass');assert.equal(checks.find(e=>e.id==='transaction_base_fee')?.status,'unknown');
+test('failed code retains independent balance/call reads only under a complete stable snapshot',async()=>{
+ const request=native();request.transaction.value='0x65';const rpc=fixture(call=>{if(call.method==='eth_getCode')throw Error('Missing code');});
+ const checks=await usingFetch(rpc.fetcher,()=>collector(config,rpc.fetcher)(request,decodeRequest(request))),context=checks.find(e=>e.id==='chain_context')!;
+ assert.equal(context.data?.nativeBalanceWei,'100');assert.equal(context.data?.targetHasCode,undefined);assert.equal(context.data?.blockHash,blockHash);assert.equal(context.data?.snapshotConsistency,'verified_before_after');
+ assert.ok(checks.some(e=>e.id==='native_balance'&&e.status==='risk'));assert.equal(checks.find(e=>e.id==='basic_call')?.status,'pass');
+ const invalid=fixture(call=>call.method==='eth_getBlockByNumber'?{...header,number:'0x2b'}:undefined),unverified=await usingFetch(invalid.fetcher,()=>collector(config,invalid.fetcher)(request,decodeRequest(request)));
+ assert.equal(unverified.find(e=>e.id==='chain_context')?.status,'unknown');assert.ok(!unverified.some(e=>e.id==='native_balance'||e.id==='basic_call'));assert.ok(!invalid.calls.some(call=>call.method==='eth_getBalance'));
 });
 
 test('unsupported transaction fields never produce a substitute basic execution success',async()=>{
@@ -97,11 +98,11 @@ test('custom typed data gets domain evidence and one-hop delegation facts withou
  assert.ok(!checks.some(e=>e.id==='signature_scope'));assert.ok(rpc.calls.filter(c=>c.method==='eth_call').every(c=>c.params[1]==='0x2a'));
 });
 
-test('missing header leaves Permit nonce and domain facts usable while deadline comparison stays unknown',async()=>{
+test('missing header leaves encoded Permit scope intact but does not retain unbound nonce/domain or deadline state',async()=>{
  const request:Extract<SecurityRequest,{kind:'signature'}>={kind:'signature',chainId:31337,signature:{from:owner,method:'eth_signTypedData_v4',data:{domain:{name:'Fixture',chainId:31337,verifyingContract:target},types:{Permit:[{name:'owner',type:'address'},{name:'spender',type:'address'},{name:'value',type:'uint256'},{name:'nonce',type:'uint256'},{name:'deadline',type:'uint256'}]},primaryType:'Permit',message:{owner,spender:delegate,value:'10',nonce:'0',deadline:'2000000000'}}}};
  const rpc=fixture(call=>{if(call.method==='eth_getBlockByNumber')throw Error('Missing header');if(call.method==='eth_call')return encodeAbiParameters(parseAbiParameters('uint256'),[0n]);});
  const checks=await usingFetch(rpc.fetcher,()=>signatureChainEvidence(request,config));
- assert.equal(checks.find(e=>e.id==='signature_nonce')?.status,'pass');assert.equal(checks.find(e=>e.id==='signature_deadline')?.status,'unknown');assert.equal(checks.find(e=>e.id==='signature_deadline')?.data?.expiredAtObservedBlock,null);
+ assert.equal(checks.find(e=>e.id==='signature_nonce')?.status,'unknown');assert.ok(!checks.some(e=>e.id==='signature_deadline'||e.id==='signature_domain'));assert.ok(checks.some(e=>e.id==='signature_scope'&&e.source==='eip712'));assert.ok(!rpc.calls.some(call=>call.method==='eth_call'));
  assert.ok(checks.every(e=>e.data?.blockHash===undefined&&e.data?.blockTimestampSeconds===undefined));
 });
 

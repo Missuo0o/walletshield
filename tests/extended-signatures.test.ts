@@ -80,7 +80,7 @@ test('DAI domain and nonce reads fail independently, and expired submission does
  const request=signature();body(request).message.expiry='999';
  const a=await observe(request,{domainFailure:true,nonce:6n});assert.equal(a.checks.find(e=>e.id==='signature_domain')?.status,'unknown');assert.equal(a.checks.find(e=>e.id==='signature_nonce')?.status,'risk');assert.equal(a.checks.find(e=>e.id==='signature_deadline')?.status,'warning');assert.equal(a.checks.find(e=>e.id==='signature_scope')?.data?.declaredGrant,true);
  const b=await observe(request,{nonceFailure:true});assert.equal(b.checks.find(e=>e.id==='signature_domain')?.status,'pass');assert.equal(b.checks.find(e=>e.id==='signature_nonce')?.status,'unknown');
- const c=await observe(request,{headerFailure:true});assert.equal(c.checks.find(e=>e.id==='signature_deadline')?.status,'unknown');assert.equal(c.checks.find(e=>e.id==='signature_nonce')?.status,'pass');
+ const c=await observe(request,{headerFailure:true});assert.ok(!c.checks.some(e=>e.id==='signature_deadline'));assert.equal(c.checks.find(e=>e.id==='signature_nonce')?.status,'unknown');assert.ok(c.checks.some(e=>e.id==='signature_scope'&&e.source==='eip712'));
 });
 test('DAI revocation is observed as zero mapped allowance and still requires a usable nonce/domain/signature',async()=>{
  const request=signature();body(request).message.allowed=false;const {checks}=await observe(request);const scope=checks.find(e=>e.id==='signature_scope')!;
@@ -97,7 +97,7 @@ test('ERC-3009 open validity window rejects both exact boundaries and reports in
   const request=signature('transfer');Object.assign(body(request).message,{validAfter:after,validBefore:before});const {checks}=await observe(request),window=checks.find(e=>e.id==='signature_authorization_window')!;
   assert.equal(window.status,expected);assert.equal(window.data?.notYetValidAtObservedBlock,notYet);assert.equal(window.data?.expiredAtObservedBlock,expired);assert.equal(window.data?.invalidWindow,BigInt(after)>=BigInt(before));assert.equal(window.data?.validAtObservedBlock,expected==='pass');assert.equal(window.data?.blockHash,blockHash);
  }
- const absent=await observe(signature('transfer'),{headerFailure:true}),window=absent.checks.find(e=>e.id==='signature_authorization_window')!;assert.equal(window.status,'unknown');assert.equal(window.data?.validAtObservedBlock,null);assert.equal(window.data?.blockHash,undefined);assert.equal(absent.checks.find(e=>e.id==='signature_nonce')?.status,'pass');
+ const absent=await observe(signature('transfer'),{headerFailure:true});assert.ok(!absent.checks.some(e=>e.id==='signature_authorization_window'));assert.equal(absent.checks.find(e=>e.id==='signature_nonce')?.status,'unknown');assert.ok(absent.checks.some(e=>e.id==='signature_scope'&&e.source==='eip712'));
 });
 test('ERC-3009 used-or-canceled and failed state reads remain distinct while independent domain facts survive',async()=>{
  const request=signature('receive'),used=await observe(request,{used:true}),missing=await observe(request,{authorizationFailure:true}),domainMissing=await observe(request,{domainFailure:true});

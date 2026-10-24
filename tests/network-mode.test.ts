@@ -13,7 +13,7 @@ test('public network listing distinguishes configuration from connection and nev
 test('real network probe is read-only, verifies chain before querying an account, and pins account reads to the observed block',async()=>{
  const calls:{method:string;params:unknown[]}[]=[];
  const fetcher:typeof fetch=async(_url,init)=>{const request=JSON.parse(String(init?.body));calls.push(request);const result=request.method==='eth_chainId'?'0xaa36a7':request.method==='eth_getBlockByNumber'?{number:'0x64',timestamp:'0x68f7f100',hash:'0x'+'1'.repeat(64)}:request.method==='eth_getBalance'?'0xde0b6b3a7640000':'0xef0100'+'2'.repeat(40);return new Response(JSON.stringify({jsonrpc:'2.0',id:request.id,result}));};
- const result=await probeNetwork(config.rpc[11155111],11155111,address,fetcher);assert.equal(result.account?.balanceEth,'1');assert.equal(result.account?.delegatedCode,true);assert.deepEqual(calls.map(c=>c.method),['eth_chainId','eth_getBlockByNumber','eth_getBalance','eth_getCode','eth_call','eth_getBalance','debug_traceCall','trace_call']);assert.deepEqual(calls[2].params,[address,'0x64']);assert.deepEqual(calls[3].params,[address,'0x64']);assert.equal(result.capabilities?.historicalBlock,'0');assert.equal(result.capabilities?.callTrace,'unavailable','A hex response is not a usable call trace');
+ const result=await probeNetwork(config.rpc[11155111],11155111,address,fetcher);assert.equal(result.account?.balanceEth,'1');assert.equal(result.account?.delegatedCode,true);assert.deepEqual(calls.map(c=>c.method),['eth_chainId','eth_getBlockByNumber','eth_getBalance','eth_getCode','eth_call','eth_getBalance','debug_traceCall','trace_call','eth_chainId','eth_getBlockByNumber']);assert.deepEqual(calls[2].params,[address,'0x64']);assert.deepEqual(calls[3].params,[address,'0x64']);assert.equal(result.capabilities?.historicalBlock,'0');assert.equal(result.capabilities?.callTrace,'unavailable','A hex response is not a usable call trace');
  let n=0;await assert.rejects(()=>probeNetwork(config.rpc[1],1,address,async(_url,init)=>{n++;const r=JSON.parse(String(init?.body));return new Response(JSON.stringify({jsonrpc:'2.0',id:r.id,result:'0xaa36a7'}));}),/wrong_chain/);assert.equal(n,1,'Wrong network must not receive the wallet address');
 });
 test('public network API rejects foreign origins, unconfigured networks, forged RPCs and local funding requests; status never generates AI scores',async()=>{
@@ -47,4 +47,17 @@ test('EIP-6963 selects explicit provider objects, removes duplicate legacy provi
  announce(legacy,'11111111-1111-1111-1111-111111111111','io.metamask');assert.equal(latest.length,1);announce(flask,'22222222-2222-2222-2222-222222222222','io.metamask.flask');assert.equal(latest.length,2);assert.equal(defaultWallet(latest)?.provider,flask);
  announce(flask,'22222222-2222-2222-2222-222222222222','io.metamask.flask');assert.equal(latest.length,2);stop();announce({request:async()=>[]},'33333333-3333-3333-3333-333333333333','other');assert.equal(latest.length,2);
  assert.deepEqual(walletAccounts([address]),[address]);assert.throws(()=>walletAccounts(['invalid']));assert.equal(walletChain('0xaa36a7'),11155111);assert.equal(walletChain('11155111'),null);assert.equal(walletChain('0x20000000000000'),null);
+});
+
+test('public network probe never returns an account snapshot after a reorg, timestamp change, wrong chain or failed final header',async()=>{
+ for(const mode of ['hash','timestamp','chain','malformed','missing']){
+  let chainReads=0,headerReads=0;const calls:any[]=[];
+  const fetcher:typeof fetch=async(_url,init)=>{const body=JSON.parse(String(init?.body));calls.push(body);let result:any;
+   if(body.method==='eth_chainId')result=++chainReads>1&&mode==='chain'?'0x1':'0xaa36a7';
+   else if(body.method==='eth_getBlockByNumber'){headerReads++;result=headerReads===1?{number:'0x64',timestamp:'0x68f7f100',hash:'0x'+'1'.repeat(64)}:mode==='missing'?null:{number:'0x64',timestamp:mode==='timestamp'?'0x68f7f101':'0x68f7f100',hash:mode==='malformed'?'bad-hash':'0x'+(mode==='hash'?'2':'1').repeat(64)};}
+   else result=body.method==='eth_getBalance'?'0x64':body.method==='eth_getCode'?'0x6000':body.method==='eth_call'?'0x':null;
+   return Response.json({jsonrpc:'2.0',id:body.id,result});
+  };
+  await assert.rejects(()=>probeNetwork(config.rpc[11155111],11155111,address,fetcher),/snapshot_changed/);assert.ok(calls.some(call=>call.method==='eth_getBalance'&&call.params[0]===address));assert.equal(chainReads,2);assert.equal(headerReads,2);
+ }
 });

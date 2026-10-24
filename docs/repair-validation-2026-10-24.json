@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-24",
+  "runtime": "Node.js 24.19.0",
+  "scope": "Four reviewed defects and the related hosted network authorization status distinction",
+  "unitRegression": {"tests": 558, "passed": 558, "failed": 0, "skipped": 0},
+  "typecheck": "passed",
+  "build": "passed",
+  "v3StateIntegration": {"tests": 1, "passed": 1, "scenarios": 23, "sourceStateUnchanged": true},
+  "forkTraceIntegration": {"tests": 1, "passed": 1, "sourceStateUnchanged": true},
+  "devPrivateFilesIntegration": {"tests": 1, "passed": 1},
+  "offlineValidator": {"datasetVersion": "walletshield-synthetic-eval-v1", "datasetSha256": "ec51ab2ae98946db2bbd503a95dea0d8112edcf1afbe5f7cfc037524d81a3f31", "validAbstentions": {"passed": 12, "total": 12}, "adversarialRejections": {"passed": 120, "total": 120}},
+  "priorOriginalMuseReplay": {"accepted": 6, "total": 6, "scores": [38, 38, null, null, null, 22], "originalScoresPreserved": true, "method": "Offline original responses replayed against corresponding original reports"},
+  "newPaidModelCalls": 0,
+  "externalPublicChainRpcCalls": 0,
+  "newMetaMaskPopupAcceptance": false,
+  "independentAccuracyMeasured": false,
+  "boundaries": ["Bounded claim grammar is not universal natural-language proof", "Numeric before/after checks are not atomic hash reads or proof against dishonest RPC", "Wallet timeouts cannot cancel extension prompts", "Previously documented protocol and hook-delivery limits remain"]
+}

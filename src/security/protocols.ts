@@ -1,7 +1,8 @@
+import {rpcSnapshotGuard} from './trusted-rpc.js';
 import { decodeFunctionResult, encodeFunctionData, keccak256, parseAbi, stringToHex, toHex } from 'viem';
 import type { Operation, SecurityRequest, Evidence } from './types.js';
 import type { SecurityConfig } from './config.js';
-import { evidence, snapshotMetadata, readBoundedText } from './evidence.js';
+import { evidence, readBoundedText } from './evidence.js';
 const abi=parseAbi([
  'function owner() view returns(address)','function paused() view returns(bool)',
  'function decimals() view returns(uint8)','function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)',
@@ -40,7 +41,7 @@ export async function protocolEvidence(request:SecurityRequest,op:Operation,conf
  const chainId=request.chainId||Number(op.fields.domainChainId),url=config.rpc[chainId];
  const needed=op.category==='vault'?'vault_context':op.category==='lending'?'lending_context':'contract_controls';
  if(!url)return [...out,evidence(needed,'unknown','Contract context unavailable','No trusted RPC is configured for this network.','configuration')];
- let serial=0;
+ let serial=0;let guard:ReturnType<typeof rpcSnapshotGuard>|undefined;
  const rpc=async(method:string,params:unknown[])=>{
   const id=++serial;
   const response=await fetcher(url,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id,method,params}),signal:AbortSignal.timeout(2200)});
@@ -49,9 +50,10 @@ export async function protocolEvidence(request:SecurityRequest,op:Operation,conf
  try {
   if(BigInt(await rpc('eth_chainId',[]))!==BigInt(chainId))throw Error('Wrong chain');
   const block=await rpc('eth_blockNumber',[]);if(!/^0x[\da-f]+$/i.test(block))throw Error('Invalid block');
-  let header;try{const value=await rpc('eth_getBlockByNumber',[block,false]);if(value&&typeof value.number==='string'&&BigInt(value.number)===BigInt(block)&&typeof value.timestamp==='string')header={number:BigInt(value.number),hash:value.hash,timestamp:BigInt(value.timestamp)};}catch{/* Common interface facts do not depend on header availability. */}
-  const snapshot=snapshotMetadata(chainId,BigInt(block),header);
-  const code=await rpc('eth_getCode',[target,block]);if(typeof code!=='string'||!/^0x(?:[\da-f]{2})*$/i.test(code)||code==='0x')return [...out,evidence(needed,'unknown','Target contract code unavailable','No usable code was observed on this network and block, so protocol interfaces cannot be verified.','rpc')];
+  const header=await rpc('eth_getBlockByNumber',[block,false]);
+  guard=rpcSnapshotGuard(chainId,BigInt(block),header,async()=>{const [chain,header]=await Promise.all([rpc('eth_chainId',[]),rpc('eth_getBlockByNumber',[block,false])]);return {chain,header};});
+  const snapshot=guard.snapshot;
+  const code=await rpc('eth_getCode',[target,block]);if(typeof code!=='string'||!/^0x(?:[\da-f]{2})*$/i.test(code)||code==='0x'){out.push(evidence(needed,'unknown','Target contract code unavailable','No usable code was observed on this network and block, so protocol interfaces cannot be verified.','rpc'));return out;}
   const read=async(name:string,args:readonly unknown[]=[],at=target)=>decodeFunctionResult({abi,functionName:name as any,data:await rpc('eth_call',[{to:at,data:encodeFunctionData({abi,functionName:name as any,args:args as any})},block])});
   const slots=['implementation','admin','beacon'];
   const observations=await Promise.allSettled([
@@ -114,5 +116,6 @@ export async function protocolEvidence(request:SecurityRequest,op:Operation,conf
    if(typeof data.healthFactor==='string'&&/^\d+$/.test(data.healthFactor)&&BigInt(data.healthFactor)<10n**18n)out.push(evidence('liquidation_risk','risk','Account interface reports health factor below 1','Under this interface convention of 1e18 per unit, the reported factor indicates liquidation exposure. Protocol identity and price data still require verification.','rpc',{...snapshot,healthFactor:data.healthFactor}));
   }
  }catch{out.push(evidence(needed,'unknown','Contract or protocol context query failed','The RPC timed out, the network differed, code was absent, or an interface was unsupported. Missing data is not a pass.','rpc'));}
+ finally{if(guard)await guard.finish(out,'protocol');}
  return out;
 }

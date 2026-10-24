@@ -105,10 +105,10 @@ test('either Permit2 allowance layer may fail independently and absent header/co
  const req=tx('approve',[token,spender,150n,2000000000],permit2);
  for(const options of [{outerFailure:true},{innerFailure:true},{codeFailure:true},{headerFailure:true}]){
   const {checks}=await assetsFixture(req,options),outer=checks.find(e=>e.id==='existing_allowance'),inner=checks.find(e=>e.id==='permit2_allowance')!;
+  if(options.headerFailure){assert.equal(checks.find(e=>e.id==='token_identity')?.status,'unknown');assert.ok(!inner);assert.ok(!outer);continue;}
   assert.equal(inner.status,options.innerFailure?'unknown':'pass');
   if(options.outerFailure)assert.equal(checks.find(e=>e.id==='allowance_unavailable_0')?.status,'unknown');else assert.equal(outer?.status,'pass');
   if(options.codeFailure){assert.equal(checks.find(e=>e.id==='token_identity')?.status,'unknown');assert.equal(inner.data?.amount,'7');assert.equal(outer?.data?.amount,'80');}
-  if(options.headerFailure){assert.equal(inner.data?.activeAtObservedBlock,null);assert.equal(inner.data?.blockHash,undefined);}
  }
 });
 test('zero-address authority revocation is distinct from real zero-address transfers and NFT token ID zero',()=>{

@@ -81,12 +81,11 @@ test('threshold reduction is a conditional comparison, while missing or inconsis
  const duplicate=rpcFixture(call=>call.method==='eth_call'&&decodeFunctionData({abi:accountStateAbi,data:call.params[0].data}).functionName==='getOwners'?encodeFunctionResult({abi:accountStateAbi,functionName:'getOwners',result:[from,from]}):undefined);
  assert.equal(evidence(await accountEvidence(req,operation,config,duplicate.fetcher),'account_owners').status,'unknown');
 });
-test('owner list and metadata are bounded and a failed header never fabricates snapshot provenance',async()=>{
+test('owner list and metadata are bounded under a complete verified snapshot',async()=>{
  const req=request('addOwnerWithThreshold',[authority,1n]),operation=decodeAccountOperation(req)!,owners=Array.from({length:65},(_,i)=>`0x${(i+10).toString(16).padStart(40,'0')}` as `0x${string}`),rpc=rpcFixture(call=>{
-  if(call.method==='eth_getBlockByNumber')return {number:'0x2b',timestamp:'0x3e8',hash};
   if(call.method==='eth_call'&&decodeFunctionData({abi:accountStateAbi,data:call.params[0].data}).functionName==='getOwners')return encodeFunctionResult({abi:accountStateAbi,functionName:'getOwners',result:owners});
  }),checks=await accountEvidence(req,operation,config,rpc.fetcher),observed=evidence(checks,'account_owners');
- assert.equal(observed.status,'unknown');assert.equal((observed.data?.owners as string[]).length,64);assert.equal(observed.data?.truncated,true);assert.equal(observed.data?.returnedCount,65);assert.equal(observed.data?.blockHash,undefined);assert.equal(evidence(checks,'account_threshold').status,'pass');
+ assert.equal(observed.status,'unknown');assert.equal((observed.data?.owners as string[]).length,64);assert.equal(observed.data?.truncated,true);assert.equal(observed.data?.returnedCount,65);assert.equal(observed.data?.blockHash,hash);assert.equal(evidence(checks,'account_threshold').status,'pass');
 });
 test('unconfigured/wrong-chain/invalid-envelope contexts remain unknown and never use request-origin URLs',async()=>{
  const req=request('setGuard',[authority]),operation=decodeAccountOperation(req)!;
@@ -98,4 +97,9 @@ test('sentinel modules are not queried and unsupported execution operations reta
  const req=request('enableModule',[sentinel]),operation=decodeAccountOperation(req)!,rpc=rpcFixture();await accountEvidence(req,operation,config,rpc.fetcher);assert.equal(rpc.calls.filter(call=>call.method==='eth_call'&&decodeFunctionData({abi:accountStateAbi,data:call.params[0].data}).functionName==='isModuleEnabled').length,0);
  const exec=request('execTransaction',[authority,0n,'0x',2,0n,0n,0n,zero,zero,'0x']),checks=await accountEvidence(exec,decodeAccountOperation(exec)!,config,rpc.fetcher);assert.equal(evidence(checks,'account_execution_type').status,'unknown');
  assert.deepEqual(await accountEvidence(exec,{...decodeAccountOperation(exec)!,category:'native_transfer'} as Operation,config,rpc.fetcher),[]);
+});
+
+test('a mismatched initial account header never retains candidate owner or threshold facts',async()=>{
+ const req=request('addOwnerWithThreshold',[authority,1n]),fixture=rpcFixture(call=>call.method==='eth_getBlockByNumber'?{number:'0x2b',timestamp:'0x3e8',hash}:undefined),checks=await accountEvidence(req,decodeAccountOperation(req)!,config,fixture.fetcher);
+ assert.equal(evidence(checks,'account_state').status,'unknown');assert.ok(!checks.some(check=>check.id==='account_owners'||check.id==='account_threshold'));assert.ok(!fixture.calls.some(call=>call.method==='eth_call'));
 });

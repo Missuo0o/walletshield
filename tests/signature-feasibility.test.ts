@@ -31,7 +31,7 @@ async function withFixture(req:Signature,options:Options,run:(fixture:{fetcher:t
   try{
    if(rpc.method==='eth_chainId')result='0x7a69';
    else if(rpc.method==='eth_blockNumber')result='0x20';
-   else if(rpc.method==='eth_getBlockByNumber')result={number:'0x20',timestamp:'0x3e8',transactions:[]};
+   else if(rpc.method==='eth_getBlockByNumber')result={number:'0x20',hash:`0x${'ab'.repeat(32)}`,timestamp:'0x3e8',transactions:[]};
    else if(rpc.method==='eth_getCode')result=rpc.params[0].toLowerCase()===owner.toLowerCase()?options.ownerCode??'0x':'0x6000';
    else if(rpc.method==='eth_getStorageAt')result=`0x${'0'.repeat(64)}`;
    else if(rpc.method==='eth_call'){

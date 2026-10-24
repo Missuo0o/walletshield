@@ -1,7 +1,8 @@
+import {rpcSnapshotGuard} from './trusted-rpc.js';
 import {createPublicClient,http,parseAbi,erc20Abi,formatUnits,type Address} from 'viem';
 import type {SecurityRequest,Operation,Evidence} from './types.js';
 import type {SecurityConfig} from './config.js';
-import {evidence,snapshotMetadata,validateAccountCode} from './evidence.js';
+import {evidence,validateAccountCode} from './evidence.js';
 const nftAbi=parseAbi(['function supportsInterface(bytes4) view returns(bool)','function ownerOf(uint256) view returns(address)','function getApproved(uint256) view returns(address)','function isApprovedForAll(address,address) view returns(bool)','function balanceOf(address,uint256) view returns(uint256)']);
 const permit2Abi=parseAbi(['function allowance(address owner,address token,address spender) view returns(uint160 amount,uint48 expiration,uint48 nonce)']);
 const address=(v:unknown):v is Address=>typeof v==='string'&&/^0x[\da-f]{40}$/i.test(v);
@@ -26,11 +27,11 @@ export async function assetEvidence(request:SecurityRequest,op:Operation,config:
  const client=createPublicClient({transport:http(rpc,{timeout:2400,retryCount:0,fetchOptions:{redirect:'error'}})});
  const from=request.kind==='transaction'?request.transaction.from:request.kind==='signature'?request.signature.from:undefined;
  const owner=address(op.fields.owner)?op.fields.owner:from;
- const out:Evidence[]=[];
+ const out:Evidence[]=[];let guard:ReturnType<typeof rpcSnapshotGuard>|undefined;
  try{
   if(await client.getChainId()!==chainId)throw Error('Wrong network');const block=await client.getBlockNumber({cacheTime:0});
-  let header;try{header=await client.getBlock({blockNumber:block});}catch{/* Preserve balances when only the header is unavailable. */}
-  const snapshot=snapshotMetadata(chainId,block,header);
+  const header=await client.getBlock({blockNumber:block});
+  guard=rpcSnapshotGuard(chainId,block,header,async()=>{const [chain,header]=await Promise.all([client.getChainId(),client.getBlock({blockNumber:block})]);return {chain,header};});const snapshot=guard.snapshot;
   const chainTime=header?.number===block&&typeof header.timestamp==='bigint'?header.timestamp:undefined;
   await Promise.all(unique.slice(0,8).map(async(token,index)=>{
    const id=index===0?'token_identity':`asset_identity_${index}`;
@@ -109,5 +110,6 @@ export async function assetEvidence(request:SecurityRequest,op:Operation,config:
   }));
   if(unique.length>8)out.push(evidence('asset_limit','unknown','Asset queries truncated','At most 8 explicit assets are queried. Remaining and hidden assets were not individually checked.','coverage'));
  }catch{out.push(evidence('token_identity','unknown','Asset contract queries failed','The RPC is unavailable or the network differs.','rpc'));}
+ finally{if(guard)await guard.finish(out,'asset');}
  return out;
 }

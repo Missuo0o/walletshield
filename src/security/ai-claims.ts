@@ -129,33 +129,59 @@ function boundedFacts(check:Evidence):BoundedFact[]{
 }
 export function claimSupport(report:SecurityReport){return {officialIdentity:false,securityAudit:false,guaranteedSafety:false,futureExecution:false,futureSellability:false,usdLoss:false,boundedObservations:report.checks.flatMap(check=>boundedFacts(check).map(kind=>({evidence_id:check.id,kind}))),boundary:'Only the listed bounded observations can be reported as completed. Source matching is not a security audit. Observations are not official identity, future guarantees, dollar loss or a safety certificate.'};}
 
+/** Keep a qualifier attached to the assertion it governs. A modal on another
+ * predicate ("may receive tokens and is safe") and advice after a fact must not
+ * turn that fact into uncertainty. This is a bounded grammar guard, not a
+ * general natural-language entailment engine. */
+function certaintyParts(sentence:string):{text:string;nonAssertion:boolean}[]{
+ const result:{text:string;nonAssertion:boolean}[]=[];
+ let condition=false,governed=false,continuation=false;
+ for(const raw of sentence.split(/([,，]|\b(?:and|or|but|however|because|since|although|yet)\b|但是|但|因为|由于|并且|而且)/gi)){
+  if(!raw.trim())continue;
+  if(/^(?:and|or|并且|而且)$/i.test(raw)){continuation=true;continue;}
+  if(/^(?:[,，]|but|however|because|since|although|yet|但是|但|因为|由于)$/i.test(raw)){condition=false;governed=false;continuation=false;continue;}
+  const text=raw.trim();
+  const conditional=/^(?:(?:only|even)\s+)?(?:if|unless|provided(?:\s+that)?|assuming(?:\s+that)?)\b|^(?:如果|若)/i.test(text);
+  const advice=/^(?:(?:you|users?)\s+(?:should|must)\s+)?(?:(?:please\s+)?(?:check|verify|confirm|determine|ensure|inspect|avoid|never\s+assume)\b|do\s+not\s+(?:assume|treat|consider|rely)\b)|^(?:请|不要(?:认为|假设|视为|依赖))/i.test(text);
+  const uncertain=/^(?:(?:perhaps|possibly|allegedly)\b|(?:there\s+is\s+)?no\s+(?:evidence|proof)\s+(?:that|whether)\b|(?:we|i|you|one)\s+(?:cannot|can't)\s+(?:confirm|guarantee|establish|prove)\b|it\s+is\s+not\s+(?:known|proven|established|confirmed)\s+(?:that|whether)\b)|^(?:是否|可能|无法(?:确认|保证|证明)|未(?:确认|证明)|声称|宣称)/i.test(text);
+  // A repeated subject introduces an independent finite assertion. Omitted
+  // predicates may continue an imperative; a conditional antecedent may have
+  // multiple subjects, but ends at a comma or an explanatory/contrast clause.
+  const independent=/^(?:(?:the|this|that|these|those|a|an)\s+)?(?:it|they|you|we|funds|assets|tokens?|execution|transactions?|transfers?|recipients?|spenders?|contracts?|verifiers?|websites?|protocols?|addresses|address|collections?|sources?)\b|^(?:该|此|这个|那个)?(?:合约|收款方|网站|协议|地址|交易|资金|资产|代币)/i.test(text);
+  const inherited:boolean=continuation&&(condition||governed&&!independent);
+  condition=conditional||continuation&&condition;
+  governed=advice||uncertain||inherited;
+  result.push({text,nonAssertion:condition||governed});
+  continuation=false;
+ }
+ return result;
+}
+function locallyQualified(part:string,index:number):boolean{
+ const prefix=part.slice(0,index);
+ // The modal must govern this predicate, not merely occur elsewhere in the
+ // sentence. "should know ... is official" still asserts official identity.
+ return /\b(?:may|might|could)\s+(?:(?:be|have|been|being|possibly|perhaps|potentially|considered|regarded|as|a|an|the)\s+)*$/i.test(prefix)
+  || /\b(?:claims?|claimed|alleged)\s+(?:that\s+)?(?:(?:the|this|that|it|they)\s+)?$/i.test(prefix)
+  || /\b(?:whether|if)\s+(?:(?:the|this|that|it|a|an)\s+)?$/i.test(prefix);
+}
+
 /** Explicit high-impact certainty assertions receive an additional bounded
  * guard. This is deliberately not advertised as universal language proof.
  * Unsupported paraphrases still require adversarial evaluation. */
 export function validateCertaintyClaims(statements:readonly CitedStatement[],report:SecurityReport){
  const checks=new Map(report.checks.map(check=>[check.id,check]));
  for(const statement of statements)for(const sentence of statement.text.matchAll(/[^。！？；;.!?\n]+[。！？；;.!?\n]?/g)){
-  if(/[?？]$/.test(sentence[0]))continue;
-  let conditional=false;
-  for(const raw of sentence[0].split(/([,，]|\b(?:but|however|because|since|although|yet)\b|但|因为|由于)/gi)){
-   if(/^[,，]$/.test(raw))continue;
-   if(/^(?:but|however|because|since|although|yet|但|因为|由于)$/i.test(raw)){conditional=false;continue;}
-  const clause=raw.trim();if(!clause)continue;
-  if(/^(?:(?:only|even)\s+)?(?:if|unless|provided|assuming)\b|^(?:如果|若)/i.test(clause))conditional=true;
-  // Independent finite assertions after advice are not covered by the advice.
-  for(const part of clause.split(/\band\b(?=\s+(?:the|this|that|it|funds|execution|transaction|recipient|spender|contract|verifier|token|website|protocol)\b)/i)){
-   const condition=conditional||/\b(?:if|unless|whether|may|might|could|should|possibly|perhaps|cannot\s+(?:confirm|guarantee|establish|prove)|not\s+(?:known|proven|established|confirmed|proof|evidence)|no\s+(?:evidence|proof)|claims?|claimed|alleged)\b|如果|若|是否|可能|建议|无法(?:确认|保证|证明)|未(?:确认|证明)|声称|宣称/i.test(part);
-   const advice=/^\s*(?:(?:please\s+)?(?:check|verify|confirm|determine|ensure|inspect|avoid|never\s+assume)\b|do\s+not\s+(?:assume|treat|consider|rely)|请|不要(?:认为|假设|视为|依赖))/i.test(part);
-   if(condition||advice)continue;
+  if(/[?？]$/.test(sentence[0])&&(/^\s*(?:who|what|where|when|why|how|is|are|was|were|can|could|will|would|does|do|has|have|should|whether)\b/i.test(sentence[0])||/(?:吗|么|是否)[?？]$/.test(sentence[0])))continue;
+  for(const {text:part,nonAssertion} of certaintyParts(sentence[0])){
    const denied=(index:number)=>/\b(?:not|never|no|cannot|can't|isn't|aren't|wasn't|weren't)\s+(?:(?:a|an|necessarily|fully|independently|currently|yet|been|be|being|considered|known|proven|confirmed|established|guaranteed|possible|safe|to)\s+)*$/i.test(part.slice(0,index))||/(?:不|未|无法|不能|并非|没有|不等于|并不代表|不代表|不是|不保证|不能证明|不意味着)(?:能|被|已|经|确认|证明|保证)*$/.test(part.slice(0,index));
    const hazards=[
     /\b(?:guaranteed\s+(?:safe|secure|safety|execution|success)|(?:completely|entirely|totally|provably)\s+safe|risk[ -]?free|(?:no|zero)\s+(?:risk|chance\s+of\s+loss)|(?:funds|assets|tokens?)\s+(?:cannot|can't|will\s+not)\s+(?:be\s+)?(?:lost|stolen|drained)|(?:is|are)\s+(?:safe|secure|trustworthy|trusted)(?:\s+to\s+(?:sign|proceed))?|(?:is|are)\s+not\s+a\s+honeypot|honeypot[ -]free)\b|绝对安全|完全安全|毫无风险|没有(?:任何)?风险|(?:资金|资产)(?:绝对)?不会(?:损失|被盗|丢失)/gi,
-    /\b(?:(?:verified|authenticated|confirmed|known)\s+(?:as\s+)?(?:the\s+)?(?:official|legitimate|authentic)|(?:recipient|spender|contract|verifier|protocol|website|address|collection|token|source)\s+(?:is|are|was|has\s+been|belongs\s+to)\s+(?:the\s+)?(?:official|officially\s+(?:verified|authenticated|confirmed)|trusted|legitimate|authentic|verified)|verified\s+(?:recipient|spender|verifier|protocol|website|collection|identity))\b|(?:已(?:经)?(?:确认|验证|认证).{0,8}(?:官方|可信|真实身份))|(?:合约|收款方|网站|协议|地址)(?:是|属于)(?:官方|可信)/gi,
+    /\b(?:(?:verified|authenticated|confirmed|known)\s+(?:as\s+)?(?:the\s+)?(?:official|legitimate|authentic)|(?:recipient|spender|contract|verifier|protocol|website|address|collection|token|source)\s+(?:is|are|was|has\s+been|belongs\s+to)\s+(?:the\s+)?(?:official|officially\s+(?:verified|authenticated|confirmed)|trusted|legitimate|authentic|verified)|(?:is|are|was|were|has\s+been|have\s+been)\s+(?:the\s+)?(?:official|officially\s+(?:verified|authenticated|confirmed)|legitimate|authentic)|verified\s+(?:recipient|spender|verifier|protocol|website|collection|identity))\b|(?:已(?:经)?(?:确认|验证|认证).{0,8}(?:官方|可信|真实身份))|(?:合约|收款方|网站|协议|地址)(?:是|属于)(?:官方|可信)/gi,
     /\b(?:(?:has|have)\s+(?:passed|completed|undergone)\s+(?:an?\s+)?(?:(?:independent|external|formal|security|source[ -]code)\s+)*audits?|(?:is|are|was|were|has\s+been|have\s+been)\s+(?:(?:independently|externally|formally|fully|security)\s+)*audited|(?:security|source[ -]code)\s+audit\s+(?:(?:has|have)\s+)?(?:passed|succeeded|completed)|audit\s+(?:is|was|has\s+been)\s+(?:completed|passed|successful))\b|已(?:经)?(?:通过|完成|接受).{0,10}(?:安全|代码|合约)审计|(?:合约|代码|协议).{0,4}已(?:经)?(?:审计|安全认证)/gi,
     /\b(?:(?:will|always|guaranteed\s+to)\s+(?:be\s+)?(?:sell|sold|sellable|withdraw)|(?:can\s+(?:always\s+)?be\s+sold|sellability\s+is\s+guaranteed)|(?:can|will)\s+sell\s+(?:anytime|any\s+time|later|in\s+the\s+future)|(?:execution|transaction|transfer)\s+(?:is\s+)?guaranteed|(?:will|must)\s+(?:succeed|execute\s+successfully)|(?:will|can)\s+never\s+(?:fail|revert)|will\s+not\s+(?:fail|revert)|cannot\s+revert)\b|(?:保证|永远|随时|未来一定).{0,8}(?:卖出|出售|提现|执行成功)|(?:交易|执行|转账)(?:保证|一定|必定)(?:成功|执行)/gi,
     /(?:\b(?:USD|dollar|dollars|US\$)\s+(?:loss|losses|value\s+lost)|\b(?:loss|losses|lose|lost)\b.{0,35}(?:\bUSD\b|\bdollars?\b|US\$|\$\s*\d)|\$\s*\d.{0,25}\b(?:loss|lost)\b)|(?:美元|美金)(?:损失|亏损)|(?:损失|亏损).{0,15}(?:美元|美金)/gi
    ];
-   for(const pattern of hazards)for(const match of part.matchAll(pattern))if(!denied(match.index!)){
+   for(const pattern of hazards)for(const match of part.matchAll(pattern))if(!nonAssertion&&!locallyQualified(part,match.index!)&&!denied(match.index!)){
     const tail=part.slice(match.index!+match[0].length);
     if(/^\s*(?:(?:is|are|remains?)\s+)?(?:unknown|uncertain|unverified|unconfirmed|unproven|unavailable|not\s+(?:known|proven|verified|quantifiable|established)|cannot\s+be\s+(?:quantified|confirmed|proven|guaranteed))\b|^(?:未知|无法(?:确定|量化|确认|证明)|尚未(?:验证|确认))/.test(tail))continue;
     // A bounded simulated sale is reportable only with a positive observed
@@ -167,12 +193,11 @@ export function validateCertaintyClaims(statements:readonly CitedStatement[],rep
     throw Error('Unsupported certainty claim');
    }
    const execution=/\b(?:execution|transaction|transfer|simulation|eth_call|fork)\b.{0,45}\b(?:succeeded|executed\s+successfully|completed\s+successfully|was\s+successful)\b|(?:已执行成功|交易已成功)/gi;
-   for(const match of part.matchAll(execution))if(!denied(match.index!)){
+   for(const match of part.matchAll(execution))if(!nonAssertion&&!locallyQualified(part,match.index!)&&!denied(match.index!)){
     const kind:BoundedFact=/\beth_call\b/i.test(part)?'basic_call':'fork_execution';
     if(kind==='fork_execution'&&!/\b(?:fork|simulation|simulated)\b/i.test(part))throw Error('Unsupported bounded observation claim');
     if(!statement.evidence_ids.some(id=>{const check=checks.get(id);return check&&boundedFacts(check).includes(kind);}))throw Error('Unsupported bounded observation claim');
    }
-  }
   }
  }
 }

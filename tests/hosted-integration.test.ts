@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {privateKeyToAccount} from 'viem/accounts';
 import {buildApp} from '../src/server/app.js';
 import {createStore} from '../src/server/store.js';
@@ -55,7 +56,7 @@ test('hosted history and evidence are isolated by wallet, with no Origin-only au
   for(const suffix of ['', '/evidence']){assert.equal((await f.app.inject({url:`/api/security/records/${aid}${suffix}`,headers:webHeaders(alice.web.token)})).statusCode,200);assert.equal((await f.app.inject({url:`/api/security/records/${aid}${suffix}`,headers:webHeaders(bob.web.token)})).statusCode,404);assert.equal((await f.app.inject({url:`/api/security/records/${aid}${suffix}`,headers:webHeaders()})).statusCode,404);}
   assert.equal((await f.app.inject({method:'POST',url:'/api/security/scan',headers:{host,origin:'https://evil.example',authorization:`Bearer ${alice.web.token}`},payload:request()})).statusCode,401);
   assert.equal((await f.app.inject({url:'/api/security/records',headers:{host:'attacker.example',origin,authorization:`Bearer ${alice.web.token}`}})).statusCode,403);
-  assert.equal((await f.app.inject({method:'POST',url:'/api/networks/check',headers:webHeaders(alice.web.token),payload:{chainId:11155111,address:bob.account.address}})).statusCode,401);
+  assert.equal((await f.app.inject({method:'POST',url:'/api/networks/check',headers:webHeaders(alice.web.token),payload:{chainId:11155111,address:bob.account.address}})).statusCode,403);
   assert.equal((await f.app.inject({method:'POST',url:'/api/networks/check',headers:webHeaders(alice.web.token),payload:{chainId:11155111,address:alice.account.address}})).statusCode,200);assert.equal(f.counts().networkCalls,1);
  }finally{await f.close();}
 });
@@ -113,4 +114,18 @@ test('hosted concurrency permits different wallets up to cap and rejects duplica
   release();const results=await Promise.all(pending);assert.ok(results.every(r=>r.statusCode===200));assert.equal(f.counts().scoreCalls,3);
   assert.equal((await f.app.inject({method:'POST',url:'/api/security/scan',headers:snapHeaders(identities[3].snap.token),payload:request(identities[3].account)})).statusCode,200);assert.equal(f.counts().scoreCalls,4);
  }finally{release();await Promise.allSettled(pending);await f.close();}
+});
+
+test('valid hosted chain-scoped identities keep their session after forbidden account/network queries, while expiry returns 401',async()=>{
+ const f=await fixture();try{
+  const token='9'.repeat(64),expired='8'.repeat(64),createdAt=new Date(Date.now()-60000).toISOString(),expiresAt=new Date(Date.now()+3600000).toISOString(),address=accounts[0].address.toLowerCase(),chainId=11155111;
+  f.store.authTokenSave({id:createHash('sha256').update(token).digest('hex'),address,chainId,kind:'web',createdAt,expiresAt});
+  f.store.authTokenSave({id:createHash('sha256').update(expired).digest('hex'),address,chainId,kind:'web',createdAt,expiresAt:new Date(Date.now()-1000).toISOString()});
+  for(const payload of [{chainId:1,address},{chainId,address:accounts[1].address}]){
+   const denied=await f.app.inject({method:'POST',url:'/api/networks/check',headers:webHeaders(token),payload});assert.equal(denied.statusCode,403,denied.body);assert.equal(f.counts().networkCalls,0);
+   assert.equal((await f.app.inject({url:'/api/wallet-auth/status',headers:webHeaders(token)})).statusCode,200,'A scope mismatch must not revoke an otherwise valid login.');
+  }
+  const permitted=await f.app.inject({method:'POST',url:'/api/networks/check',headers:webHeaders(token),payload:{chainId,address}});assert.equal(permitted.statusCode,200,permitted.body);assert.equal(f.counts().networkCalls,1);
+  const stale=await f.app.inject({method:'POST',url:'/api/networks/check',headers:webHeaders(expired),payload:{chainId,address}});assert.equal(stale.statusCode,401,stale.body);assert.equal(f.counts().networkCalls,1,'Expired credentials must fail before probes or cache lookup.');
+ }finally{await f.close();}
 });

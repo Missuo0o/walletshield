@@ -1,7 +1,8 @@
+import {rpcSnapshotGuard} from './trusted-rpc.js';
 import { createPublicClient, http, keccak256 } from 'viem';
 import type { SecurityRequest, Operation, Evidence } from './types.js';
 import type { SecurityConfig } from './config.js';
-import { evidence, snapshotMetadata, validateAccountCode } from './evidence.js';
+import { evidence, validateAccountCode } from './evidence.js';
 import {intelligenceEvidence} from './intelligence.js';
 import { simulateRequest } from './simulation.js';
 import { signatureChainEvidence, signatureStructure } from './signatures.js';
@@ -40,21 +41,21 @@ function basicCollector(config:SecurityConfig, fetcher:typeof fetch):Collector {
     const rpc=config.rpc[lookupChain];
     if (!rpc) collected.push(evidence('chain_context','unknown','No RPC configured for this network','Actual state on this network was not read.','configuration'));
     else {
+      let guard:ReturnType<typeof rpcSnapshotGuard>|undefined;
       try {
         const client=createPublicClient({transport:http(rpc,{timeout:2400,retryCount:0,fetchOptions:{redirect:'error'}})});
         if(await client.getChainId()!==lookupChain) throw Error('Wrong chain');
-        const block=await client.getBlockNumber({cacheTime:0});
+        const block=await client.getBlockNumber({cacheTime:0}),header=await client.getBlock({blockNumber:block});
+        guard=rpcSnapshotGuard(lookupChain,block,header,async()=>{const [chain,header]=await Promise.all([client.getChainId(),client.getBlock({blockNumber:block})]);return {chain,header};});
         const from=request.kind==='transaction'?request.transaction.from:request.kind==='signature'?request.signature.from:undefined;
         const to=request.kind==='transaction'?request.transaction.to:op.token;
-        const [headerResult,balanceResult,codeResult,nonceResult,pendingResult] = await Promise.allSettled([
-          client.getBlock({blockNumber:block}),
+        const [balanceResult,codeResult,nonceResult,pendingResult] = await Promise.allSettled([
           from?client.getBalance({address:from as `0x${string}`,blockNumber:block}):Promise.resolve(undefined),
           to?client.getCode({address:to as `0x${string}`,blockNumber:block}).then(validateAccountCode):Promise.resolve(undefined),
           request.kind==='transaction'?client.request({method:'eth_getTransactionCount',params:[request.transaction.from as `0x${string}`,`0x${block.toString(16)}`]}).then(value=>{if(!/^0x[\da-f]{1,64}$/i.test(value))throw Error('Invalid nonce');return BigInt(value);}):Promise.resolve(undefined),
           request.kind==='transaction'?client.request({method:'eth_getTransactionCount',params:[request.transaction.from as `0x${string}`,'pending']}).then(value=>{if(!/^0x[\da-f]{1,64}$/i.test(value))throw Error('Invalid pending nonce');return BigInt(value);}):Promise.resolve(undefined)
         ]);
-        const header=headerResult.status==='fulfilled'&&headerResult.value.number===block?headerResult.value:undefined;
-        const snapshot=snapshotMetadata(lookupChain,block,header);
+        const snapshot=guard.snapshot;
         const balance=balanceResult.status==='fulfilled'?balanceResult.value:undefined;
         const code=codeResult.status==='fulfilled'?codeResult.value:undefined;
         const missing=[...(!header?['block_header']:[]),...(from&&balance===undefined?['native_balance']:[]),...(to&&code===undefined?['target_code']:[])];
@@ -84,6 +85,7 @@ function basicCollector(config:SecurityConfig, fetcher:typeof fetch):Collector {
         }
 
       } catch { collected.push(evidence('chain_context','unknown','Chain-state query failed','The RPC was unavailable, timed out, or reported a different chain ID.','rpc')); }
+      finally{if(guard)await guard.finish(collected,'chain');}
     }
     // A basic call is not a trace or a dependent buy/sell simulation.
     if(request.kind!=='transaction')collected.push(evidence('asset_simulation','unknown','Future signature consumption was not simulated','An unsigned message does not specify the complete future consumption transaction.','coverage'));

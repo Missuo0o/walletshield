@@ -1,4 +1,4 @@
-import {authHeaders} from './session';
+import {authHeaders,handleWebAuthFailure} from './session';
 import React,{useEffect,useState} from 'react';
 import {Activity,Wallet,Loader2,RotateCcw,ShieldCheck} from 'lucide-react';
 import type {WalletCase} from '../../src/testing/cases';
@@ -12,7 +12,7 @@ import {SNAP_ID,type WalletProvider} from './wallet';
 import {scoreStatusLabel} from '../../src/security/score-disposition';
 type Status={ready:boolean;message:string;cases:WalletCase[];caseCount:number;walletProfileCount:number;analysisProfileCount:number;transactionCount:number;signatureCount:number;aiConfigured:boolean;aiDailyLimit:number;aiCallsToday:number;unavailable:{name:string;reason:string}[]};
 type Session=Omit<LabSession,'tokenHash'>&{report?:SecurityReport|null};
-export async function labApi<T>(path:string,body?:unknown,signal?:AbortSignal):Promise<T>{const timeout=AbortSignal.timeout(85000);const r=await fetch(path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...authHeaders()},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:signal?AbortSignal.any([signal,timeout]):timeout});const data=await r.json();if(!r.ok)throw Error(data.error??'The backend request did not complete.');return data;}
+export async function labApi<T>(path:string,body?:unknown,signal?:AbortSignal):Promise<T>{const timeout=AbortSignal.timeout(85000),headers=authHeaders();const r=await fetch(path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...headers},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:signal?AbortSignal.any([signal,timeout]):timeout});handleWebAuthFailure(r.status,headers.Authorization,path);const data=await r.json();if(!r.ok)throw Error(data.error??'The backend request did not complete.');return data;}
 const outcomes={pending:'Waiting for wallet',signed:'Signature returned (not uploaded or used)',submitted:'Transaction submitted · Awaiting receipt',rejected:'Canceled in wallet',error:'Wallet request incomplete',confirmed:'Confirmed on local chain',reverted:'Reverted on local chain'};
 export function WalletLab({provider,externalBusy,account,snapReady,inventory,inventoryLoading,inventoryError,preparing,clearing,onPrepare,onClear,onRefreshInventory,onSetup,onBusy,switchLocal}:{provider?:WalletProvider;externalBusy:boolean;account:string;snapReady:boolean;inventory:LabInventory|null;inventoryLoading:boolean;inventoryError:string;preparing:boolean;clearing:boolean;onPrepare:()=>Promise<void>;onClear:()=>Promise<void>;onRefreshInventory:()=>Promise<void>;onSetup:()=>void;onBusy:(value:boolean)=>void;switchLocal:()=>Promise<void>}){
  const [status,setStatus]=useState<Status|null>(null),[selected,setSelected]=useState('approve-unlimited'),[group,setGroup]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[sessions,setSessions]=useState<Session[]>([]),[activeId,setActiveId]=useState('');

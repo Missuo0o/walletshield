@@ -38,7 +38,7 @@ test('same-address contract identities cannot scan, read, overwrite or probe ano
   }
   assert.equal((await f.app.inject({url:'/api/security/records',headers:f.headers(eoa.token)})).json().length,2,'EOA remains the same key across EVM chains');
   assert.equal(f.store.authSaveSecurityReport({...b.json(),request:{...b.json().request,chainId:1}},address,one.record.id,new Date().toISOString()),false,'a scoped caller cannot reassign a same-address foreign-chain report ID');
-  assert.equal((await f.app.inject({method:'POST',url:'/api/networks/check',headers:f.headers(one.token),payload:{chainId:10,address}})).statusCode,401);assert.equal(f.counts().probed,0);
+  assert.equal((await f.app.inject({method:'POST',url:'/api/networks/check',headers:f.headers(one.token),payload:{chainId:10,address}})).statusCode,403);assert.equal(f.counts().probed,0);
   assert.equal((await f.app.inject({method:'POST',url:'/api/networks/check',headers:f.headers(one.token),payload:{chainId:1,address}})).statusCode,200);
   assert.equal((await f.scan(eoa.token,10)).statusCode,200);
  }finally{await f.close();}

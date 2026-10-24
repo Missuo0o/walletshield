@@ -72,6 +72,70 @@ test('unrelated negative, advice and conditional clauses cannot suppress a later
  ])assert.throws(()=>validateAI(withText(text,'summary'),report(),'fixture'),/Unsupported certainty claim/,text);
 });
 
+test('modals and advice cannot hide an independent certainty assertion in any displayed field',()=>{
+ const assertions=[
+  'The contract is official and you should approve it.',
+  'The contract may receive tokens and is completely safe.',
+  'You should know the contract is official.',
+  'You should know that the contract is official.',
+  'The contract is official and may receive tokens.',
+  'The contract might receive tokens and is official.',
+  'The contract could receive tokens and has passed a security audit.',
+  'The contract may receive tokens and the transfer cannot revert.',
+  'The recipient is trusted or you should check the address.',
+  'Check the allowance and the contract is official.',
+  'Do not assume the contract is official, but it is completely safe.',
+  'If the allowance is zero, the transaction will succeed.',
+  'The contract is official, perhaps you should approve it.',
+  'The token may receive transfers and can always be sold.',
+  'The contract is official, right?',
+  '该合约是官方，并且建议批准。',
+  '可能会收到代币，而且资金不会被盗。',
+  '请检查额度，但合约是官方。'
+ ];
+ for(const slot of ['summary','suggested_action','missing_data','reason','dimension'])for(const text of assertions){
+  assert.throws(()=>validateAI(withText(text,slot),report(),'fixture'),/Unsupported certainty claim/,`${slot}: ${text}`);
+ }
+});
+
+test('qualifiers remain attached to conditional, advisory, attributed and negative assertions',()=>{
+ const phrases=[
+  'The contract may be completely safe.',
+  'The transaction could be entirely safe.',
+  'Perhaps the contract is official.',
+  'The website claims that the contract is official.',
+  'The website claims it is official.',
+  'If the contract is official and the recipient is trusted, verify the address independently.',
+  'If the contract is official and has passed a security audit, verify the exact scope.',
+  'Verify whether the contract is official and whether the source code is audited.',
+  'Verify whether the contract is official and has passed a security audit.',
+  'You should verify whether the contract is official.',
+  'Please check whether the transaction is guaranteed safe.',
+  'There is no evidence that the contract has passed a security audit.',
+  'The contract is not official and is not completely safe.',
+  'The contract has not passed a security audit and the transaction is not guaranteed safe.',
+  'Is the contract official?',
+  'Can this transaction be completely safe?',
+  '如果合约是官方，而且收款方可信，请核实地址。',
+  '请核实合约是否属于官方。',
+  '该合约是官方吗？'
+ ];
+ for(const slot of ['summary','suggested_action','missing_data','reason','dimension'])for(const text of phrases){
+  assert.equal(validateAI(withText(text,slot),report(),'fixture').score,29,`${slot}: ${text}`);
+ }
+});
+
+test('an unrelated modal cannot bypass the bounded execution observation requirement',()=>{
+ for(const slot of ['summary','suggested_action','missing_data','reason','dimension'])for(const text of [
+  'The contract may receive tokens and the fork simulation executed successfully.',
+  'The fork simulation executed successfully and you should proceed.',
+  'You should know that the eth_call succeeded.'
+ ])assert.throws(()=>validateAI(withText(text,slot),report(),'fixture'),/Unsupported bounded observation claim/,`${slot}: ${text}`);
+ const r=report();r.checks.push(evidence('simulation_execution','pass','Fork execution','Synthetic run','isolated-fork',{status:'success'}));
+ const value=output();value.reasons.push({text:'The fork simulation executed successfully and you should inspect its bounded result.',evidence_ids:['simulation_execution']});
+ assert.equal(validateAI(value,r,'fixture').score,29);
+});
+
 test('source matching cannot be promoted to a completed security audit in any displayed model field',()=>{
  const r=report();r.checks.push(evidence('registry_source_0','pass','Source match','Matching source is not an audit.','sourcify',{address:token,runtimeMatch:'exact_match',sourceCodeAudit:false}));
  assert.equal(claimSupport(r).securityAudit,false);

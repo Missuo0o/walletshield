@@ -43,7 +43,7 @@ export async function buildApp(store: Store, options: { context?: (i: AnalysisIn
   const auth=registerWalletAuth(app,store,{origin:service.origin,enabled:service.mode==='hosted',retentionDays:service.reportRetentionDays,rpc:async()=>{const config=await(options.security?.config??loadSecurityConfig)();return Object.fromEntries(Object.entries(config.rpc).filter(([id])=>id!=='31337'));}});
   registerSecurity(app, store, {...options.security,access:{service,auth}});
   if(service.mode==='local')registerLab(app,store,options.lab);
-  registerNetworks(app,options.security?.config??loadSecurityConfig,options.networkProbe,{origins:service.origins,authorize:service.mode==='hosted'?(req,address,chainId)=>{const who=auth.authenticate(req);return !!who&&(!address||who.address===address.toLowerCase())&&(who.chainId===undefined||who.chainId===chainId);}:undefined});
+  registerNetworks(app,options.security?.config??loadSecurityConfig,options.networkProbe,{origins:service.origins,authorize:service.mode==='hosted'?(req,address,chainId)=>{const who=auth.authenticate(req);if(!who)return 401;return (!address||who.address===address.toLowerCase())&&(who.chainId===undefined||who.chainId===chainId)?true:403;}:undefined});
   function save(input: AnalysisInput, context: Context) {
     const record = { ...evaluate(input, context), id: randomUUID(), createdAt: new Date().toISOString(),
       fingerprint: createHash('sha256').update(JSON.stringify({ chainId: input.chainId, transaction: input.transaction })).digest('hex') };

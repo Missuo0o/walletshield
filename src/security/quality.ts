@@ -49,7 +49,8 @@ export function evidenceQuality(report:SecurityReport):EvidenceQuality {
  const caveats=[
   'Counts describe collected checks, not detection accuracy or a confidence percentage.',
   'A recorded observation time is not a guarantee of provider freshness; examine its block and source.',
-  'Reads are pinned by block number, not atomically by block hash. Recorded hashes are provenance; reorganizations or inconsistent provider responses are not ruled out. Fork execution is distinct from upstream and future state.'
+  'Independent interface failures preserve other observed facts only when the related snapshot verifies consistently; missing or changed headers discard all state-derived conclusions in that group.',
+  'pinnedRpc prefers canonical block-hash selectors. Numeric confirmed-state groups verify complete chain/header state before and after collection and discard the related state group if verification fails. This is not a global atomic snapshot or proof of provider honesty, and fork execution is distinct from upstream and future state.'
  ];
  if(report.request.kind==='signature'&&!report.request.chainId)caveats.push('The signature hook did not supply a request-bound network. A domain or separate provider snapshot does not establish it.');
  if(stale.length)caveats.push('Some observations were recorded more than five minutes before report creation; this is a freshness flag, not a risk-score threshold.');
