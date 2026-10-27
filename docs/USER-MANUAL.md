@@ -102,13 +102,15 @@ Keep the launcher terminal open. Press Ctrl+C there to stop the services it owns
 
 Each new demo resets the in-memory local chain. Old local approvals, balances, positions and receipts disappear, while SQLite reports persist. Prepare assets again after a restart. An old report is a historical observation, not a description of the new chain.
 
-For development, `npm run dev` starts only backend/web/Snap services. It does not create the chain and its API process does not watch changes. Use `npm run chain`, `npm run deploy:local`, `npm run build`, then `npm run dev` in the separate-terminal sequence shown in the README. Rebuild and reload/pair the Snap after changing it.
+For separate development terminals, keep `npm run chain` running in terminal 1. In terminal 2 run `npm run deploy:local`, then `npm run build`, then keep `npm run dev` running. `dev` starts only backend/web/Snap services; it does not create the chain and its API process does not watch changes. Restart after backend edits; rebuild and reload/pair after Snap edits. `npm run deploy:lab` checks/deploys lab fixtures on an already prepared local chain.
 
 ## 3. Configure data and optional AI
 
 Local wallet requests work without a model key. Without enabled, configured and successful Muse analysis, reports show evidence and gaps with no numeric score.
 
-Create `.local/` if necessary. Use [`.env.example`](../.env.example) as the reference and preserve any existing settings. An arbitrary root `.env` file is not automatically loaded.
+Create `.local/` if necessary. The two reference templates match the actual backend files: [Muse settings](../config/meta.env.example) → `.local/meta.env`, and [RPC/tool settings](../config/rpc.env.example) → `.local/rpc.env`. Preserve existing files and keys. The root [`.env.example`](../.env.example) is a combined reference; neither it nor a root `.env` file is automatically loaded.
+
+Private configuration is intentionally absent from GitHub. A local `ENABLE_EXTERNAL_LOOKUPS=1` enables GoPlus even though the repository example defaults to `0`. Enabling a tool does not prove a lookup succeeded or that the current chain is supported. Check `/api/security/status` → `externalLookups` for the loaded switch. `META_MODEL` in old local files is ignored: the backend fixes `muse-wonder-1.0`, so no model-name setting is required.
 
 | Configuration | Place it locally | Purpose |
 | --- | --- | --- |
@@ -126,7 +128,16 @@ Muse is fixed to `muse-wonder-1.0` at `https://api.meta.ai/v1/responses`. OpenAI
 
 Each initial call reserves one attempt, including failed calls. A permitted output-validation repair reserves a second attempt. The default daily cap is 100 for the backend; hosted mode also defaults to 20 per verified identity, shared across its web and Snap sessions. Hosted reservations check both caps atomically: if either denies the attempt, neither is charged and no model call starts. These are attempt limits, not dollar budgets. RPC, Infura and GoPlus limits/billing are separate.
 
-The local synthetic connection-test command in the README intentionally calls Meta and can incur charges. It is not needed to install, run offline tests or exercise evidence without scoring. The route is absent in hosted mode. Scheduled post-sign monitoring remains disabled regardless of `ENABLE_MONITOR`.
+For an optional paid connection check against an already running local-mode service, developers can send a fixed synthetic sample:
+
+```sh
+curl -sS -X POST http://127.0.0.1:5173/api/security/ai/test \
+  -H 'Origin: http://127.0.0.1:5173' \
+  -H 'Content-Type: application/json' \
+  --data '{}'
+```
+
+This intentionally calls Meta and can incur charges; it is not required for installation or offline tests. Inspect `ai.status`, `ai.message` and `ai.result`: HTTP success alone does not prove an accepted score. The route is absent in hosted mode. Scheduled post-sign monitoring remains disabled regardless of `ENABLE_MONITOR`.
 
 ## 4. Connect and verify the Snap
 

@@ -522,19 +522,31 @@ WalletShield 会话。释放端口前确认进程归属，不要随意结束其�
 <p>每次重新运行 demo
 都会重置内存中的本地链，之前的本地授权、余额、头寸和回执会消失；SQLite
 报告继续保留。重启后重新准备资产。旧报告是历史观察，不描述新链的当前状态。</p>
-<p>开发时，<code>npm run dev</code> 只启动后端、网页和 Snap
-文件服务，不创建链，API 进程也不会监听代码变化并自动重启。按照 README
-的多终端顺序，依次使用
-<code>npm run chain</code>、<code>npm run deploy:local</code>、<code>npm run build</code>
-和 <code>npm run dev</code>。修改 Snap
-后须重新构建，再重新加载和配对。</p>
+<p>分开终端开发时，在终端 1 保持 <code>npm run chain</code> 运行；在终端
+2 依次执行
+<code>npm run deploy:local</code>、<code>npm run build</code>，再保持
+<code>npm run dev</code> 运行。<code>dev</code> 只启动后端、网页和 Snap
+文件服务，不创建链，API
+进程也不会自动监听代码变化。后端修改后须重启；Snap
+修改后须重新构建、加载和配对。<code>npm run deploy:lab</code>
+用于在已准备的本地链上检查或部署实验室合约。</p>
 <h2 id="配置数据与可选-ai">3. 配置数据与可选 AI</h2>
 <p>没有模型密钥也能运行本地钱包请求。Muse
 未启用、未配置或未成功完成有效分析时，报告只显示证据和缺口，不显示数值分数。</p>
-<p>按需创建 <code>.local/</code>，以 <a
+<p>按需创建 <code>.local/</code>。两个示例对应实际后端文件：<a
+href="../config/meta.env.example">Muse 设置</a> →
+<code>.local/meta.env</code>，<a
+href="../config/rpc.env.example">RPC/工具设置</a> →
+<code>.local/rpc.env</code>。保留已有文件和密钥。根目录的 <a
 href="../.env.example"><code>.env.example</code></a>
-为配置参考，并保留已有设置。项目根目录下任意命名的 <code>.env</code>
-文件不会自动加载。</p>
+是合并参考，它和根目录 <code>.env</code> 都不会自动加载。</p>
+<p>私人配置本来就不会上传到 GitHub。本地
+<code>ENABLE_EXTERNAL_LOOKUPS=1</code> 表示开启 GoPlus，与仓库示例默认
+<code>0</code> 不冲突。开关启用不证明每次查询成功或当前链受支持，可通过
+<code>/api/security/status</code> 的 <code>externalLookups</code>
+核对加载值。旧本地文件中的 <code>META_MODEL</code>
+不会被读取：后端固定使用
+<code>muse-wonder-1.0</code>，不需要再配置模型名称。</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -599,8 +611,15 @@ HTTP 除外；含内嵌用户名或密码的 URL 会被拒绝。</p>
 100 次；托管模式还默认限制每个已验证身份每天 20 次，该身份的网页和 Snap
 会话共用。托管额度以原子方式同时检查两个上限：任意一个拒绝时，两个计数都不扣减，也不发起模型调用。这些是尝试次数上限，不是金额预算；RPC、Infura
 和 GoPlus 的限额与计费独立。</p>
-<p>README 中本地合成 AI 连通性测试命令会主动调用
-Meta，可能产生费用。安装、离线测试或无评分取证不需要运行该命令。托管模式没有此测试路由。无论
+<p>开发者可对已运行的本地模式服务，主动发送固定合成样本进行可选的付费连通性检查：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sS</span> <span class="at">-X</span> POST http://127.0.0.1:5173/api/security/ai/test <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&#39;Origin: http://127.0.0.1:5173&#39;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&#39;Content-Type: application/json&#39;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--data</span> <span class="st">&#39;{}&#39;</span></span></code></pre></div>
+<p>该命令会调用 Meta，可能产生费用，安装和离线测试不需要运行。查看
+<code>ai.status</code>、<code>ai.message</code> 和
+<code>ai.result</code>，HTTP
+成功不等于分数通过校验。托管模式没有此路由。无论
 <code>ENABLE_MONITOR</code> 如何设置，定时签名后监控都保持禁用。</p>
 <h2 id="连接钱包并验证-snap">4. 连接钱包并验证 Snap</h2>
 <ol type="1">
@@ -1039,9 +1058,9 @@ IP 12 次、全局 60 次。每身份最多 4 个活动 Snap 凭据，全局最�
 域名、自有 npm 包名和公开仓库，参考<a
 href="../deploy/service.env.example">部署配置示例</a>。密钥保留在仅后端使用的模型/RPC
 文件中。在项目目录执行：</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build:hosted</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run package:hosted</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run start:hosted</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build:hosted</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run package:hosted</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run start:hosted</span></code></pre></div>
 <p>构建将同一个 HTTPS origin/npm ID 编译到前端和
 Snap。打包会检查成功构建的指纹，并创建隔离的、仅包含允许文件的
 <code>dist/release-snap</code> npm

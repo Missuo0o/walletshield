@@ -104,13 +104,15 @@ npm run demo
 
 每次重新运行 demo 都会重置内存中的本地链，之前的本地授权、余额、头寸和回执会消失；SQLite 报告继续保留。重启后重新准备资产。旧报告是历史观察，不描述新链的当前状态。
 
-开发时，`npm run dev` 只启动后端、网页和 Snap 文件服务，不创建链，API 进程也不会监听代码变化并自动重启。按照 README 的多终端顺序，依次使用 `npm run chain`、`npm run deploy:local`、`npm run build` 和 `npm run dev`。修改 Snap 后须重新构建，再重新加载和配对。
+分开终端开发时，在终端 1 保持 `npm run chain` 运行；在终端 2 依次执行 `npm run deploy:local`、`npm run build`，再保持 `npm run dev` 运行。`dev` 只启动后端、网页和 Snap 文件服务，不创建链，API 进程也不会自动监听代码变化。后端修改后须重启；Snap 修改后须重新构建、加载和配对。`npm run deploy:lab` 用于在已准备的本地链上检查或部署实验室合约。
 
 ## 3. 配置数据与可选 AI
 
 没有模型密钥也能运行本地钱包请求。Muse 未启用、未配置或未成功完成有效分析时，报告只显示证据和缺口，不显示数值分数。
 
-按需创建 `.local/`，以 [`.env.example`](../.env.example) 为配置参考，并保留已有设置。项目根目录下任意命名的 `.env` 文件不会自动加载。
+按需创建 `.local/`。两个示例对应实际后端文件：[Muse 设置](../config/meta.env.example) → `.local/meta.env`，[RPC/工具设置](../config/rpc.env.example) → `.local/rpc.env`。保留已有文件和密钥。根目录的 [`.env.example`](../.env.example) 是合并参考，它和根目录 `.env` 都不会自动加载。
+
+私人配置本来就不会上传到 GitHub。本地 `ENABLE_EXTERNAL_LOOKUPS=1` 表示开启 GoPlus，与仓库示例默认 `0` 不冲突。开关启用不证明每次查询成功或当前链受支持，可通过 `/api/security/status` 的 `externalLookups` 核对加载值。旧本地文件中的 `META_MODEL` 不会被读取：后端固定使用 `muse-wonder-1.0`，不需要再配置模型名称。
 
 | 配置 | 本地文件 | 用途 |
 | --- | --- | --- |
@@ -128,7 +130,16 @@ Muse 固定使用 `https://api.meta.ai/v1/responses` 上的 `muse-wonder-1.0`，
 
 每次初始调用预留一次尝试额度，失败也计数。允许的输出校验修复调用会再预留一次。后端默认每天最多 100 次；托管模式还默认限制每个已验证身份每天 20 次，该身份的网页和 Snap 会话共用。托管额度以原子方式同时检查两个上限：任意一个拒绝时，两个计数都不扣减，也不发起模型调用。这些是尝试次数上限，不是金额预算；RPC、Infura 和 GoPlus 的限额与计费独立。
 
-README 中本地合成 AI 连通性测试命令会主动调用 Meta，可能产生费用。安装、离线测试或无评分取证不需要运行该命令。托管模式没有此测试路由。无论 `ENABLE_MONITOR` 如何设置，定时签名后监控都保持禁用。
+开发者可对已运行的本地模式服务，主动发送固定合成样本进行可选的付费连通性检查：
+
+```sh
+curl -sS -X POST http://127.0.0.1:5173/api/security/ai/test \
+  -H 'Origin: http://127.0.0.1:5173' \
+  -H 'Content-Type: application/json' \
+  --data '{}'
+```
+
+该命令会调用 Meta，可能产生费用，安装和离线测试不需要运行。查看 `ai.status`、`ai.message` 和 `ai.result`，HTTP 成功不等于分数通过校验。托管模式没有此路由。无论 `ENABLE_MONITOR` 如何设置，定时签名后监控都保持禁用。
 
 ## 4. 连接钱包并验证 Snap
 
