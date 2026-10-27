@@ -81,7 +81,7 @@ Wallet and network 页面提供有界只读 RPC 能力观察：固定区块调�
 
 ### macOS：使用项目自带的启动脚本
 
-已有本地配置时，在 Finder 中双击[启动WalletShield.command](../%E5%90%AF%E5%8A%A8WalletShield.command)，保持它打开的终端窗口运行。脚本自动进入项目目录，优先使用可用的托管 Node 运行时，在缺少 `node_modules` 时执行 `npm ci` 安装依赖，再运行 `npm run demo`。脚本不负责安装 Node.js，也不会复制配置模板。后端会读取已有 `.local/meta.env` 和 `.local/rpc.env`，请保留这些文件。
+已有本地配置时，在 Finder 中双击[StartWalletShield.command](../StartWalletShield.command)，保持它打开的终端窗口运行。脚本自动进入项目目录，优先使用可用的托管 Node 运行时，在缺少 `node_modules` 时执行 `npm ci` 安装依赖，再运行 `npm run demo`。脚本不负责安装 Node.js，也不会复制配置模板。后端会读取已有 `.local/meta.env` 和 `.local/rpc.env`，请保留这些文件。
 
 使用双击启动后，无须再执行下面这些命令。只有选择终端启动或使用其他受支持系统时，才在项目目录运行：
 

@@ -79,7 +79,7 @@ Use Node.js 24.x, npm and a desktop browser containing MetaMask Flask. Use a ded
 
 ### macOS: use the included launcher
 
-For an existing local setup, double-click [启动WalletShield.command](../%E5%90%AF%E5%8A%A8WalletShield.command) in Finder. Keep the Terminal window it opens running. The launcher enters the project directory, uses the available managed Node runtime when present, installs dependencies with `npm ci` if `node_modules` is absent, then runs `npm run demo`. It does not install Node.js or copy configuration templates. Existing `.local/meta.env` and `.local/rpc.env` are read by the backend; preserve them.
+For an existing local setup, double-click [StartWalletShield.command](../StartWalletShield.command) in Finder. Keep the Terminal window it opens running. The launcher enters the project directory, uses the available managed Node runtime when present, installs dependencies with `npm ci` if `node_modules` is absent, then runs `npm run demo`. It does not install Node.js or copy configuration templates. Existing `.local/meta.env` and `.local/rpc.env` are read by the backend; preserve them.
 
 You do not need to run the following commands as well when using the launcher. To start from a terminal instead, or on another supported operating system, run these from the project directory:
 

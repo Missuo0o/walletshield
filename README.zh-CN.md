@@ -38,7 +38,7 @@ Muse 从权限、敞口、执行、身份、协议和欺骗六个维度给出可
 
 需要 **Node.js 24.x**、npm，以及安装 **MetaMask Flask** 的桌面浏览器。请使用专门的开发钱包，Flask 测试账户中不要存放真实资金。
 
-**macOS 用户：直接双击项目文件夹中的 [启动WalletShield.command](启动WalletShield.command)。** 它会进入项目目录，使用本机可用的 Node（存在 Codex 运行时则优先使用），在缺少 `node_modules` 时安装依赖，然后自动执行 `npm run demo`。启动器不会安装 Node.js，需要事先具备 Node 24。使用启动器后，**不需要再重复运行下面的命令**。
+**macOS 用户：直接双击项目文件夹中的 [StartWalletShield.command](StartWalletShield.command)。** 它会进入项目目录，使用本机可用的 Node（存在 Codex 运行时则优先使用），在缺少 `node_modules` 时安装依赖，然后自动执行 `npm run demo`。启动器不会安装 Node.js，需要事先具备 Node 24。使用启动器后，**不需要再重复运行下面的命令**。
 
 其他系统或希望使用终端开发的用户，可以在项目目录选择以下替代方式：
 

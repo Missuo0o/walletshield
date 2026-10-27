@@ -38,7 +38,7 @@ Muse supplies the optional **0–100 risk score**, reasons, uncertainty and advi
 
 Use **Node.js 24.x**, npm and a desktop browser with **MetaMask Flask**. Use a dedicated development wallet; keep real funds out of the Flask test account.
 
-On **macOS**, double-click [启动WalletShield.command](启动WalletShield.command) in the project folder. It changes to that folder, uses your available Node installation (preferring the Codex runtime if present), installs dependencies if `node_modules` is absent, and runs `npm run demo` automatically. It does not install Node.js; Node 24 must already be available. You do **not** need to run the terminal commands again after using the launcher.
+On **macOS**, double-click [StartWalletShield.command](StartWalletShield.command) in the project folder. It changes to that folder, uses your available Node installation (preferring the Codex runtime if present), installs dependencies if `node_modules` is absent, and runs `npm run demo` automatically. It does not install Node.js; Node 24 must already be available. You do **not** need to run the terminal commands again after using the launcher.
 
 For other systems or terminal-based development, use this alternative from the project directory:
 
