@@ -122,6 +122,13 @@ Automatic assessment requires MetaMask to deliver the supported transaction/mess
 
 Public distribution additionally requires HTTPS hosting, identity/pairing configuration and the Snap release workflow. An Infura key alone does not publish the service. Follow the [hosted deployment instructions](docs/USER-MANUAL.md#9-hosted-identity-and-release-operation).
 
+
+## Hosted test lab
+
+An optional **Test lab** brings wallet testing to the HTTPS site, using disposable chain **31338**; the desktop lab remains **31337**. Connect a dedicated test wallet, verify identity, install/pair the published Snap, then prepare assets and accept the new network. Requests follow the same wallet → Snap → evidence → Muse → report flow. Test assets have no real value.
+
+This is a **shared test chain** with a 15-minute exclusive transaction lease. Contract control state can change between testers. Asset management and private test sessions are limited to the verified account; chain data is public. The bounded HTTPS RPC excludes Anvil management and unlocked sends. The operator must explicitly enable/deploy it. See [hosted lab operations](docs/HOSTED-TEST-LAB.md).
+
 ## Privacy and boundaries
 
 - Unsigned requests, message content, addresses and evidence are processed by the backend and stored in its SQLite history. A bounded evidence packet goes to Meta when AI is enabled; configured RPC/intelligence providers receive relevant queries. Local storage is not encrypted by the application.

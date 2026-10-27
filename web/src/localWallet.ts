@@ -1,8 +1,10 @@
+import {LAB_CHAIN_ID,HOSTED_LAB_ENABLED} from '../../src/testing/network';
+import {RUNTIME} from '../../src/runtime.generated';
 import {switchWalletNetwork} from './networkSwitch';
 import {walletAccounts,walletChain,type WalletProvider} from './wallet';
 
-export const LOCAL_CHAIN_ID=31337;
-export const LOCAL_CHAIN_METADATA={chainId:'0x7a69',chainName:'WalletShield Local',nativeCurrency:{name:'Test Ether',symbol:'ETH',decimals:18},rpcUrls:['http://127.0.0.1:8545']};
+export const LOCAL_CHAIN_ID=LAB_CHAIN_ID;
+export const LOCAL_CHAIN_METADATA={chainId:`0x${LAB_CHAIN_ID.toString(16)}`,chainName:HOSTED_LAB_ENABLED?'WalletShield Test Lab':'WalletShield Local',nativeCurrency:{name:'Test Ether',symbol:'ETH',decimals:18},rpcUrls:[HOSTED_LAB_ENABLED?RUNTIME.appOrigin+'/api/test-rpc':'http://127.0.0.1:8545']};
 type LocalWalletOptions={isCurrent?:()=>boolean;timeoutMs?:number;readTimeoutMs?:number;promptTimeoutMs?:number;verificationTimeoutMs?:number;pollIntervalMs?:number};
 type WalletRequest=Parameters<WalletProvider['request']>[0];
 export class LocalWalletTimeoutError extends Error {readonly code='WALLETSHIELD_WALLET_TIMEOUT';}
@@ -35,7 +37,7 @@ export function createLocalWalletGuard(provider:WalletProvider,address:string,op
  }
  async function checkIdentity(){
   await checkAccount();
-  if(walletChain(await request({method:'eth_chainId'}))!==LOCAL_CHAIN_ID)throw Error('The account or network changed. Select this account on local chain 31337 and try again.');
+  if(walletChain(await request({method:'eth_chainId'}))!==LOCAL_CHAIN_ID)throw Error(`The account or network changed. Select this account on test chain ${LAB_CHAIN_ID} and try again.`);
  }
  async function switchNetwork(){
   await checkAccount();

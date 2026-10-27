@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import {privateKeyToAccount} from 'viem/accounts';
+import {createStore} from '../src/server/store.js';
+import {buildApp} from '../src/server/app.js';
+import {HOSTED_LAB_ENABLED,LAB_CHAIN_ID} from '../src/testing/network.js';
+import {buildWalletCase,WALLET_CASES} from '../src/testing/cases.js';
+import {verifiedLab,labArtifacts} from '../src/testing/contracts.js';
+assert.equal(HOSTED_LAB_ENABLED,true,'Use an isolated hosted-lab build, never the running local workspace.');
+assert.equal(LAB_CHAIN_ID,31338);
+const origin='https://walletshield.example',host='walletshield.example';
+const account=privateKeyToAccount(('0x'+'ab'.repeat(32)) as `0x${string}`);
+const store=createStore(':memory:');
+const app=await buildApp(store,{service:{mode:'hosted',testLab:true,origin,origins:[origin],hosts:[host],walletDailyLimit:20,maxScans:1},security:{collect:async()=>[],config:async()=>({apiKey:'',model:'muse-wonder-1.0',aiEnabled:false,lookups:false,goPlusToken:'',rpc:{31338:'http://127.0.0.1:8546'}})}});
+const headers=(token?:string)=>({host,origin,...(token?{authorization:'Bearer '+token}:{})});
+const post=(url:string,payload:unknown,token?:string)=>app.inject({method:'POST',url,headers:headers(token),payload:payload as object});
+try{
+ const challenge=(await post('/api/wallet-auth/challenge',{address:account.address,chainId:11155111})).json();
+ const signed=await account.signMessage({message:challenge.message});
+ const verified=await post('/api/wallet-auth/verify',{id:challenge.id,signature:signed});assert.equal(verified.statusCode,200,verified.body);
+ const token=verified.json().token;
+ assert.equal((await app.inject({url:'/api/lab/status',headers:{host}})).statusCode,401);
+ const prepared=await post('/api/lab/prepare',{address:account.address},token);assert.equal(prepared.statusCode,200,prepared.body);assert.equal(prepared.json().inventory.chainId,31338);assert.equal(prepared.json().inventory.ready,true);
+ const status=await app.inject({url:'/api/lab/status',headers:headers(token)});assert.equal(status.json().ready,true);assert.equal(status.json().sharedSandbox,true);
+ const d=await verifiedLab(),artifacts=await labArtifacts();
+ for(const c of WALLET_CASES){const r=await buildWalletCase(c.id,account.address,d,artifacts,origin);if(r.kind==='transaction')assert.equal(r.chainId,31338,c.id);if(r.kind==='signature'&&typeof r.signature.data==='object'){const data=r.signature.data as any;if(data.domain?.chainId)assert.equal(Number(data.domain.chainId),31338,c.id);}}
+ const begun=await post('/api/lab/begin',{caseId:'approve-limited',address:account.address},token);assert.equal(begun.statusCode,200,begun.body);
+ const session=begun.json(),tx=session.request.transaction;
+ const rpc=async(method:string,params:unknown[])=>{const response=await post('/api/test-rpc',{jsonrpc:'2.0',id:1,method,params});assert.equal(response.statusCode,200,response.body);const r=response.json();assert.equal(r.error,undefined,JSON.stringify(r));return r.result;};
+ assert.equal(await rpc('eth_chainId',[]),'0x7a6a');
+ const nonce=Number(BigInt(await rpc('eth_getTransactionCount',[account.address,'latest'])));
+ const raw=await account.signTransaction({chainId:31338,to:tx.to,data:tx.data,value:BigInt(tx.value??'0x0'),nonce,gas:200000n,gasPrice:2_000_000_000n});
+ const hash=await rpc('eth_sendRawTransaction',[raw]);
+ const receipt=await rpc('eth_getTransactionReceipt',[hash]);assert.equal(receipt.status,'0x1');
+ const result=await post('/api/lab/sessions/'+session.id+'/result',{token:session.token,status:'submitted',transactionHash:hash},token);assert.equal(result.statusCode,200,result.body);assert.equal(result.json().status,'confirmed');
+ const pair=await post('/api/security/pair',{},token);assert.equal(pair.statusCode,200,pair.body);
+ const scan=await app.inject({method:'POST',url:'/api/security/scan',headers:{host,origin:'null',authorization:'Bearer '+pair.json().token,'x-walletshield-test-session':session.id},payload:session.request});assert.equal(scan.statusCode,200,scan.body);assert.equal(scan.json().capture.channel,'paired-snap');
+ const history=await app.inject({url:'/api/lab/sessions/'+session.id,headers:headers(token)});assert.equal(history.json().report.id,scan.json().id);
+ const cleared=await post('/api/lab/clear',{address:account.address,confirm:true},token);assert.equal(cleared.statusCode,200,cleared.body);assert.equal(cleared.json().inventory.eth,'0');
+ console.log(JSON.stringify({chainId:31338,caseRequestsBuilt:WALLET_CASES.length,prepare:true,signedGatewayTransaction:true,receiptVerified:true,snapCredentialScan:true,reportLinked:true,clear:true,noLiveModelCalls:true}));
+}finally{await app.close();store.close();}

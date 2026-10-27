@@ -1,20 +1,20 @@
+import {LAB_CHAIN_ID,LAB_RPC_URL,LAB_CHAIN} from './network.js';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import solc from 'solc';
 import {createPublicClient,createWalletClient,http,keccak256,parseEther,formatEther,formatUnits,type Address,type Abi} from 'viem';
-import {foundry} from 'viem/chains';
 import {localStatus,localClient} from '../server/chain.js';
-export const labClient=createPublicClient({chain:foundry,transport:http('http://127.0.0.1:8545',{timeout:5000,retryCount:0})});
-export const labWallet=createWalletClient({chain:foundry,transport:http('http://127.0.0.1:8545',{timeout:5000,retryCount:0})});
+export const labClient=createPublicClient({chain:LAB_CHAIN,transport:http(LAB_RPC_URL,{timeout:5000,retryCount:0})});
+export const labWallet=createWalletClient({chain:LAB_CHAIN,transport:http(LAB_RPC_URL,{timeout:5000,retryCount:0})});
 const wallet=labWallet;
 export type Artifact={abi:Abi;bytecode:`0x${string}`};
-export type LabDeployment={version:1;chainId:31337;baseToken:Address;owner:Address;recipient:Address;deployedAt:string;contracts:Record<string,{address:Address;codeHash:`0x${string}`}>};
+export type LabDeployment={version:1;chainId:number;baseToken:Address;owner:Address;recipient:Address;deployedAt:string;contracts:Record<string,{address:Address;codeHash:`0x${string}`}>};
 const file=()=>resolve(process.cwd(),'.local/lab-deployment.json');
-export async function assertLocalAnvil(){if(await labClient.getChainId()!==31337||!(await labClient.request({method:'web3_clientVersion'})).toLowerCase().includes('anvil'))throw Error('Only the local Anvil node on chain 31337 is allowed.');}
+export async function assertLocalAnvil(){if(await labClient.getChainId()!==LAB_CHAIN_ID||!(await labClient.request({method:'web3_clientVersion'})).toLowerCase().includes('anvil'))throw Error(`Only the local Anvil node on chain ${LAB_CHAIN_ID} is allowed.`);}
 export async function readLab(){try{return JSON.parse(await readFile(file(),'utf8')) as LabDeployment;}catch{return null;}}
 export async function verifiedLab(){
  await assertLocalAnvil();const base=await localStatus(),d=await readLab();
- if(!base.ready||!base.deployment||!d||d.version!==1||d.chainId!==31337||base.deployment.token.toLowerCase()!==d.baseToken.toLowerCase())throw Error('Run npm run deploy:lab to prepare the local wallet test contracts.');
+ if(!base.ready||!base.deployment||!d||d.version!==1||d.chainId!==LAB_CHAIN_ID||base.deployment.token.toLowerCase()!==d.baseToken.toLowerCase())throw Error('Run npm run deploy:lab to prepare the local wallet test contracts.');
  const required=['token','quote','honey','nft','multi','router','vault','lending','actions','control','permit2','wrapped'];
  if(required.some(key=>!d.contracts?.[key]?.address||!d.contracts[key].codeHash))throw Error('The local test contract manifest is incomplete. Deploy the lab again.');
  await Promise.all(Object.values(d.contracts).map(async c=>{const code=await labClient.getCode({address:c.address});if(!code||keccak256(code)!==c.codeHash)throw Error('The local test contract code changed. Deploy the lab contracts again.');}));return d;
@@ -37,7 +37,7 @@ export async function deployLab(){
  // Keep its existing contracts, addresses, artifacts and balances intact.
  const previous=existing?await labArtifacts().catch(()=>({} as Record<string,Artifact>)):{};
  const artifacts:Record<string,Artifact>={...compiled,...previous,LabAccount:compiled.LabAccount,LabOrderVerifier:compiled.LabOrderVerifier};
- const d:LabDeployment=existing??{version:1,chainId:31337,baseToken:base.deployment.token,owner,recipient,deployedAt:new Date().toISOString(),contracts:{}};
+ const d:LabDeployment=existing??{version:1,chainId:LAB_CHAIN_ID,baseToken:base.deployment.token,owner,recipient,deployedAt:new Date().toISOString(),contracts:{}};
  async function deploy(key:string,name:string,args:unknown[]=[]){const a=artifacts[name];const hash=await wallet.deployContract({account:owner,abi:a.abi,bytecode:a.bytecode,args});const r=await labClient.waitForTransactionReceipt({hash});if(r.status!=='success'||!r.contractAddress)throw Error('Test contract deployment failed.');const code=await labClient.getCode({address:r.contractAddress});if(!code)throw Error('Test contract code is missing.');d.contracts[key]={address:r.contractAddress,codeHash:keccak256(code)};return r.contractAddress;}
  if(existing){
   if(!d.contracts.account)await deploy('account','LabAccount',[recipient]);
@@ -99,7 +99,7 @@ export async function labInventory(account:Address){
   testId>0n?read('nft','LabNFT','ownerOf',[testId]):Promise.resolve(null),read('multi','LabMultiNFT','balanceOf',[account,1n]),read('multi','LabMultiNFT','balanceOf',[account,2n]),read('vault','LabVault','balanceOf',[account]),read('lending','LabLending','collateral',[account]),read('lending','LabLending','debt',[account]),read('actions','LabActions','staked',[account]),read('actions','LabActions','liquidity',[account]),read('control','LabControl','owner')]);
  const nftOwned=typeof owner==='string'&&owner.toLowerCase()===account.toLowerCase();
  const baseBalance=await labClient.readContract({address:d.baseToken,abi:artifacts.LabToken.abi,functionName:'balanceOf',args:[account],blockNumber:block}) as bigint;
- return {account,chainId:31337,blockNumber:String(block),eth:formatEther(native),ready:native>0n&&baseBalance>0n&&assets.slice(0,3).every(a=>BigInt(a.balanceRaw)>0n)&&nftOwned&&multi1>0n&&multi2>0n,
+ return {account,chainId:LAB_CHAIN_ID,blockNumber:String(block),eth:formatEther(native),ready:native>0n&&baseBalance>0n&&assets.slice(0,3).every(a=>BigInt(a.balanceRaw)>0n)&&nftOwned&&multi1>0n&&multi2>0n,
   assets:[{key:'base',address:d.baseToken,symbol:'TEST-USD',decimals:6,balanceRaw:String(baseBalance),balance:formatUnits(baseBalance,6),standard:'ERC20' as const},...assets],
   nfts:[{address:d.contracts.nft.address,standard:'ERC721',id:String(testId),balance:nftOwned?'1':'0'},{address:d.contracts.multi.address,standard:'ERC1155',id:'1',balance:String(multi1)},{address:d.contracts.multi.address,standard:'ERC1155',id:'2',balance:String(multi2)}],
   positions:{vaultSharesRaw:String(shares),collateralRaw:String(collateral),debtRaw:String(debt),stakedRaw:String(staked),liquidityUnitsRaw:String(liquidity),controlOwner},

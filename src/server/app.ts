@@ -1,3 +1,6 @@
+import {HOSTED_LAB_ENABLED} from '../testing/network.js';
+import {hostedLabAccess} from '../testing/hosted-access.js';
+import {registerHostedLabRpc} from '../testing/hosted-rpc.js';
 import Fastify from 'fastify';
 import {serviceConfig,permittedHost,type ServiceConfig} from './service-config.js';
 import {registerWalletAuth} from './wallet-auth.js';
@@ -35,7 +38,7 @@ export async function buildApp(store: Store, options: { context?: (i: AnalysisIn
     // Loopback binding alone does not stop DNS-rebinding reads.
     if(!permittedHost(req.headers.host,service))return reply.code(403).send({error:'The request Host is not configured for this service.'});
     if(req.method==='GET'&&path.startsWith('/api/')&&req.headers.origin&&!service.origins.includes(req.headers.origin)&&!(path==='/api/security/pair/status'&&req.headers.origin==='null'))return reply.code(403).send({error:'Check data is unavailable to this origin.'});
-    if(service.mode==='hosted'&&/^\/api\/(?:lab(?:\/|$)|local(?:\/|$)|workflow(?:\/|$)|records(?:\/|$)|analyze(?:\/|$)|demo(?:\/|$)|scenarios(?:\/|$))/.test(path))return reply.code(404).send({error:'Local experimental routes are unavailable in hosted mode.'});
+    if(service.mode==='hosted'&&!(service.testLab&&HOSTED_LAB_ENABLED&&path.startsWith('/api/lab/'))&&/^\/api\/(?:lab(?:\/|$)|local(?:\/|$)|workflow(?:\/|$)|records(?:\/|$)|analyze(?:\/|$)|demo(?:\/|$)|scenarios(?:\/|$))/.test(path))return reply.code(404).send({error:'Local experimental routes are unavailable in hosted mode.'});
     if(req.method==='POST'&&(/^\/api\/(?:analyze|demo\/|records\/)/.test(path))&&!['http://127.0.0.1:5173','http://localhost:5173'].includes(req.headers.origin??''))return reply.code(403).send({error:'Submit this request from the local workbench.'});
   });
   await app.register(cors, { origin: [...service.origins, 'null'], methods: ['GET', 'POST'], allowedHeaders: ['Content-Type','Authorization','X-WalletShield-Test-Session'] });
@@ -43,6 +46,7 @@ export async function buildApp(store: Store, options: { context?: (i: AnalysisIn
   const auth=registerWalletAuth(app,store,{origin:service.origin,enabled:service.mode==='hosted',retentionDays:service.reportRetentionDays,rpc:async()=>{const config=await(options.security?.config??loadSecurityConfig)();return Object.fromEntries(Object.entries(config.rpc).filter(([id])=>id!=='31337'));}});
   registerSecurity(app, store, {...options.security,access:{service,auth}});
   if(service.mode==='local')registerLab(app,store,options.lab);
+  else if(service.testLab&&HOSTED_LAB_ENABLED){const access=hostedLabAccess(auth,store);registerLab(app,store,{...options.lab,hosted:{origin:service.origin,access}});registerHostedLabRpc(app,{maySend:access.maySend,takeRate:access.rpcRate});}
   registerNetworks(app,options.security?.config??loadSecurityConfig,options.networkProbe,{origins:service.origins,authorize:service.mode==='hosted'?(req,address,chainId)=>{const who=auth.authenticate(req);if(!who)return 401;return (!address||who.address===address.toLowerCase())&&(who.chainId===undefined||who.chainId===chainId)?true:403;}:undefined});
   function save(input: AnalysisInput, context: Context) {
     const record = { ...evaluate(input, context), id: randomUUID(), createdAt: new Date().toISOString(),

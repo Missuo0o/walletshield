@@ -6,7 +6,7 @@ import {readBoundedText} from '../security/evidence.js';
 import {normalizeTrace} from '../security/trace.js';
 import {rpcSnapshotGuard} from '../security/trusted-rpc.js';
 const names:Record<number,{name:string;testnet:boolean}>={1:{name:'Ethereum Mainnet',testnet:false},11155111:{name:'Sepolia',testnet:true},10:{name:'Optimism',testnet:false},56:{name:'BNB Smart Chain',testnet:false},137:{name:'Polygon',testnet:false},8453:{name:'Base',testnet:false},42161:{name:'Arbitrum One',testnet:false}};
-export function networkList(config:SecurityConfig){return [...new Set([11155111,1,...Object.keys(config.rpc).map(Number).filter(id=>id!==31337)])].map(chainId=>({chainId,name:names[chainId]?.name??`EVM ${chainId}`,testnet:names[chainId]?.testnet??null,configured:!!config.rpc[chainId]}));}
+export function networkList(config:SecurityConfig){return [...new Set([11155111,1,...Object.keys(config.rpc).map(Number).filter(id=>id!==31337&&id!==31338)])].map(chainId=>({chainId,name:names[chainId]?.name??`EVM ${chainId}`,testnet:names[chainId]?.testnet??null,configured:!!config.rpc[chainId]}));}
 const quantity=(v:unknown):v is string=>typeof v==='string'&&/^0x[\da-f]{1,64}$/i.test(v);
 export type NetworkSnapshot={chainId:number;network:string;checkedAt:string;blockNumber:string;blockHash:string;blockTime:string;latencyMs:number;account?:{address:string;balanceWei:string;balanceEth:string;hasCode:boolean;delegatedCode:boolean};capabilities?:{pinnedCall:'observed'|'unavailable';historicalState:'observed'|'unavailable';historicalBlock:string;callTrace:'observed'|'unavailable';callTraceMethod?:'debug_traceCall'|'trace_call';scope:string}};
 export type NetworkProbe=(url:string,chainId:number,address?:string)=>Promise<NetworkSnapshot>;
@@ -58,7 +58,7 @@ export function registerNetworks(app:FastifyInstance,getConfig:()=>Promise<Secur
  let active=false;const recent:number[]=[];const cache=new Map<string,{expires:number;value:NetworkSnapshot}>();
  app.post('/api/networks/check',async(req,reply)=>{
   if(!local(req.headers.origin))return reply.code(403).send({error:'Network reads require the configured workbench origin.'});
-  const parsed=z.object({chainId:z.number().int().positive().max(Number.MAX_SAFE_INTEGER).refine(id=>id!==31337),address:z.string().regex(/^0x[\da-f]{40}$/i).optional()}).strict().safeParse(req.body);
+  const parsed=z.object({chainId:z.number().int().positive().max(Number.MAX_SAFE_INTEGER).refine(id=>id!==31337&&id!==31338),address:z.string().regex(/^0x[\da-f]{40}$/i).optional()}).strict().safeParse(req.body);
   if(!parsed.success)return reply.code(400).send({error:'Select a public network and optionally the connected public account address. Custom RPC input is not accepted.'});
   const {chainId,address}=parsed.data;
   // Credentials can expire or be revoked while configuration or RPC work is

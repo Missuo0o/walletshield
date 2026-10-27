@@ -1,3 +1,4 @@
+import {LAB_CHAIN_ID} from '../../src/testing/network';
 /** One current, verified local inventory. Request ordering and identity epochs
  * remain authoritative even when a transport ignores cancellation. */
 export type LocalInventory={account:string;chainId:number;ready:boolean};
@@ -19,7 +20,7 @@ export function createLabInventoryController<T extends LocalInventory>(identity:
    try{
     const inventory=await load(requestedAccount,controller.signal);
     if(disposed||request!==generation||controller.signal.aborted)return;
-    if(inventory.account.toLowerCase()!==requestedAccount.toLowerCase()||inventory.chainId!==31337)throw Error('The returned inventory does not match this account and local chain.');
+    if(inventory.account.toLowerCase()!==requestedAccount.toLowerCase()||inventory.chainId!==LAB_CHAIN_ID)throw Error('The returned inventory does not match this account and local chain.');
     emit({...state,inventory,loading:false,error:''});
    }catch(error){
     if(disposed||request!==generation||controller.signal.aborted)return;

@@ -1,3 +1,4 @@
+import {LAB_CHAIN_ID,LAB_RPC_URL,LAB_CHAIN} from './network.js';
 import {encodeFunctionData,getAddress,isAddress,keccak256,parseAbi,parseAbiItem,parseEther,zeroAddress,type Abi,type Address,type Hex} from 'viem';
 import {readDeployment,type Deployment} from '../server/chain.js';
 import {labClient,labWallet,labInventory,preflightLab,type Artifact,type LabDeployment} from './contracts.js';
@@ -23,8 +24,8 @@ export async function clearLocalTestBalances(account:Address,deps:LocalBalanceCl
  const {client,wallet,deployment:d,baseDeployment:base,artifacts}=deps;
  if(!isAddress(account)||same(account,zeroAddress)||same(account,LOCAL_BALANCE_SINK))throw Error('Choose a nonzero local test account, other than the cleanup sink.');
  account=getAddress(account);
- if(await client.getChainId()!==31337||!String(await client.request({method:'web3_clientVersion'})).toLowerCase().includes('anvil'))throw Error('Balance clearing is allowed only on local Anvil chain 31337.');
- if(d.version!==1||d.chainId!==31337||base.chainId!==31337||!isAddress(d.baseToken)||!same(d.baseToken,base.token)||requiredContracts.some(key=>!d.contracts?.[key]))throw Error('The verified local test manifest is incomplete or mismatched.');
+ if(await client.getChainId()!==LAB_CHAIN_ID||!String(await client.request({method:'web3_clientVersion'})).toLowerCase().includes('anvil'))throw Error(`Balance clearing is allowed only on local Anvil chain ${LAB_CHAIN_ID}.`);
+ if(d.version!==1||d.chainId!==LAB_CHAIN_ID||base.chainId!==LAB_CHAIN_ID||!isAddress(d.baseToken)||!same(d.baseToken,base.token)||requiredContracts.some(key=>!d.contracts?.[key]))throw Error('The verified local test manifest is incomplete or mismatched.');
  const entries=Object.entries(d.contracts);
  if(entries.length>64||entries.some(([,c])=>!isAddress(c.address)||same(c.address,zeroAddress)||!/^0x[\da-f]{64}$/i.test(c.codeHash))||!/^0x[\da-f]{64}$/i.test(base.tokenCodeHash))throw Error('The local test contract manifest is invalid.');
  const targets=[base.token,...['token','quote','honey','nft','multi','wrapped'].map(key=>d.contracts[key].address)];
@@ -111,7 +112,7 @@ export async function clearLocalTestBalances(account:Address,deps:LocalBalanceCl
  ]);
  const finalSelfAllowance=uint(await read(base.token,baseAbi,'allowance',[account,account],finalBlock),'restored self allowance');
  if(finalValues.some(value=>uint(value,'final balance')!==0n)||finalSelfAllowance!==previousSelfAllowance)throw Error('Local balance clearing could not verify zero balances and the restored self allowance. Refresh the inventory before retrying.');
- return {account,chainId:31337 as const,cleared:true as const,sink:LOCAL_BALANCE_SINK,blockNumber:String(finalBlock),transactionCount:writeCount,clearedNftIds:ownedIds.map(String),balances:{eth:'0',base:'0',token:'0',quote:'0',honey:'0',wrapped:'0',nft:'0',multi1:'0',multi2:'0'},positionsUnchanged:true as const,erc20AllowancesUnchanged:true as const,operatorApprovalsUnchanged:true as const,nftTokenApprovalsClearedByTransfer:ownedIds.length>0};
+ return {account,chainId:LAB_CHAIN_ID,cleared:true as const,sink:LOCAL_BALANCE_SINK,blockNumber:String(finalBlock),transactionCount:writeCount,clearedNftIds:ownedIds.map(String),balances:{eth:'0',base:'0',token:'0',quote:'0',honey:'0',wrapped:'0',nft:'0',multi1:'0',multi2:'0'},positionsUnchanged:true as const,erc20AllowancesUnchanged:true as const,operatorApprovalsUnchanged:true as const,nftTokenApprovalsClearedByTransfer:ownedIds.length>0};
 }
 
 export async function clearLabAssets(account:Address){

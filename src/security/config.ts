@@ -1,3 +1,4 @@
+import {LAB_CHAIN_ID,LAB_RPC_URL} from '../testing/network.js';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -26,7 +27,7 @@ export async function loadSecurityConfig(options: {root?: string; env?: NodeJS.P
   // Preserve old RPC/tool switches, but NEVER reuse the old OpenAI credentials.
   const get = (name: string) => env[name] ?? network[name] ?? meta[name] ?? legacy[name] ?? '';
   const getMeta = (name: string) => env[name] ?? meta[name] ?? '';
-  const rpc: Record<number,string> = {31337: 'http://127.0.0.1:8545'};
+  const rpc: Record<number,string> = {[LAB_CHAIN_ID]: LAB_RPC_URL};
   const infuraKey = get('INFURA_API_KEY').trim();
   if (/^[A-Za-z0-9_-]+$/.test(infuraKey)) {
     rpc[1] = `https://mainnet.infura.io/v3/${infuraKey}`;
@@ -35,7 +36,7 @@ export async function loadSecurityConfig(options: {root?: string; env?: NodeJS.P
   const ids = new Set([1,10,56,137,8453,42161,11155111,
     ...Object.keys({...legacy,...meta,...network,...env}).map(key => Number(key.match(/^RPC_(\d+)_URL$/)?.[1])).filter(id => Number.isSafeInteger(id) && id > 0)]);
   for (const id of ids) {
-    if (id === 31337) continue; // Local test funding must always refer to the owned local chain.
+    if (id === 31337 || id === 31338) continue; // Local test funding must always refer to the owned local chain.
     const candidate = get(`RPC_${id}_URL`);
     if (!candidate) continue;
     try {
@@ -48,7 +49,7 @@ export async function loadSecurityConfig(options: {root?: string; env?: NodeJS.P
   const traceRpc:Record<number,string>={};
   for(const key of Object.keys({...legacy,...meta,...network,...env})){
     const id=Number(key.match(/^TRACE_RPC_(\d+)_URL$/)?.[1]);
-    if(!Number.isSafeInteger(id)||id<=0||id===31337||!rpc[id])continue;
+    if(!Number.isSafeInteger(id)||id<=0||(id===31337||id===31338)||!rpc[id])continue;
     const candidate=get(key);if(!candidate)continue;
     try{const url=new URL(candidate);if(!url.username&&!url.password&&(url.protocol==='https:'||url.protocol==='http:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname)))traceRpc[id]=candidate;}catch{/* Invalid configuration stays unavailable. */}
   }

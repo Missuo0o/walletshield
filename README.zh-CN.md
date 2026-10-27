@@ -134,3 +134,9 @@ ENABLE_EXTERNAL_LOOKUPS=1
 [中文使用手册](docs/USER-MANUAL-zh.md) · [English manual](docs/USER-MANUAL.md) · [覆盖范围](docs/CURRENT-COVERAGE-zh.md) · [取数字段与 AI 证据](docs/AI-COVERAGE-GUIDE-zh.md) · [接入与评估](docs/RELIABILITY-AND-INTEGRATION.md)
 
 开发者验证命令与带日期的结果：[最新完整复测](docs/FULL-RETEST-2026-10-27-zh.md)。
+
+## 线上测试实验室
+
+可选的 **Test lab** 将钱包实验室保留在线上网站，使用临时测试链 **31338**；电脑本地链仍为 **31337**。连接专用测试钱包、验证身份、安装并配对已发布的 Snap，再准备资产并确认新网络。请求依然经过钱包 → Snap → 后端取证 → Muse → 报告。测试资产没有真实价值。
+
+这是**共享测试链**，使用 15 分钟独占交易时段；合约控制状态可能随测试者切换而改变。准备和清理资产仅限本人已验证账户，测试会话按身份隔离，链上数据公开。受限 HTTPS RPC 不开放 Anvil 管理与解锁账户发送。需由运营者显式启用并部署，详见[线上实验室说明](docs/HOSTED-TEST-LAB.md)。

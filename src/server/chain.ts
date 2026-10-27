@@ -1,10 +1,10 @@
+import {LAB_CHAIN_ID,LAB_RPC_URL,LAB_CHAIN} from '../testing/network.js';
 import { readFile } from 'node:fs/promises';
 import { createPublicClient, http, erc20Abi, keccak256 } from 'viem';
-import { foundry } from 'viem/chains';
 import type { AnalysisInput, Context } from '../core/types.js';
 import { parseApproval } from '../core/engine.js';
-export const RPC_URL = 'http://127.0.0.1:8545';
-export const localClient = createPublicClient({ chain: foundry, transport: http(RPC_URL, { timeout: 3500, retryCount: 0 }) });
+export const RPC_URL = LAB_RPC_URL;
+export const localClient = createPublicClient({ chain: LAB_CHAIN, transport: http(RPC_URL, { timeout: 3500, retryCount: 0 }) });
 export type Deployment = { chainId: number; token: `0x${string}`; owner: `0x${string}`; spender: `0x${string}`; tokenCodeHash: string; deployedAt: string };
 export async function readDeployment(): Promise<Deployment | null> {
   try { return JSON.parse(await readFile(new URL('../../.local/deployment.json', import.meta.url), 'utf8')); }
@@ -14,7 +14,7 @@ export async function localStatus() {
   const deployment = await readDeployment();
   try {
     const chainId = await localClient.getChainId();
-    if (chainId !== 31337) return { ready: false, message: 'The node chain ID does not match the local configuration.', deployment: null };
+    if (chainId !== LAB_CHAIN_ID) return { ready: false, message: 'The node chain ID does not match the local configuration.', deployment: null };
     if (!deployment) return { ready: false, message: 'The node is running. Run npm run deploy:local.', deployment: null };
     const code = await localClient.getCode({ address: deployment.token });
     if (!code || keccak256(code) !== deployment.tokenCodeHash) return { ready: false, message: 'The node was reset or its contract does not match. Deploy again.', deployment: null };
@@ -24,13 +24,13 @@ export async function localStatus() {
 export async function collectContext(input: AnalysisInput): Promise<Context> {
   const context: Context = { source: 'rpc', reputation: 'unknown', reputationSource: 'No external threat intelligence; local test list only',
     simulation: { status: 'unavailable', detail: 'The basic call check has not completed.' } };
-  if (input.chainId !== 31337) return { ...context, error: 'This legacy approval path supports only local Anvil chain 31337 and does not assess other networks.' };
+  if (input.chainId !== LAB_CHAIN_ID) return { ...context, error: `This legacy approval path supports only local Anvil chain ${LAB_CHAIN_ID} and does not assess other networks.` };
   let decoded: ReturnType<typeof parseApproval>;
   try { decoded = parseApproval(input.transaction.data); } catch { return context; }
   try {
     const deployment = await readDeployment();
     if (!deployment || input.transaction.to.toLowerCase() !== deployment.token.toLowerCase()) return { ...context, error: 'This contract is absent from the local deployment list; its ERC-20 behavior is unverified.' };
-    if (await localClient.getChainId() !== 31337) throw new Error('Node chain ID mismatch.');
+    if (await localClient.getChainId() !== LAB_CHAIN_ID) throw new Error('Node chain ID mismatch.');
     const blockNumber = await localClient.getBlockNumber({ cacheTime: 0 });
     context.blockNumber = blockNumber.toString();
     const code = await localClient.getCode({ address: deployment.token, blockNumber });

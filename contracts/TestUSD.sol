@@ -14,7 +14,7 @@ contract TestUSD {
     constructor(address owner) { totalSupply = 5000 * 10**6; balanceOf[owner] = totalSupply; emit Transfer(address(0), owner, totalSupply); }
     /// @notice Local-only faucet. Top up to 5,000 TEST-USD, never reduce a balance.
     function faucet(address recipient) external returns (uint256 minted) {
-        require(block.chainid == 31337, "local chain only");
+        require((block.chainid == 31337 || block.chainid == 31338), "local chain only");
         require(recipient != address(0), "zero recipient");
         uint256 target = 5000 * 10**6;
         if (balanceOf[recipient] < target) {

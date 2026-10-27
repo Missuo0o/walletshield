@@ -1,0 +1,27 @@
+[Unit]
+Description=WalletShield disposable hosted test chain (31338)
+After=network.target
+
+[Service]
+Type=simple
+User=walletshield
+Group=walletshield
+WorkingDirectory=/opt/walletshield/app
+EnvironmentFile=/opt/walletshield/state/service.env
+Environment=PATH=/opt/walletshield/runtime/node-v24.22.1-linux-x64/bin:/usr/local/bin:/usr/bin:/bin
+Environment=RUST_LOG=error
+ExecStart=/opt/walletshield/runtime/node-v24.22.1-linux-x64/bin/node scripts/chain.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/walletshield/state
+MemoryMax=512M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

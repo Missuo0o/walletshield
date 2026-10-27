@@ -1,3 +1,4 @@
+import {LAB_CHAIN_ID,LAB_RPC_URL,LAB_CHAIN} from './network.js';
 import {randomBytes} from 'node:crypto';
 import {encodeFunctionData,encodeDeployData,maxUint256,stringToHex,zeroAddress,type Address} from 'viem';
 import type {SecurityRequest} from '../security/types.js';
@@ -91,7 +92,7 @@ export async function buildWalletCase(id:string,account:Address,d:LabDeployment,
  if(!WALLET_CASES.some(c=>c.id===id))throw Error('Unsupported wallet test case.');
  const c=d.contracts,recipient=account.toLowerCase()===d.recipient.toLowerCase()?d.owner:d.recipient,spender='0x3333333333333333333333333333333333333333' as Address;
  const deadline=BigInt(Math.floor(Date.now()/1000)+1800),amount=10n**6n;
- const transaction=(to:Address|null,data:`0x${string}`,value='0x0'):SecurityRequest=>({kind:'transaction',chainId:31337,origin,transaction:{from:account,to,data,value}});
+ const transaction=(to:Address|null,data:`0x${string}`,value='0x0'):SecurityRequest=>({kind:'transaction',chainId:LAB_CHAIN_ID,origin,transaction:{from:account,to,data,value}});
  const call=(key:string,artifact:string,name:string,args:unknown[]=[],value='0x0')=>{if(!c[key]?.address||!artifacts[artifact])throw Error('Run npm run deploy:lab to add the optional account fixture, then prepare local test assets.');return transaction(c[key].address,encodeFunctionData({abi:artifacts[artifact].abi,functionName:name,args}),value);};
  if(id==='native')return transaction(recipient,'0x','0x38d7ea4c68000');
  if(id==='native-contract')return transaction(c.actions.address,'0x','0x38d7ea4c68000');
@@ -139,9 +140,9 @@ export async function buildWalletCase(id:string,account:Address,d:LabDeployment,
  if(id==='unknown')return transaction(c.actions.address,'0x12345678');
  const signature=(data:unknown,method:'personal_sign'|'eth_signTypedData_v4'):SecurityRequest=>({kind:'signature',chainId:0,origin,signature:{from:account,method,data:data as any}});
  if(id==='message')return signature(stringToHex('WalletShield local wallet signature test. No real assets. This signature is not submitted to any contract.'),'personal_sign');
- if(id.startsWith('siwe'))return signature(stringToHex(`${id==='siwe-mismatch'?'different.walletshield.invalid':new URL(origin).host} wants you to sign in with your Ethereum account:\n${account}\n\nWalletShield local login test.\n\nURI: ${origin}\nVersion: 1\nChain ID: 31337\nNonce: ${crypto.randomUUID().replaceAll('-','').slice(0,16)}\nIssued At: ${new Date().toISOString()}\nExpiration Time: ${new Date(Number(deadline)*1000).toISOString()}`),'personal_sign');
+ if(id.startsWith('siwe'))return signature(stringToHex(`${id==='siwe-mismatch'?'different.walletshield.invalid':new URL(origin).host} wants you to sign in with your Ethereum account:\n${account}\n\nWalletShield local login test.\n\nURI: ${origin}\nVersion: 1\nChain ID: ${LAB_CHAIN_ID}\nNonce: ${crypto.randomUUID().replaceAll('-','').slice(0,16)}\nIssued At: ${new Date().toISOString()}\nExpiration Time: ${new Date(Number(deadline)*1000).toISOString()}`),'personal_sign');
  const domainTypes=[{name:'name',type:'string'},{name:'version',type:'string'},{name:'chainId',type:'uint256'},{name:'verifyingContract',type:'address'}];
- const domain={name:'WalletShield Lab USD',version:'1',chainId:31337,verifyingContract:c.token.address};
+ const domain={name:'WalletShield Lab USD',version:'1',chainId:LAB_CHAIN_ID,verifyingContract:c.token.address};
  if(id==='dai-allow'||id==='dai-revoke'){
   const nonce=await labClient.readContract({address:c.token.address,abi:artifacts.LabToken.abi,functionName:'nonces',args:[account]}) as bigint;
   return signature({domain,types:{EIP712Domain:domainTypes,Permit:[{name:'holder',type:'address'},{name:'spender',type:'address'},{name:'nonce',type:'uint256'},{name:'expiry',type:'uint256'},{name:'allowed',type:'bool'}]},primaryType:'Permit',message:{holder:account,spender,nonce:String(nonce),expiry:String(deadline),allowed:id==='dai-allow'}},'eth_signTypedData_v4');

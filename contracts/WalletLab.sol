@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 // Local fixtures only. These contracts deliberately simplify protocol economics;
 // their names and function shapes are NOT implementations of live protocols.
 abstract contract LocalOnly {
-    constructor() { require(block.chainid == 31337, "local chain only"); }
+    constructor() { require((block.chainid == 31337 || block.chainid == 31338), "local chain only"); }
 }
 contract LabToken is LocalOnly {
     string public name; string public symbol; uint8 public immutable decimals;
@@ -20,7 +20,7 @@ contract LabToken is LocalOnly {
         name=n; symbol=s; decimals=d; admin=msg.sender;
         DOMAIN_SEPARATOR=keccak256(abi.encode(keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),keccak256(bytes(n)),keccak256("1"),block.chainid,address(this)));
     }
-    function faucet(address to) external { require(block.chainid==31337,"local only"); uint256 target=5000*10**decimals; if(balanceOf[to]<target)_mint(to,target-balanceOf[to]); }
+    function faucet(address to) external { require((block.chainid==31337||block.chainid==31338),"local only"); uint256 target=5000*10**decimals; if(balanceOf[to]<target)_mint(to,target-balanceOf[to]); }
     function seed(address to,uint256 amount) external { require(msg.sender==admin,"admin"); _mint(to,amount); }
     function blockRecipient(address target) external { require(msg.sender==admin,"admin"); blockedRecipient=target; }
     function _mint(address to,uint256 amount) internal { require(to!=address(0),"zero"); totalSupply+=amount; balanceOf[to]+=amount; emit Transfer(address(0),to,amount); }

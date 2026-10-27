@@ -1,3 +1,5 @@
+import {HOSTED_LAB_ENABLED,HOSTED_LAB_CHAIN_ID} from '../testing/network.js';
+import {labSessionAddress} from '../testing/hosted-access.js';
 import type {ServiceConfig} from '../server/service-config.js';
 import {PairingLimitError,type WalletAuth,type WalletPrincipal} from '../server/wallet-auth.js';
 import type { FastifyInstance } from 'fastify';
@@ -24,7 +26,8 @@ import {SCORING_POLICY} from './scoring-policy.js';
 export type SecurityOptions={access?:{service:ServiceConfig;auth:WalletAuth};config?:()=>Promise<SecurityConfig>;collect?:Collector;score?:(report:SecurityReport,config:SecurityConfig)=>Promise<AIState>};
 export function registerSecurity(app:FastifyInstance,store:Store,options:SecurityOptions={}) {
   const hosted=options.access?.service.mode==='hosted',auth=options.access?.auth;
-  const getConfig=async()=>{const c=await(options.config??loadSecurityConfig)();return hosted?{...c,rpc:Object.fromEntries(Object.entries(c.rpc).filter(([id])=>id!=='31337')),monitorEnabled:false}:c;};
+  const hostedLab=hosted&&!!options.access?.service.testLab&&HOSTED_LAB_ENABLED;
+  const getConfig=async()=>{const c=await(options.config??loadSecurityConfig)();return hosted?{...c,rpc:Object.fromEntries(Object.entries(c.rpc).filter(([id])=>id!=='31337'&&(id!==String(HOSTED_LAB_CHAIN_ID)||hostedLab))),monitorEnabled:false}:c;};
   const monitor=startMonitor(store,getConfig);
   app.addHook('onClose',async()=>monitor.close());
   const local=(origin:string|undefined)=>(options.access?.service.origins??['http://127.0.0.1:5173','http://localhost:5173']).includes(origin??'');
@@ -130,7 +133,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     let inputRedacted=false,inputTruncated=false;
     if(parsed.data.kind==='transaction'){const unsupported=executionLimitations(parsed.data.transaction);if(unsupported.length)parsed.data.transaction.unsupportedFields=unsupported;}
     if(parsed.data.kind!=='transaction'&&parsed.data.kind!=='signature'){const sanitized=sanitizeRpcParams(parsed.data.params);parsed.data.params=sanitized.params as typeof parsed.data.params;inputRedacted=sanitized.removed;inputTruncated=sanitized.truncated;}
-    if(hosted&&(parsed.data.chainId===31337||parsed.data.kind==='signature'&&Number(decodeRequest(parsed.data).fields.domainChainId)===31337))return reply.code(400).send({error:'Hosted mode does not connect to local lab chain 31337.'});
+    if(hosted&&[parsed.data.chainId,parsed.data.kind==='signature'?Number(decodeRequest(parsed.data).fields.domainChainId):0].some(id=>id===31337||id===HOSTED_LAB_CHAIN_ID&&!hostedLab))return reply.code(400).send({error:'Hosted mode does not connect to local lab chain 31337.'});
     if(principal?.chainId!==undefined&&parsed.data.chainId!==principal.chainId)return reply.code(403).send({error:'This contract-wallet identity is bound to its verified chain. Sign in and pair again on the request network.'});
     if(principal){const sender=parsed.data.kind==='transaction'?parsed.data.transaction.from:parsed.data.kind==='signature'?parsed.data.signature.from:undefined;if(sender?sender.toLowerCase()!==principal.address:principal.kind==='snap')return reply.code(403).send({error:'The request account differs from the bound wallet; switch identity and pair again.'});}
     const key=principal?walletIdentityKey(principal.address,principal.chainId):'local',now=Date.now(),times=recent.get(key)??[];while(times.length&&now-times[0]>60000)times.shift();
@@ -156,7 +159,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
       // Store once before model work. The same ID is updated; AI never creates a
       // second wallet-operation record or fabricates a transaction outcome.
       save(report,principal);
-      if(fromSnap&&!hosted){const sessionId=req.headers['x-walletshield-test-session'];const candidates=store.labList().filter(s=>typeof sessionId!=='string'||s.id===sessionId);const session=matchLabReport(candidates,report);if(session)store.labSave(session);}
+      if(fromSnap&&(!hosted||hostedLab)){const sessionId=req.headers['x-walletshield-test-session'];const candidates=store.labList().filter(s=>(!principal||labSessionAddress(s)===principal.address)&&(typeof sessionId!=='string'||s.id===sessionId));const session=matchLabReport(candidates,report);if(session)store.labSave(session);}
       return await modelStage(report,config,principal);
     } catch(error){if(error instanceof RevokedScan)return reply.code(401).send({error:error.message});throw error;} finally {busy.delete(key);}
   });

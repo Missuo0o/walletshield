@@ -362,3 +362,11 @@ Generated lab/neutral-test signatures stay in the browser. Hosted login signatur
 | Old report appears inconsistent | Compare its time/version/source and chain reset. Historical text and outcomes are preserved. |
 
 Run `npm test`, `npm run typecheck` and `npm run build` for offline/static regression checks. `npm run test:security` starts its own isolated test node. `test:chain` and `test:lab` require the running local deployment and snapshot/restore it; keep the browser idle. These tests use node accounts, not browser Snap delivery. The complete acceptance check is a manual wallet request with a matched Snap report, visible evidence and a separately recorded wallet outcome. No automated test count establishes universal detection or production readiness.
+
+### Optional hosted Test lab
+
+Set `WALLETSHIELD_ENABLE_TEST_LAB=1` at build and service startup to retain **Test lab** online. It uses chain **31338** and a loopback-only node on **8546**; the desktop local chain stays 31337. Follow [hosted lab deployment](HOSTED-TEST-LAB.md).
+
+Connect a dedicated wallet → verify identity → install/pair the published Snap → open Test lab → prepare assets → confirm the WalletShield Test Lab network and optional display prompts → choose a case and satisfy its prerequisites → review the actual Snap/Muse insight → confirm or cancel in MetaMask. EOA login spans networks; contract login must match the test chain. Clear-assets affects only your known fixture balances; positions, standing approvals and history remain.
+
+This is a shared disposable chain, not a private per-user blockchain. Preparation/start acquires a 15-minute exclusive transaction lease; other testers wait. Chain data is public, while lab sessions and reports require identity. The gateway accepts signed sandbox transactions for the active account only; administrative methods remain internal. Muse calls use existing quotas and can legitimately remain unscored. Verify the matched report rather than assuming installation means delivery.
