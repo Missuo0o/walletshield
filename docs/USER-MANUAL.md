@@ -126,7 +126,9 @@ Private configuration is intentionally absent from GitHub. A local `ENABLE_EXTER
 | `INFURA_API_KEY` | `.local/rpc.env` | Derive backend Ethereum mainnet and Sepolia RPC endpoints; different from the Meta key |
 | `RPC_<CHAIN_ID>_URL` | `.local/rpc.env` | Explicit trusted endpoint for that chain; overrides a derived endpoint |
 | `ENABLE_FORK_SIMULATION=1` | `.local/rpc.env` | Opt into temporary local-fork execution when RPC/history supports it |
-| `ENABLE_EXTERNAL_LOOKUPS=1` and optional `GOPLUS_TOKEN` | `.local/rpc.env` | Opt into GoPlus reputation/token observations |
+| `ENABLE_EXTERNAL_LOOKUPS=1` / `0` | `.local/rpc.env` | Enable / disable GoPlus reputation/token observations |
+
+For ordinary anonymous GoPlus queries, **`ENABLE_EXTERNAL_LOOKUPS=1` is the enabling setting**. `GOPLUS_TOKEN` is an optional credential, not another switch; omit it or leave it empty when not using authenticated requests. A token alone does not enable GoPlus. The repository template uses `0` for a new installation; a private `.local/rpc.env` set to `1` is enabled and is not overridden by the template. Effective precedence for RPC/tool settings is process environment → `.local/rpc.env` → `.local/meta.env` → legacy `.local/ai.env`, taking the first defined value. Check the loaded `externalLookups` flag at `/api/security/status`; individual reports separately show whether the query succeeded, was unavailable or the chain was unsupported.
 
 Do not put credentials in browser fields, Snap configuration, source code or request JSON. `.local/` and credential `.env` files are ignored by Git; example files contain placeholders. Explicit process environment values take precedence. Configuration is reread per request; restart if you changed the process environment. Chain 31337 stays fixed to the owned local node. Public RPC URLs require HTTPS, except loopback HTTP; embedded username/password credentials are rejected.
 

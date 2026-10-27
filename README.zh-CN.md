@@ -89,9 +89,15 @@ cp -n config/rpc.env.example .local/rpc.env
 
 本地钱包测试不需要 Infura 密钥。Muse 没有配置、未启用或调用未成功时，仍可查看证据，但不会得到 AI 数字。Infura 提供公网状态读取，不提供钱包权限或钓鱼检测。其他网络需要各自可信的 `RPC_<CHAIN_ID>_URL`；链 31337 始终绑定本地节点。
 
-GoPlus 需要**主动启用**：示例文件设置 `ENABLE_EXTERNAL_LOOKUPS=0`，已有本地安装可以设为 `1`。启用不代表查询成功，也不代表支持所有链；缺失情报保持未知。可选源码验证和专用 trace 端点见[使用手册](docs/USER-MANUAL-zh.md)。
+启用 GoPlus，只需在 **`.local/rpc.env`** 设置这个开关：
 
-进程环境变量优先。Meta 凭据与 AI 设置随后读取 `.local/meta.env`；RPC/工具设置优先读取 `.local/rpc.env`，再兼容旧设置。文件在每次请求时重新读取；修改进程环境变量则需要重启。请勿为了套用模板而覆盖已有配置。
+```env
+ENABLE_EXTERNAL_LOOKUPS=1
+```
+
+改为 `0` 即关闭。**`GOPLUS_TOKEN` 不是开关，匿名查询时可以不配置或留空。** 仓库模板初始值为 `0`，本地实际文件设为 `1` 就是开启，不受模板值影响；模板不会在运行时加载。`/api/security/status` 的 `externalLookups` 显示后端实际加载的开关值。启用不代表查询成功或支持所有链，缺失情报保持未知。可选源码验证和专用 trace 端点见[使用手册](docs/USER-MANUAL-zh.md)。
+
+进程环境变量优先。Meta 凭据与 AI 设置随后读取 `.local/meta.env`；RPC/工具设置依次读取 `.local/rpc.env` → `.local/meta.env` → 旧版 `.local/ai.env` 中首个已定义的值。文件在每次请求时重新读取；修改进程环境变量则需要重启。请勿为了套用模板而覆盖已有配置。
 
 模型调用可能产生费用。失败也计入每日尝试额度，允许的输出修正可能再消耗一次尝试。这是尝试次数上限，不是金额预算。RPC 与情报服务有各自的额度。密钥应始终保留在服务端，不要提交 Git、截图或发送到聊天。
 

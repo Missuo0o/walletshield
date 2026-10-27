@@ -128,7 +128,9 @@ npm run demo
 | `INFURA_API_KEY` | `.local/rpc.env` | 为后端生成 Ethereum 主网和 Sepolia RPC 端点；与 Meta 密钥不同 |
 | `RPC_<CHAIN_ID>_URL` | `.local/rpc.env` | 该链明确配置的可信端点，优先于生成的端点 |
 | `ENABLE_FORK_SIMULATION=1` | `.local/rpc.env` | RPC 和历史状态支持时，选择启用临时本地分叉执行 |
-| `ENABLE_EXTERNAL_LOOKUPS=1`，以及可选的 `GOPLUS_TOKEN` | `.local/rpc.env` | 选择启用 GoPlus 信誉和代币观察 |
+| `ENABLE_EXTERNAL_LOOKUPS=1` / `0` | `.local/rpc.env` | 开启 / 关闭 GoPlus 信誉和代币观察 |
+
+普通匿名 GoPlus 查询的**启用项就是 `ENABLE_EXTERNAL_LOOKUPS=1`**。`GOPLUS_TOKEN` 是可选凭据，不是另一个开关；不使用鉴权请求时可以省略或留空。仅填写 Token 不会开启 GoPlus。仓库模板对新安装使用 `0`，本地 `.local/rpc.env` 设为 `1` 就是开启，不会被模板覆盖。RPC/工具设置的实际优先级为：进程环境变量 → `.local/rpc.env` → `.local/meta.env` → 旧版 `.local/ai.env`，使用首个已定义的值。通过 `/api/security/status` 的 `externalLookups` 核对加载的开关；具体查询成功、不可用或网络不支持，则在对应报告中单独说明。
 
 不要将凭据放入浏览器输入框、Snap 配置、源码或请求 JSON。`.local/` 与凭据 `.env` 文件被 Git 忽略；示例文件只含占位符。显式进程环境变量优先。服务会逐请求重新读取配置文件；若修改的是进程环境变量，则需要重启。链 31337 始终固定到本项目拥有的本地节点。公网 RPC URL 必须使用 HTTPS，回环 HTTP 除外；含内嵌用户名或密码的 URL 会被拒绝。
 

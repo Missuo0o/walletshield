@@ -89,9 +89,15 @@ The model is fixed by the code constant **`META_MODEL`** to `muse-wonder-1.0`, u
 
 Local wallet tests need no Infura key. Without a configured, enabled and successful Muse call, you can inspect evidence but get no AI number. Infura enables public-network reads, not wallet access or phishing detection. Other networks need their own trusted `RPC_<CHAIN_ID>_URL`; chain 31337 stays bound to the local node.
 
-GoPlus is **opt-in**: example files set `ENABLE_EXTERNAL_LOOKUPS=0`. An existing local installation may set `1`. Being enabled does not mean a lookup succeeded or that every chain is supported. Missing intelligence stays unknown. Optional source verification and dedicated trace endpoints are documented in the [manual](docs/USER-MANUAL.md).
+To enable GoPlus, set this switch in **`.local/rpc.env`**:
 
-Process environment values take precedence. Meta credentials/AI settings then come from `.local/meta.env`; RPC/tool settings prefer `.local/rpc.env`, then compatible older settings. Files are reread per request; process-environment changes require a restart. Do not overwrite an existing setup when following the templates.
+```env
+ENABLE_EXTERNAL_LOOKUPS=1
+```
+
+Set it to `0` to disable GoPlus. **`GOPLUS_TOKEN` is not the switch and can be omitted or left empty for anonymous queries.** The repository template starts at `0`; a private installation set to `1` is enabled, regardless of that template. The template is not loaded at runtime. `/api/security/status` reports the loaded switch as `externalLookups`. This does not prove a query succeeded or that every chain is supported; missing intelligence remains unknown. Optional source verification and dedicated trace endpoints are documented in the [manual](docs/USER-MANUAL.md).
+
+Process environment values take precedence. Meta credentials/AI settings then come from `.local/meta.env`. RPC/tool settings use the first defined value in `.local/rpc.env` → `.local/meta.env` → legacy `.local/ai.env`. Files are reread per request; process-environment changes require a restart. Do not overwrite an existing setup when following the templates.
 
 Model requests can incur charges. Failures count toward the daily attempt budget; an allowed output repair may use a second attempt. This is an attempt limit, not a monetary spending cap. RPC and intelligence providers have separate quotas. Keep all keys server-side and out of Git, screenshots and chat.
 

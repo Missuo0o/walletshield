@@ -603,13 +603,22 @@ href="../config/rpc.env.example">RPC/工具设置</a> →
 <td>RPC 和历史状态支持时，选择启用临时本地分叉执行</td>
 </tr>
 <tr>
-<td><code>ENABLE_EXTERNAL_LOOKUPS=1</code>，以及可选的
-<code>GOPLUS_TOKEN</code></td>
+<td><code>ENABLE_EXTERNAL_LOOKUPS=1</code> / <code>0</code></td>
 <td><code>.local/rpc.env</code></td>
-<td>选择启用 GoPlus 信誉和代币观察</td>
+<td>开启 / 关闭 GoPlus 信誉和代币观察</td>
 </tr>
 </tbody>
 </table>
+<p>普通匿名 GoPlus 查询的<strong>启用项就是
+<code>ENABLE_EXTERNAL_LOOKUPS=1</code></strong>。<code>GOPLUS_TOKEN</code>
+是可选凭据，不是另一个开关；不使用鉴权请求时可以省略或留空。仅填写 Token
+不会开启 GoPlus。仓库模板对新安装使用 <code>0</code>，本地
+<code>.local/rpc.env</code> 设为 <code>1</code>
+就是开启，不会被模板覆盖。RPC/工具设置的实际优先级为：进程环境变量 →
+<code>.local/rpc.env</code> → <code>.local/meta.env</code> → 旧版
+<code>.local/ai.env</code>，使用首个已定义的值。通过
+<code>/api/security/status</code> 的 <code>externalLookups</code>
+核对加载的开关；具体查询成功、不可用或网络不支持，则在对应报告中单独说明。</p>
 <p>不要将凭据放入浏览器输入框、Snap 配置、源码或请求
 JSON。<code>.local/</code> 与凭据 <code>.env</code> 文件被 Git
 忽略；示例文件只含占位符。显式进程环境变量优先。服务会逐请求重新读取配置文件；若修改的是进程环境变量，则需要重启。链
