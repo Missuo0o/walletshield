@@ -79,7 +79,11 @@ Wallet and network 页面提供有界只读 RPC 能力观察：固定区块调�
 
 使用 Node.js 24.x、npm，以及安装了 MetaMask Flask 的桌面浏览器。使用专门的开发账户。应用内嵌浏览器可能没有钱包扩展。
 
-在项目目录执行：
+### macOS：使用项目自带的启动脚本
+
+已有本地配置时，在 Finder 中双击[启动WalletShield.command](../%E5%90%AF%E5%8A%A8WalletShield.command)，保持它打开的终端窗口运行。脚本自动进入项目目录，优先使用可用的托管 Node 运行时，在缺少 `node_modules` 时执行 `npm ci` 安装依赖，再运行 `npm run demo`。脚本不负责安装 Node.js，也不会复制配置模板。后端会读取已有 `.local/meta.env` 和 `.local/rpc.env`，请保留这些文件。
+
+使用双击启动后，无须再执行下面这些命令。只有选择终端启动或使用其他受支持系统时，才在项目目录运行：
 
 ```sh
 node --version
@@ -110,7 +114,9 @@ npm run demo
 
 没有模型密钥也能运行本地钱包请求。Muse 未启用、未配置或未成功完成有效分析时，报告只显示证据和缺口，不显示数值分数。
 
-按需创建 `.local/`。两个示例对应实际后端文件：[Muse 设置](../config/meta.env.example) → `.local/meta.env`，[RPC/工具设置](../config/rpc.env.example) → `.local/rpc.env`。保留已有文件和密钥。根目录的 [`.env.example`](../.env.example) 是合并参考，它和根目录 `.env` 都不会自动加载。
+已有配置的本地项目不需要再创建配置文件。后端读取 `.local/meta.env` 中的 Muse 设置，以及 `.local/rpc.env` 中的 RPC/工具设置。`.local` 等以点开头的路径在 macOS Finder 中默认隐藏，按 **Command+Shift+.** 可显示。
+
+新安装才需要创建 `.local/`，使用两个模板：[Muse 设置](../config/meta.env.example) → `.local/meta.env`，[RPC/工具设置](../config/rpc.env.example) → `.local/rpc.env`。模板不会直接加载，也不包含私人密钥。请保留已有文件与密钥，不需要另外填写根目录配置；根目录 `.env` 不会自动加载。
 
 私人配置本来就不会上传到 GitHub。本地 `ENABLE_EXTERNAL_LOOKUPS=1` 表示开启 GoPlus，与仓库示例默认 `0` 不冲突。开关启用不证明每次查询成功或当前链受支持，可通过 `/api/security/status` 的 `externalLookups` 核对加载值。旧本地文件中的 `META_MODEL` 不会被读取：后端固定使用 `muse-wonder-1.0`，不需要再配置模型名称。
 

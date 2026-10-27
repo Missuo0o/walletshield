@@ -38,7 +38,9 @@ Muse 从权限、敞口、执行、身份、协议和欺骗六个维度给出可
 
 需要 **Node.js 24.x**、npm，以及安装 **MetaMask Flask** 的桌面浏览器。请使用专门的开发钱包，Flask 测试账户中不要存放真实资金。
 
-在项目目录运行：
+**macOS 用户：直接双击项目文件夹中的 [启动WalletShield.command](启动WalletShield.command)。** 它会进入项目目录，使用本机可用的 Node（存在 Codex 运行时则优先使用），在缺少 `node_modules` 时安装依赖，然后自动执行 `npm run demo`。启动器不会安装 Node.js，需要事先具备 Node 24。使用启动器后，**不需要再重复运行下面的命令**。
+
+其他系统或希望使用终端开发的用户，可以在项目目录选择以下替代方式：
 
 ```sh
 node --version
@@ -57,13 +59,13 @@ Demo 会构建网页与 Snap，启动全新的本地 Anvil 链，部署测试合
 | 开发版 Snap 文件 | http://127.0.0.1:8080 |
 | Anvil，链 ID 31337 | http://127.0.0.1:8545 |
 
-在安装 Flask 的浏览器中打开 **http://127.0.0.1:5173/**。保持终端运行，按 **Ctrl+C** 停止本次 Demo 的服务。启动下一次前先停止旧的 WalletShield 会话。每次新 Demo 都会重置本地链；保存的报告仍是历史记录，重启后需要重新准备资产。
+启动器不会自动打开浏览器。请在安装 Flask 的浏览器中打开 **http://127.0.0.1:5173/**。保持终端运行，按 **Ctrl+C** 停止本次 Demo 的服务。启动下一次前先停止旧的 WalletShield 会话。每次新 Demo 都会重置本地链；保存的报告仍是历史记录，重启后需要重新准备资产。
 
 分别运行开发终端、修改后端或 Snap，以及启动排错的步骤见[使用手册](docs/USER-MANUAL-zh.md)。`npm run deploy:lab` 用于检查或补充已有本地链上的实验室合约。
 
 ## 配置后端
 
-使用**两个本地配置文件**。新克隆的项目可以从对应模板创建；`cp -n` 会保留已有文件：
+使用**两个本地配置文件**。本机已经配置好时，保留原文件、正常启动即可。新克隆的项目可以从可见的 [Meta 模板](config/meta.env.example) 和 [RPC 模板](config/rpc.env.example) 创建；`cp -n` 会保留已有文件：
 
 ```sh
 mkdir -p .local
@@ -71,7 +73,7 @@ cp -n config/meta.env.example .local/meta.env
 cp -n config/rpc.env.example .local/rpc.env
 ```
 
-编辑本地副本。已有私有配置可以有意与仓库示例不同，请保留它们。根目录 [`.env.example`](.env.example) 只是参考文件，不会作为配置自动加载。
+请编辑 `.local/meta.env` 和 `.local/rpc.env`，而不是模板。`config/` 中的文件是可见示例，**不会自动加载**；真正生效的私有 `.local/` 文件不会上传 GitHub，可以有意与示例不同。在 macOS Finder 中按 **Command + Shift + .**，即可显示隐藏文件并找到 `.local/`。
 
 | 设置 | 文件 | 用途 |
 | --- | --- | --- |
@@ -82,7 +84,6 @@ cp -n config/rpc.env.example .local/rpc.env
 | `RPC_<CHAIN_ID>_URL` | `.local/rpc.env` | 指定其他 EVM 网络的可信端点，或覆盖推导出的端点 |
 | `ENABLE_FORK_SIMULATION=1` | `.local/rpc.env` | RPC 和历史状态支持时启用隔离 Anvil 模拟 |
 | `ENABLE_EXTERNAL_LOOKUPS=1` | `.local/rpc.env` | 主动启用 GoPlus 地址、网站及代币风险观察 |
-| `GOPLUS_TOKEN` | `.local/rpc.env` | 需要时填写的可选 GoPlus 凭据 |
 
 模型由代码常量 **`META_MODEL`** 固定为 `muse-wonder-1.0`，端点为 `https://api.meta.ai/v1/responses`。它**不是环境变量模型选择器**，在本地文件加入 `META_MODEL=` 不会更换模型。这里需要 Meta 密钥，不使用 OpenAI 密钥。
 

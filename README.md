@@ -38,7 +38,9 @@ Muse supplies the optional **0–100 risk score**, reasons, uncertainty and advi
 
 Use **Node.js 24.x**, npm and a desktop browser with **MetaMask Flask**. Use a dedicated development wallet; keep real funds out of the Flask test account.
 
-From the project directory:
+On **macOS**, double-click [启动WalletShield.command](启动WalletShield.command) in the project folder. It changes to that folder, uses your available Node installation (preferring the Codex runtime if present), installs dependencies if `node_modules` is absent, and runs `npm run demo` automatically. It does not install Node.js; Node 24 must already be available. You do **not** need to run the terminal commands again after using the launcher.
+
+For other systems or terminal-based development, use this alternative from the project directory:
 
 ```sh
 node --version
@@ -57,13 +59,13 @@ The demo builds the webpage and Snap, starts a fresh local Anvil chain, deploys 
 | Development Snap files | http://127.0.0.1:8080 |
 | Anvil, chain ID 31337 | http://127.0.0.1:8545 |
 
-Open **http://127.0.0.1:5173/** in the browser containing Flask. Keep the terminal open; **Ctrl+C** stops that demo's services. Stop an earlier WalletShield session before starting another. Each new demo resets local chain state; saved reports remain historical. Prepare assets again after restarting.
+The launcher does not open a browser automatically. Open **http://127.0.0.1:5173/** in the browser containing Flask. Keep the terminal open; **Ctrl+C** stops that demo's services. Stop an earlier WalletShield session before starting another. Each new demo resets local chain state; saved reports remain historical. Prepare assets again after restarting.
 
 For separate development terminals, backend/Snap changes and startup recovery, follow the [manual](docs/USER-MANUAL.md). `npm run deploy:lab` checks or adds lab fixtures to an existing local chain.
 
 ## Configure the backend
 
-Use **two local configuration files**. For a new checkout, create them from the corresponding templates; `cp -n` preserves existing files:
+Use **two local configuration files**. If this machine is already configured, keep those files and launch normally. For a new checkout, create them from the visible [Meta template](config/meta.env.example) and [RPC template](config/rpc.env.example); `cp -n` preserves existing files:
 
 ```sh
 mkdir -p .local
@@ -71,7 +73,7 @@ cp -n config/meta.env.example .local/meta.env
 cp -n config/rpc.env.example .local/rpc.env
 ```
 
-Edit the local copies. Existing private settings can intentionally differ from repository examples; preserve them. The root [`.env.example`](.env.example) is a reference, not an automatically loaded configuration file.
+Edit `.local/meta.env` and `.local/rpc.env`, not the templates. The `config/` examples are visible reference files and are **not automatically loaded**. The actual private `.local/` files are excluded from GitHub and can intentionally differ from the examples. In macOS Finder, press **Command + Shift + .** to show hidden files and find `.local/`.
 
 | Setting | File | Purpose |
 | --- | --- | --- |
@@ -82,7 +84,6 @@ Edit the local copies. Existing private settings can intentionally differ from r
 | `RPC_<CHAIN_ID>_URL` | `.local/rpc.env` | Explicit trusted endpoint for another EVM chain, or override a derived endpoint |
 | `ENABLE_FORK_SIMULATION=1` | `.local/rpc.env` | Enable isolated Anvil simulation when RPC/history supports it |
 | `ENABLE_EXTERNAL_LOOKUPS=1` | `.local/rpc.env` | Opt into GoPlus address/site/token risk observations |
-| `GOPLUS_TOKEN` | `.local/rpc.env` | Optional GoPlus credential when needed |
 
 The model is fixed by the code constant **`META_MODEL`** to `muse-wonder-1.0`, using `https://api.meta.ai/v1/responses`. It is **not an environment model selector**; adding `META_MODEL=` to a local file does not change it. Use a Meta key, not an OpenAI key.
 

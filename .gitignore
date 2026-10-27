@@ -6,7 +6,6 @@ snap/dist/
 *.log
 
 .env.*
-!.env.example
 
 # Local machine metadata, credential files, and runtime databases.
 .DS_Store

@@ -77,7 +77,11 @@ The same account address can be used on different networks, but balances and con
 
 Use Node.js 24.x, npm and a desktop browser containing MetaMask Flask. Use a dedicated development account. The embedded application browser may not have wallet extensions.
 
-From the project directory:
+### macOS: use the included launcher
+
+For an existing local setup, double-click [启动WalletShield.command](../%E5%90%AF%E5%8A%A8WalletShield.command) in Finder. Keep the Terminal window it opens running. The launcher enters the project directory, uses the available managed Node runtime when present, installs dependencies with `npm ci` if `node_modules` is absent, then runs `npm run demo`. It does not install Node.js or copy configuration templates. Existing `.local/meta.env` and `.local/rpc.env` are read by the backend; preserve them.
+
+You do not need to run the following commands as well when using the launcher. To start from a terminal instead, or on another supported operating system, run these from the project directory:
 
 ```sh
 node --version
@@ -108,7 +112,9 @@ For separate development terminals, keep `npm run chain` running in terminal 1. 
 
 Local wallet requests work without a model key. Without enabled, configured and successful Muse analysis, reports show evidence and gaps with no numeric score.
 
-Create `.local/` if necessary. The two reference templates match the actual backend files: [Muse settings](../config/meta.env.example) → `.local/meta.env`, and [RPC/tool settings](../config/rpc.env.example) → `.local/rpc.env`. Preserve existing files and keys. The root [`.env.example`](../.env.example) is a combined reference; neither it nor a root `.env` file is automatically loaded.
+An existing configured installation needs no new configuration file. The backend reads `.local/meta.env` for Muse and `.local/rpc.env` for RPC/tool settings. Dot-prefixed paths such as `.local` are hidden by default in macOS Finder; press **Command+Shift+.** to show them.
+
+For a new installation, create `.local/` and use the two templates: [Muse settings](../config/meta.env.example) → `.local/meta.env`, and [RPC/tool settings](../config/rpc.env.example) → `.local/rpc.env`. Templates are not loaded directly and contain no private keys. Preserve existing files and keys. There is no additional root configuration file to fill in; a root `.env` is not automatically loaded.
 
 Private configuration is intentionally absent from GitHub. A local `ENABLE_EXTERNAL_LOOKUPS=1` enables GoPlus even though the repository example defaults to `0`. Enabling a tool does not prove a lookup succeeded or that the current chain is supported. Check `/api/security/status` → `externalLookups` for the loaded switch. `META_MODEL` in old local files is ignored: the backend fixes `muse-wonder-1.0`, so no model-name setting is required.
 

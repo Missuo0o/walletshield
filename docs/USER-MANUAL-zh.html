@@ -466,7 +466,14 @@ TEST-USD、LAB 代币和测试 NFT
 <h2 id="本地安装与启动">2. 本地安装与启动</h2>
 <p>使用 Node.js 24.x、npm，以及安装了 MetaMask Flask
 的桌面浏览器。使用专门的开发账户。应用内嵌浏览器可能没有钱包扩展。</p>
-<p>在项目目录执行：</p>
+<h3 id="macos使用项目自带的启动脚本">macOS：使用项目自带的启动脚本</h3>
+<p>已有本地配置时，在 Finder 中双击<a
+href="../%E5%90%AF%E5%8A%A8WalletShield.command">启动WalletShield.command</a>，保持它打开的终端窗口运行。脚本自动进入项目目录，优先使用可用的托管
+Node 运行时，在缺少 <code>node_modules</code> 时执行 <code>npm ci</code>
+安装依赖，再运行 <code>npm run demo</code>。脚本不负责安装
+Node.js，也不会复制配置模板。后端会读取已有 <code>.local/meta.env</code>
+和 <code>.local/rpc.env</code>，请保留这些文件。</p>
+<p>使用双击启动后，无须再执行下面这些命令。只有选择终端启动或使用其他受支持系统时，才在项目目录运行：</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> <span class="at">--version</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> ci</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run demo</span></code></pre></div>
@@ -533,13 +540,17 @@ WalletShield 会话。释放端口前确认进程归属，不要随意结束其�
 <h2 id="配置数据与可选-ai">3. 配置数据与可选 AI</h2>
 <p>没有模型密钥也能运行本地钱包请求。Muse
 未启用、未配置或未成功完成有效分析时，报告只显示证据和缺口，不显示数值分数。</p>
-<p>按需创建 <code>.local/</code>。两个示例对应实际后端文件：<a
+<p>已有配置的本地项目不需要再创建配置文件。后端读取
+<code>.local/meta.env</code> 中的 Muse 设置，以及
+<code>.local/rpc.env</code> 中的 RPC/工具设置。<code>.local</code>
+等以点开头的路径在 macOS Finder 中默认隐藏，按
+<strong>Command+Shift+.</strong> 可显示。</p>
+<p>新安装才需要创建 <code>.local/</code>，使用两个模板：<a
 href="../config/meta.env.example">Muse 设置</a> →
 <code>.local/meta.env</code>，<a
 href="../config/rpc.env.example">RPC/工具设置</a> →
-<code>.local/rpc.env</code>。保留已有文件和密钥。根目录的 <a
-href="../.env.example"><code>.env.example</code></a>
-是合并参考，它和根目录 <code>.env</code> 都不会自动加载。</p>
+<code>.local/rpc.env</code>。模板不会直接加载，也不包含私人密钥。请保留已有文件与密钥，不需要另外填写根目录配置；根目录
+<code>.env</code> 不会自动加载。</p>
 <p>私人配置本来就不会上传到 GitHub。本地
 <code>ENABLE_EXTERNAL_LOOKUPS=1</code> 表示开启 GoPlus，与仓库示例默认
 <code>0</code> 不冲突。开关启用不证明每次查询成功或当前链受支持，可通过
