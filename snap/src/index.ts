@@ -7,6 +7,7 @@ import { coverageForCategory, ENTRY_LABELS, ENTRY_BOUNDARY, ADVICE_ONLY, DATA_BO
 import { operationLines, missingLines, adviceLine } from '../../src/security/display';
 import {unsupportedTransactionFields,normalizeAuthorizationList} from '../../src/security/transaction-fields';
 import {scoreDisposition} from '../../src/security/score-disposition';
+import {reportMatchesRequest} from './request-binding';
 const legacyPanel = (children: Component[]): Panel => ({ type: NodeType.Panel, children });
 const legacyHeading = (value: string): Component => ({ type: NodeType.Heading, value });
 const legacyText = (value: string): Component => ({ type: NodeType.Text, value });
@@ -31,7 +32,7 @@ export const onRpcRequest:OnRpcRequestHandler=async({origin,request})=>{
   const status=await pairingStatus(`Bearer ${params.token}`);await snap.request({method:'snap_manageState',params:{operation:'update',newState:{backendToken:params.token,...(status.chainId!==undefined?{chainId:status.chainId}:{})}}});return {configured:true,...status};
 };
 
-type Result = { operation?:string|{category:string;label:string;fields:Record<string,unknown>};missingData?:string[];score?: number | null; scoreSource?: string; ai?: { status: string; message: string;failureKind?:string;result?:{dimensions?:{dimension:string;assessment:string;reason:string;evidence_ids:string[]}[];evidence_confidence?:string;assessment?:'low'|'review'|'high'|'unknown';summary:string;suggested_action:string;missing_data?:string[];reasons:{text:string;evidence_ids:string[]}[]} }; id: string; source: 'rpc'; level: 'low' | 'review' | 'high' | 'unknown'; title: string; summary: string; complete: boolean; checks: { title: string; detail: string; status: string }[] };
+type Result = { request:unknown;operation?:string|{category:string;label:string;fields:Record<string,unknown>};missingData?:string[];score?: number | null; scoreSource?: string; ai?: { status: string; message: string;failureKind?:string;result?:{dimensions?:{dimension:string;assessment:string;reason:string;evidence_ids:string[]}[];evidence_confidence?:string;assessment?:'low'|'review'|'high'|'unknown';summary:string;suggested_action:string;missing_data?:string[];reasons:{text:string;evidence_ids:string[]}[]} }; id: string; source: 'rpc'; level: 'low' | 'review' | 'high' | 'unknown'; title: string; summary: string; complete: boolean; checks: { title: string; detail: string; status: string }[] };
 const assessmentLabel={low:'No clear risk observed',review:'Review required',high:'High risk',unknown:'Unable to assess'};
 const scoreExplanation='Muse independently assesses the observable request evidence; there are no fixed scores or floors. A low assessment or strong evidence support is not a safety guarantee. The combined warning preserves qualitative signals and unfinished request checks instead of using score bands.';
 const dimensionNames:Record<string,string>={authority:'Authority',exposure:'Exposure',execution:'Execution',identity:'Identity',protocol:'Protocol',deception:'Deception'};
@@ -64,18 +65,20 @@ export const onTransaction: OnTransactionHandler = async ({ transaction, chainId
     const raw=transaction as unknown as Record<string,unknown>;const unsupportedFields=unsupportedTransactionFields(raw);
     const authorizationList=normalizeAuthorizationList(raw.authorizationList);
     const type=typeof raw.type==='number'&&Number.isSafeInteger(raw.type)&&raw.type>=0?`0x${raw.type.toString(16)}`:typeof raw.type==='string'&&/^0x[\da-f]{1,64}$/i.test(raw.type)?raw.type:undefined;
+    const body=JSON.stringify({kind:'transaction',chainId:numericChain,transaction:{from:transaction.from,to:transaction.to??null,data:transaction.data??'0x',value:transaction.value??'0x0',...feeFields,...(type?{type}:{}),...(authorizationList?{authorizationList}:{}),...(unsupportedFields.length?{unsupportedFields}:{})},...(transactionOrigin?{origin:transactionOrigin}:{})});
+    const sent=JSON.parse(body);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 85000);
     let result: unknown;
     try {
       const response = await fetch(API, { method: 'POST', headers: (await backendConnection(numericChain,true)).headers, signal: controller.signal,
-        body: JSON.stringify({ kind: 'transaction', chainId: numericChain, transaction: { from: transaction.from, to: transaction.to ?? null, data: transaction.data ?? '0x', value: transaction.value ?? '0x0',...feeFields,...(type?{type}:{}),...(authorizationList?{authorizationList}:{}),...(unsupportedFields.length?{unsupportedFields}:{}) }, ...(transactionOrigin ? { origin: transactionOrigin } : {}) }) });
+        body });
       if (!response.ok) throw new Error('API_FAILED');
       // Keep the deadline active until the body has arrived, not only headers.
       // A backend can return headers and then stall while sending its report.
       result = await response.json();
     } finally { clearTimeout(timer); }
-    if (!validResult(result)) throw new Error('INVALID_RESPONSE');
+    if (!validResult(result)||!reportMatchesRequest(sent,result.request)) throw new Error('INVALID_RESPONSE');
     const operation=typeof result.operation==='object'?result.operation:undefined;
     const coverage=coverageForCategory(operation?.category),missing=missingLines(result),disposition=scoreDisposition(result);
     return {
@@ -110,11 +113,13 @@ export const onSignature: OnSignatureHandler = async ({ signature, signatureOrig
     // a query/authentication scope, not proof of an origin-bound signing chain.
     // EOA identities retain unknown signing-chain context (zero).
     const chainId=connection.boundChainId??0;
+    const body=JSON.stringify({kind:'signature',chainId,signature:{from:signature.from,method:signature.signatureMethod,data:signature.data,...(observed?{providerContext:observed}:{})},...(signatureOrigin?{origin:signatureOrigin}:{})});
+    const sent=JSON.parse(body);
     const response = await fetch(API, { method: 'POST', headers: connection.headers, signal: AbortSignal.timeout(85000),
-      body: JSON.stringify({ kind: 'signature', chainId, signature: { from: signature.from, method: signature.signatureMethod, data: signature.data,...(observed?{providerContext:observed}:{}) }, ...(signatureOrigin ? { origin: signatureOrigin } : {}) }) });
+      body });
     if (!response.ok) throw new Error('API_FAILED');
     const result: unknown = await response.json();
-    if (!validResult(result)) throw new Error('INVALID_RESPONSE');
+    if (!validResult(result)||!reportMatchesRequest(sent,result.request)) throw new Error('INVALID_RESPONSE');
     const operation=typeof result.operation==='object'?result.operation:undefined;
     const coverage=coverageForCategory(operation?.category),missing=missingLines(result),disposition=scoreDisposition(result);
     return { severity: 'critical', content: legacyPanel([legacyHeading(`WalletShield · ${result.title}`),

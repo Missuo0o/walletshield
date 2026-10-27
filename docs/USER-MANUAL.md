@@ -15,6 +15,16 @@ The [README](../README.md) is the configuration and developer reference. The [ge
 Current checks use the wallet-supplied unsigned request, source origin/network metadata and successfully collected RPC, intelligence and simulation evidence. Muse assesses observable request signals, including supported source/message/request inconsistencies. Chain/provider/execution context means technical observations. Historical reports and acceptance artifacts retain their original recorded data.
 
 
+## Current scoring and release recheck · 27 October 2026
+
+The [full re-test report](FULL-RETEST-2026-10-27.md) records this round's separate validation layers and final results. The dated October 24 section below describes the earlier implementation; it does not establish that historical scores passed the current policy.
+
+- **Quantity-bound model evidence.** Current structured results use `muse-evidence-v7-quantity-bound-facts`. Financial exposure needs a positively allowlisted quantity or economic comparison from its exact collector/field path. A real collector does not make all its flags, addresses, sizes, IDs or metadata financial evidence. Pure provenance and unperformed-control flags cannot anchor any low/review/high dimension. These are evidence-admissibility rules, not fixed points, weights, score bands or a fallback number: Muse still supplies the score.
+- **Asset subjects and units stay separate.** Native balances remain bound to the observed account; token balances/caps remain bound to that token. Nested fork before/after balances and signed raw deltas retain their actual token/native subjects. Vault shares are tied to the vault, underlying amounts to the underlying token, and lending base-account quantities are not relabeled as token balances or USD. Reverse-swap acquired output belongs to the output asset; returned input and actual input debit belong to the input asset; the return ratio is an experiment result. Missing bindings remain unresolved. None of these quantities establishes a market price or future loss.
+- **Snap results must match the captured request.** Before displaying advice, the Snap checks the backend report against the unsigned transaction/message it actually received. A mismatched report cannot supply the score for another request. This is request correlation, not cryptographic attestation of Snap execution or proof of a backend's honesty.
+- **Release bytes are verified after finalization.** Packaging aligns the final proposed name, npm package identity, version and repository, computes the checksum from the finalized manifest/bundle/icon, and validates the copied release artifact with the official MetaMask manifest/checksum utilities. Changing a manifest after an earlier checksum is no longer accepted. This prepares an artifact; it does not publish it or establish distribution eligibility.
+- **Historical results are not rescored.** Previously stored v6 or unstated-policy results retain their original score and historical-policy notice. Opening them does not run Muse again or certify them under v7. New schema/semantic tests and compliant model responses still do not measure independently labelled accuracy or calibration.
+
 ## Independent implementation recheck · 24 October 2026
 
 The [independent recheck report](INDEPENDENT-RECHECK-2026-10-24.md) records this separate review and its validation results. Older dated reports keep their original counts and observations; they are not evidence that the new policy was applied retroactively.
@@ -74,6 +84,8 @@ node --version
 npm ci
 npm run demo
 ```
+
+Use the full locked install, `npm ci`, for the current launchers, including hosted mode: `start:hosted` still runs TypeScript through the development-classified `tsx` dependency. `npm ci --omit=dev` is not a supported replacement for this workflow. The production-only audit filters package-manifest classification; it does not prove that only production-classified dependencies are installed, loaded or deployed.
 
 The demo builds the webpage and Snap, starts a fresh Anvil chain, deploys the local fixtures and starts these loopback services:
 
@@ -270,7 +282,7 @@ npm run package:hosted
 npm run start:hosted
 ```
 
-The build compiles one HTTPS origin/npm ID into the frontend and Snap. Packaging checks successful-build fingerprints and creates the isolated `dist/release-snap` allowlisted npm artifact. It does not publish. Inspect the artifact with `npm pack --dry-run --ignore-scripts` from its directory. The hosted service serves frontend/API on loopback 8787 behind the configured HTTPS reverse proxy; use [the Nginx example](../deploy/nginx.conf.example) and preserve the exact Host/origin. It starts neither Anvil nor the local Snap file server. Stop it with Ctrl+C in its terminal. Domain/package/mode changes require rebuilding both bundles.
+The build compiles one HTTPS origin/npm ID into the frontend and Snap. Packaging checks successful-build fingerprints and creates the isolated `dist/release-snap` allowlisted npm artifact. It does not publish. The finalized package also aligns the release name, npm identity, version and repository before its checksum is calculated. `getSnapChecksum`/`validateSnapShasum` and `checkManifest` from the direct `@metamask/snaps-utils` development dependency validate the actual copied manifest, bundle and icon. A successful build stamp alone does not replace these checks; no npm publication is performed. Inspect the artifact with `npm pack --dry-run --ignore-scripts` from its directory. The hosted service serves frontend/API on loopback 8787 behind the configured HTTPS reverse proxy; use [the Nginx example](../deploy/nginx.conf.example) and preserve the exact Host/origin. It starts neither Anvil nor the local Snap file server. Stop it with Ctrl+C in its terminal. Domain/package/mode changes require rebuilding both bundles.
 
 Hosted mode does not register local lab/funding, legacy/demo/workflow, monitor, example, download or synthetic AI-test routes. It enforces wallet and global quotas, one active scan per verified identity, a configurable total scan cap and rate limits. Packaging is not deployment, npm publication, registry eligibility, independent security review or browser-wallet acceptance. Complete those separately before inviting public users. The default build remains a local Flask integration.
 
@@ -306,6 +318,12 @@ GoPlus remains opt-in. It derives at most eight token and eight counterparty can
 Canonical token-funded V3 single/path exact-input/exact-output variants retain bounded dependent fork buy/sell adapters. The original buy keeps its supplied execution fields; the derived sale uses observed input debit and acquired output. Native-funded V3 round trips and router-specific sender-sentinel recipient aliases are unsupported after removal of deployment bindings; generic original-transaction simulation remains available where supported. Candidate pool/factory association, tick/range and active liquidity are observations, not authenticated pool identity, a quote or a future exit guarantee. Opaque aggregators, unsupported funding/recipients and future ordering remain gaps. The wallet catalog now has 67 representative cases; historical pre-removal acceptance results do not certify the current reduced scope.
 
 Automatic coverage still requires actual wallet delivery. MetaMask currently displays message insights only at Critical severity and after advancing to Sign; transaction insights have a separate entry point. See the [primary entry-point documentation](https://docs.metamask.io/snaps/reference/entry-points/). Permissions, sessions, UserOperations and other wallet RPCs require explicit API submission or a cooperating dApp SDK integration; no general wallet interceptor is installed. Hosted login supports EOA recovery and bounded deployed-contract ERC-1271 validation of the exact stored login message only; undeployed/ERC-6492 accounts and unsupported policies remain unavailable. Public domain/TLS, intended Snap publication/distribution, browser acceptance, secure backup/restore and load/failure testing are still required before a public launch.
+
+## Dependency audit and install scope · 27 October 2026
+
+The current lockfile retains the earlier `tmp`/`bn.js`/`uuid` repairs and pins affected `body-parser` 2.x to **2.4.0** for [GHSA-27r3-jxmh-p828](https://github.com/expressjs/body-parser/security/advisories/GHSA-27r3-jxmh-p828). `@metamask/snaps-utils` is now a direct development dependency for the official release-artifact validators. At the October 27 audit, `npm audit --omit=dev` reported **zero known alerts in its selected dependency set**; the full audit retained **12 low-severity affected-package entries** from the `elliptic` chain. The [elliptic advisory](https://github.com/advisories/GHSA-848j-6mx2-7j84) lists no patched release. Twelve package entries are not twelve independent root causes. Re-run both audits before release; this is a dated inventory, not proof of zero vulnerabilities or deployment security.
+
+Use the full locked install, `npm ci`, for the current launchers, including hosted mode: `start:hosted` still runs TypeScript through the development-classified `tsx` dependency. `npm ci --omit=dev` is not a supported replacement for this workflow. The production-only audit filters package-manifest classification; it does not prove that only production-classified dependencies are installed, loaded or deployed.
 
 ## 10. Privacy and troubleshooting
 

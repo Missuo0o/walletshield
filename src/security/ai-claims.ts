@@ -1,4 +1,4 @@
-import {AI_DIMENSIONS,type AIDimension,type Evidence,type SecurityReport} from './types.js';
+import {AI_DIMENSIONS,type AIDimension,type Evidence,type Operation,type SecurityReport} from './types.js';
 
 type Dimension=typeof AI_DIMENSIONS[number];
 export type CitedStatement={text:string;evidence_ids:string[]};
@@ -7,6 +7,15 @@ const actual=(c:Evidence)=>c.status!=='unknown'&&c.id!=='tool_plan';
 const matches=(id:string,pattern:RegExp)=>pattern.test(id);
 const protocolCategories=new Set(['swap','swap_v3','liquidity','liquidity_v3','vault','lending','staking','bridge','bridge_finalize','claim','wrap','withdrawal','control_change','account_control','account_execution','batch']);
 const address=(value:unknown):value is string=>typeof value==='string'&&/^0x[\da-f]{40}$/i.test(value);
+/** Financially meaningful committed fields for these exact decoded candidate
+ * shapes. Shared approve/transferFrom selectors need an observed ERC-20
+ * standard; NFT identifiers never become quantities. No points or weights. */
+export function decodedExposureFields(op:Operation):string[]{
+ if(!op.decoded)return [];
+ const byCategory:Record<string,string[]>={native_transfer:['valueWei'],token_transfer:['amount'],erc1155_transfer:['amount'],erc1155_batch:['amounts'],permit:['amount'],permit2_approval:['amount'],dai_permit_signature:['value','amount'],transfer_authorization:['amount'],permit2_signature:['amounts']};
+ const fields=op.category==='permit_signature'?op.tokenStandard==='erc20'?['value']:[]:['approval','asset_transfer_from'].includes(op.category)?op.tokenStandard==='erc20'?['amountOrTokenId']:[]:byCategory[op.category]??[];
+ return fields.filter(field=>{const value=op.fields[field];return Array.isArray(value)?value.length>0&&value.every(item=>/^\d+$/.test(item)):typeof value==='string'&&/^\d+$/.test(value);});
+}
 const unique=(values:unknown[])=>[...new Set(values.filter(address).map(value=>value.toLowerCase()))];
 function intelligenceScope(report:SecurityReport){
  const op=report.operation,chain=report.request.chainId||Number(op.fields.domainChainId??op.fields.chainId);
@@ -47,7 +56,7 @@ export function dimensionsForEvidence(check:Evidence,report:SecurityReport):Dime
  if(!actual(check))return [];
  const id=check.id,out=new Set<Dimension>();const add=(...values:Dimension[])=>values.forEach(value=>out.add(value));
  if(rules(check)){
-  if(id==='operation'&&report.operation.decoded){add('authority');if(protocolCategories.has(report.operation.category))add('protocol');}
+  if(id==='operation'&&report.operation.decoded){add('authority');if(protocolCategories.has(report.operation.category))add('protocol');if(decodedExposureFields(report.operation).length)add('exposure');}
   if(matches(id,/^(?:permission_scope|raw_signing|transfer_authority|account_authority|control_authority|approval_standard|permit2_expiration_zero|expired_(?:deadline|sigDeadline|expiration|login))$/))add('authority');
   if(matches(id,/^(?:fee_budget|fee_bounds|approval_native_value|over_balance|transfer_over_balance|zero_recipient|self_transfer)$/))add('exposure');
   if(matches(id,/^(?:signature_chain_mismatch|signer_mismatch|login_(?:domain|origin|uri)|zero_recipient)$/))add('identity','deception');

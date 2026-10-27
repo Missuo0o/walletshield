@@ -21,6 +21,16 @@ WalletShield 是一个 EVM 钱包安全原型，包含本地钱包实验室，�
 当前检查使用钱包提供的未签名请求、来源 origin/网络元数据，以及成功取得的 RPC、情报和模拟证据。Muse 评价可观察请求信号，包括支持范围内的来源、消息和请求不一致。链/provider/执行上下文指技术观察。历史报告与验收文件保留原始记录，不被删除或改写。
 
 
+## 当前评分与发布复核 · 2026 年 10 月 27 日
+
+本轮各层验证与最终结果见[完整复测报告](docs/FULL-RETEST-2026-10-27-zh.md)。下方带日期的 10 月 24 日章节说明此前实现，不能据此认为历史分数已经通过当前策略。
+
+- **数量绑定的模型证据。** 当前结构化结果采用 `muse-evidence-v7-quantity-bound-facts`。资金敞口必须由明确允许的采集器/字段路径中的实际数量或经济比较支持，不能因为采集器确实运行，就把其全部标记、地址、大小、ID 或元数据都当作资金证据。纯来源元数据与未执行控制项标记不能单独支撑任何 low/review/high 维度。这些规则约束证据是否可用，不是固定加分、权重、分数区间或兜底数字；分数仍由 Muse 给出。
+- **资产主体和单位保持区分。** 原生币余额绑定被观察账户；代币余额/额度绑定准确代币。分叉中嵌套的前后余额及带正负号的原始变化值，保留实际代币/原生币主体。金库份额属于金库，底层资产数量属于底层代币，借贷的账户基础单位不能改称某个代币余额或美元。反向兑换取得的输出属于输出资产，返还的输入及实际输入扣减属于输入资产，返还比例是实验结果。缺失绑定保持未确定；这些数量都不证明市场价格或未来损失。
+- **Snap 报告必须对应捕获请求。** 展示建议前，Snap 会把后端报告与它实际收到的未签名交易/消息进行对应核对。不匹配报告不能为另一请求提供分数。这是请求关联检查，不是 Snap 执行的密码学证明，也不证明后端诚实。
+- **最终发布字节接受验证。** 打包先统一最终 proposed name、npm 包身份、版本和仓库，再按最终 manifest/bundle/icon 计算校验和，并使用 MetaMask 官方 manifest/校验和工具验证复制出的发布产物。不能改完 manifest 后继续沿用旧校验和。它只准备产物，不代表已经发布或具备分发资格。
+- **历史结果不重新评分。** 已保存的 v6 或未记录策略结果保留原分数及历史策略提示；打开记录不会再次调用 Muse，也不代表通过 v7 校验。新增结构/语义测试及合规模型回复仍不能测得独立标注的准确率或校准结果。
+
 ## 独立实现复核 · 2026 年 10 月 24 日
 
 本次单独复核的过程和验证结果见[独立复核报告](docs/INDEPENDENT-RECHECK-2026-10-24-zh.md)。既有带日期报告保留原计数和观察，不能据此声称旧结果已经通过新策略校验。
@@ -113,6 +123,8 @@ npm --version
 npm ci
 npm run demo
 ```
+
+当前启动器（包括托管模式）需要按锁文件完整执行 `npm ci`：`start:hosted` 仍通过被归类为开发依赖的 `tsx` 运行 TypeScript，不能把 `npm ci --omit=dev` 当成这一流程的替代命令。生产依赖审计只按包清单分类筛选，不证明实际只安装、加载或部署了被归类为生产依赖的包。
 
 `npm run demo` 会生成覆盖指南、检查类型、构建网页和 Snap，启动全新的专用 Anvil 链，部署 TEST-USD 与钱包实验室合约，然后启动 API、Vite 和 Snap 文件服务。不需要模型评分时，本地钱包测试无需 API 密钥。附带的 [macOS 启动器](%E5%90%AF%E5%8A%A8WalletShield.command) 会从本目录启动同一套 demo 流程。
 
@@ -287,7 +299,7 @@ npm run package:hosted
 npm run start:hosted
 ```
 
-`build:hosted` 先生成前端与 Snap 共享的非秘密运行时设置，再执行构建。`package:hosted` 要求相同设置以及成功构建的源码/bundle 指纹，并创建 **`dist/release-snap/`**：这是独立 npm 包，含你拥有的包名、匹配的 manifest、bundle、图标和发布 README。源码变化或 bundle 过期时必须先重建。开发版 Snap 包仍保持 private。该命令不会发布任何内容。可在本地检查包的准确内容：
+`build:hosted` 先生成前端与 Snap 共享的非秘密运行时设置，再执行构建。`package:hosted` 要求相同设置以及成功构建的源码/bundle 指纹，并创建 **`dist/release-snap/`**：这是独立 npm 包，含你拥有的包名、匹配的 manifest、bundle、图标和发布 README。源码变化或 bundle 过期时必须先重建。开发版 Snap 包仍保持 private。该命令不会发布任何内容。最终包还会在计算校验和前统一发布名称、npm 身份、版本和仓库。直接开发依赖 `@metamask/snaps-utils` 中的 `getSnapChecksum`/`validateSnapShasum` 与 `checkManifest` 会验证实际复制出的 manifest、bundle 和图标；成功构建指纹不能代替这些检查，也不会执行 npm 发布。 可在本地检查包的准确内容：
 
 ```sh
 cd dist/release-snap
@@ -565,12 +577,12 @@ node --import tsx scripts/test-ai-audit.ts
 
 源码入口：[`web/src/main.tsx`](web/src/main.tsx)、[`snap/src/index.ts`](snap/src/index.ts)、[`src/security/api.ts`](src/security/api.ts)、[`src/security/ai.ts`](src/security/ai.ts)、[`src/security/providers.ts`](src/security/providers.ts)、[`src/security/coverage.ts`](src/security/coverage.ts) 和 [`src/testing/cases.ts`](src/testing/cases.ts)。[中文用户手册](docs/USER-MANUAL-zh.md)与[中文覆盖指南](docs/AI-COVERAGE-GUIDE-zh.md)提供操作说明及逐字段覆盖范围；英文原文为[用户手册](docs/USER-MANUAL.md)和[自动生成的详细覆盖指南](docs/AI-COVERAGE-GUIDE.md)。旧截图或验收产物与当前行为不同时，以当前源码和实际报告为准。
 
-当前实现与修复边界见[当前覆盖与可靠性说明](docs/CURRENT-COVERAGE-zh.md)。新增路径的验证与带日期历史验收分开记录；最新验证记录见[2026 年 10 月 24 日修复报告](docs/REPAIR-VALIDATION-2026-10-24-zh.md)，此前订单/trace 与模型调用报告保留其原日期和观察结果，自动化或本地验收不能证明真实模型准确率或评分校准。[此前的界面与证据审查](docs/ENGLISH-EVIDENCE-REVIEW-2026-10-22.md)及其他带日期验收文件保留为历史记录。
+当前实现与修复边界见[当前覆盖与可靠性说明](docs/CURRENT-COVERAGE-zh.md)。新增路径的验证与带日期历史验收分开记录；最新验证记录见[2026 年 10 月 27 日完整复测报告](docs/FULL-RETEST-2026-10-27-zh.md)，此前订单/trace 与模型调用报告保留其原日期和观察结果，自动化或本地验收不能证明真实模型准确率或评分校准。[此前的界面与证据审查](docs/ENGLISH-EVIDENCE-REVIEW-2026-10-22.md)及其他带日期验收文件保留为历史记录。
 
 ## 本轮依赖修复状态
 
-更新后的依赖使用 `@fastify/static` 10.1.7，并通过锁文件覆盖将 `tmp` 固定为 0.2.7、受影响的 `bn.js` 5.x 范围升为 5.2.5、低于 11.1.1 的 `uuid` 升为 11.1.1。本轮 `npm audit --omit=dev` 确认生产依赖已无已知告警。完整审计仍有 12 个低危受影响包条目，根源是 `elliptic` 开发/构建工具依赖链，当前上游没有可用修复路径。12 个条目不是 12 种独立根因，也不能声称所有依赖已经零漏洞。
+当前锁文件保留此前 `tmp`/`bn.js`/`uuid` 修复，并为 [GHSA-27r3-jxmh-p828](https://github.com/expressjs/body-parser/security/advisories/GHSA-27r3-jxmh-p828) 将受影响的 `body-parser` 2.x 固定为 **2.4.0**。另将 `@metamask/snaps-utils` 列为直接开发依赖，用于官方发布产物验证。10 月 27 日的 `npm audit --omit=dev` 在其筛选的依赖集合中报告**零已知告警**；完整审计仍有来自 `elliptic` 链的 **12 个低危受影响包条目**。[elliptic 公告](https://github.com/advisories/GHSA-848j-6mx2-7j84) 尚未列出修复版本。十二个包条目不是十二种独立根因。发布前须重跑两类审计；这些是带日期清单，不证明零漏洞或部署安全。
 
-按更新的锁文件执行 `npm ci`；发布前重新运行 `npm audit --omit=dev` 与 `npm audit`。这些是本次审计时点的结果，不是永久承诺，也不能替代项目安全审计、浏览器钱包验收或开发构建环境检查。
+当前启动器（包括托管模式）需要按锁文件完整执行 `npm ci`：`start:hosted` 仍通过被归类为开发依赖的 `tsx` 运行 TypeScript，不能把 `npm ci --omit=dev` 当成这一流程的替代命令。生产依赖审计只按包清单分类筛选，不证明实际只安装、加载或部署了被归类为生产依赖的包。
 
-[2026-10-22 扩展验证记录](docs/RELIABILITY-ACCEPTANCE-2026-10-22.md)列出本轮离线、临时链检查及尚未进行的验收；它不是识别准确率或安全认证。
+[2026-10-22 扩展验证记录](docs/RELIABILITY-ACCEPTANCE-2026-10-22.md)列出此前离线、临时链检查及尚未进行的验收；它不是识别准确率或安全认证。

@@ -23,7 +23,8 @@ test('connection tolerates the expected initial accountsChanged but rechecks the
  let selected=account;const silent:WalletProvider={request:async args=>{if(args.method==='eth_chainId'){selected=other;return'0x1';}return[selected];}};await assert.rejects(connectWalletSetup(action(silent)),/account changed/);
 });
 test('provider invalidation during connection releases the wait without requesting another account prompt',async()=>{
- const gate=deferred<unknown>(),calls:string[]=[];const provider:WalletProvider={request:async args=>{calls.push(args.method);return gate.promise;}},guard=action(provider);const pending=connectWalletSetup(guard);await tick();guard.cancel();await assert.rejects(pending,/changed/);gate.resolve([account]);await tick();assert.equal(calls.length,1);
+ const gate=deferred<unknown>(),entered=deferred<void>(),calls:string[]=[];const provider:WalletProvider={request:async args=>{calls.push(args.method);entered.resolve();return gate.promise;}},guard=createWalletAction(provider,{isCurrent:()=>true,readTimeoutMs:1000,promptTimeoutMs:1000,timeoutMs:5000});
+ const pending=connectWalletSetup(guard),rejected=assert.rejects(pending,/changed/);await entered.promise;guard.cancel();await rejected;gate.resolve([account]);await tick();assert.equal(calls.length,1);
 });
 test('Snap health checks use bounded read waits and cannot finish a late health response',async()=>{
  for(const stalled of ['wallet_getSnaps','wallet_invokeSnap','eth_accounts']){

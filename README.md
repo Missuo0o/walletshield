@@ -19,6 +19,16 @@ For a guided first run and recovery steps, read the [English user manual](docs/U
 Current checks use the wallet-supplied unsigned request, source origin/network metadata and successfully collected RPC, intelligence and simulation evidence. Muse assesses observable request signals, including supported source/message/request inconsistencies. Chain/provider/execution context means technical observations. Historical reports and acceptance artifacts retain their original recorded data.
 
 
+## Current scoring and release recheck · 27 October 2026
+
+The [full re-test report](docs/FULL-RETEST-2026-10-27.md) records this round's separate validation layers and final results. The dated October 24 section below describes the earlier implementation; it does not establish that historical scores passed the current policy.
+
+- **Quantity-bound model evidence.** Current structured results use `muse-evidence-v7-quantity-bound-facts`. Financial exposure needs a positively allowlisted quantity or economic comparison from its exact collector/field path. A real collector does not make all its flags, addresses, sizes, IDs or metadata financial evidence. Pure provenance and unperformed-control flags cannot anchor any low/review/high dimension. These are evidence-admissibility rules, not fixed points, weights, score bands or a fallback number: Muse still supplies the score.
+- **Asset subjects and units stay separate.** Native balances remain bound to the observed account; token balances/caps remain bound to that token. Nested fork before/after balances and signed raw deltas retain their actual token/native subjects. Vault shares are tied to the vault, underlying amounts to the underlying token, and lending base-account quantities are not relabeled as token balances or USD. Reverse-swap acquired output belongs to the output asset; returned input and actual input debit belong to the input asset; the return ratio is an experiment result. Missing bindings remain unresolved. None of these quantities establishes a market price or future loss.
+- **Snap results must match the captured request.** Before displaying advice, the Snap checks the backend report against the unsigned transaction/message it actually received. A mismatched report cannot supply the score for another request. This is request correlation, not cryptographic attestation of Snap execution or proof of a backend's honesty.
+- **Release bytes are verified after finalization.** Packaging aligns the final proposed name, npm package identity, version and repository, computes the checksum from the finalized manifest/bundle/icon, and validates the copied release artifact with the official MetaMask manifest/checksum utilities. Changing a manifest after an earlier checksum is no longer accepted. This prepares an artifact; it does not publish it or establish distribution eligibility.
+- **Historical results are not rescored.** Previously stored v6 or unstated-policy results retain their original score and historical-policy notice. Opening them does not run Muse again or certify them under v7. New schema/semantic tests and compliant model responses still do not measure independently labelled accuracy or calibration.
+
 ## Independent implementation recheck · 24 October 2026
 
 The [independent recheck report](docs/INDEPENDENT-RECHECK-2026-10-24.md) records this separate review and its validation results. Older dated reports keep their original counts and observations; they are not evidence that the new policy was applied retroactively.
@@ -114,6 +124,8 @@ npm --version
 npm ci
 npm run demo
 ```
+
+Use the full locked install, `npm ci`, for the current launchers, including hosted mode: `start:hosted` still runs TypeScript through the development-classified `tsx` dependency. `npm ci --omit=dev` is not a supported replacement for this workflow. The production-only audit filters package-manifest classification; it does not prove that only production-classified dependencies are installed, loaded or deployed.
 
 `npm run demo` builds the coverage guide, type-checks, builds the web app and Snap, starts a fresh owned Anvil chain, deploys TEST-USD and the wallet lab contracts, then starts the API, Vite, and Snap file servers. No API key is needed for local wallet tests without model scoring. The included [macOS launcher](%E5%90%AF%E5%8A%A8WalletShield.command) starts the same demo workflow from this directory.
 
@@ -282,7 +294,7 @@ npm run package:hosted
 npm run start:hosted
 ```
 
-`build:hosted` generates nonsecret runtime settings shared by the frontend and Snap, then runs the build. `package:hosted` requires the same settings and successful-build source/bundle fingerprints, and creates **`dist/release-snap/`**, a separate npm package with the owned package name, matching manifest, bundle, icon and release README. Changed source or stale bundles require rebuilding first. It leaves the development Snap package private. It publishes nothing. Inspect its exact package contents locally:
+`build:hosted` generates nonsecret runtime settings shared by the frontend and Snap, then runs the build. `package:hosted` requires the same settings and successful-build source/bundle fingerprints, and creates **`dist/release-snap/`**, a separate npm package with the owned package name, matching manifest, bundle, icon and release README. Changed source or stale bundles require rebuilding first. It leaves the development Snap package private. It publishes nothing. The finalized package also aligns the release name, npm identity, version and repository before its checksum is calculated. `getSnapChecksum`/`validateSnapShasum` and `checkManifest` from the direct `@metamask/snaps-utils` development dependency validate the actual copied manifest, bundle and icon. A successful build stamp alone does not replace these checks; no npm publication is performed. Inspect its exact package contents locally:
 
 ```sh
 cd dist/release-snap
@@ -548,9 +560,9 @@ To verify the complete user-facing path, use Flask manually: reload/pair the bui
 
 ## Dependency status for this repair
 
-The patched dependency set uses `@fastify/static` 10.1.7 and lockfile overrides for `tmp` 0.2.7, vulnerable `bn.js` 5.x ranges to 5.2.5, and `uuid` below 11.1.1 to 11.1.1. At the repair audit, `npm audit --omit=dev` reported **zero known production dependency alerts**. The full audit retained **12 low-severity affected-package entries**, from the `elliptic` development/build-tool dependency chain; no patched upstream resolution was available for that chain. These counts are time-specific, not a permanent vulnerability-free claim. No unsafe forced major toolchain migration was used to hide the remaining notices.
+The current lockfile retains the earlier `tmp`/`bn.js`/`uuid` repairs and pins affected `body-parser` 2.x to **2.4.0** for [GHSA-27r3-jxmh-p828](https://github.com/expressjs/body-parser/security/advisories/GHSA-27r3-jxmh-p828). `@metamask/snaps-utils` is now a direct development dependency for the official release-artifact validators. At the October 27 audit, `npm audit --omit=dev` reported **zero known alerts in its selected dependency set**; the full audit retained **12 low-severity affected-package entries** from the `elliptic` chain. The [elliptic advisory](https://github.com/advisories/GHSA-848j-6mx2-7j84) lists no patched release. Twelve package entries are not twelve independent root causes. Re-run both audits before release; this is a dated inventory, not proof of zero vulnerabilities or deployment security.
 
-Use `npm ci` from the updated lockfile; run `npm audit --omit=dev` and `npm audit` again before release. Review the remaining development/build dependencies and actual browser-wallet acceptance separately. Passing an audit is not a complete security audit of WalletShield.
+Use the full locked install, `npm ci`, for the current launchers, including hosted mode: `start:hosted` still runs TypeScript through the development-classified `tsx` dependency. `npm ci --omit=dev` is not a supported replacement for this workflow. The production-only audit filters package-manifest classification; it does not prove that only production-classified dependencies are installed, loaded or deployed.
 
 ## Troubleshooting and deployment status
 
@@ -572,6 +584,6 @@ The default build remains a **localhost Flask development integration**. Authent
 
 Source entry points: [`web/src/main.tsx`](web/src/main.tsx), [`snap/src/index.ts`](snap/src/index.ts), [`src/security/api.ts`](src/security/api.ts), [`src/security/ai.ts`](src/security/ai.ts), [`src/security/providers.ts`](src/security/providers.ts), [`src/security/coverage.ts`](src/security/coverage.ts), and [`src/testing/cases.ts`](src/testing/cases.ts). The [English user manual](docs/USER-MANUAL.md) and [generated detailed coverage guide](docs/AI-COVERAGE-GUIDE.md) provide operational instructions and field-by-field coverage; use current source and the actual report when older screenshots or acceptance artifacts differ.
 
-Current implementation and repair boundaries: [Current coverage and reliability notes](docs/CURRENT-COVERAGE.md). Validation of newly added paths is reported separately from dated acceptance files. Consult the [24 October repair report](docs/REPAIR-VALIDATION-2026-10-24.md) for the latest validation record; earlier order/trace and model-call reports remain dated observations; automated or local acceptance does not establish live accuracy or calibration. [Earlier interface/evidence review](docs/ENGLISH-EVIDENCE-REVIEW-2026-10-22.md) and other dated acceptance artifacts remain historical records.
+Current implementation and repair boundaries: [Current coverage and reliability notes](docs/CURRENT-COVERAGE.md). Validation of newly added paths is reported separately from dated acceptance files. Consult the [27 October full re-test report](docs/FULL-RETEST-2026-10-27.md) for the latest validation record; earlier order/trace and model-call reports remain dated observations; automated or local acceptance does not establish live accuracy or calibration. [Earlier interface/evidence review](docs/ENGLISH-EVIDENCE-REVIEW-2026-10-22.md) and other dated acceptance artifacts remain historical records.
 
-The [2026-10-22 reliability verification](docs/RELIABILITY-ACCEPTANCE-2026-10-22.md) records the current offline and disposable-chain checks, including what was not exercised.
+The [2026-10-22 reliability verification](docs/RELIABILITY-ACCEPTANCE-2026-10-22.md) records the earlier offline and disposable-chain checks, including what was not exercised.

@@ -1,0 +1,211 @@
+{
+  "completedDate": "2026-10-27",
+  "baseRevision": "3c4cd58e5bc8cb30e4389f332d2aa5ad8b6d4be4",
+  "runtime": "Node.js 24.22.1",
+  "scoringPolicy": "muse-evidence-v7-quantity-bound-facts",
+  "scope": "Internal scoped re-test; not external certification or universal operation coverage",
+  "unitRegression": {
+    "baseline": 592,
+    "passed": 611,
+    "failed": 0,
+    "skipped": 0
+  },
+  "build": {
+    "passed": true,
+    "fingerprintMatched": true,
+    "sourceHash": "1e9f6fd138304ab8c369fd6558080d8345ed434d6792caed5158098e4d37e7c5",
+    "bundleHash": "654843242e58ed3c12d8b9eff220b9ff4d04faf631e441304bfe9e980f3b9bf8",
+    "snapCompiledFiles": 86
+  },
+  "localIntegration": {
+    "scripts": [
+      {
+        "name": "asset-cleanup",
+        "exit": 0
+      },
+      {
+        "name": "security",
+        "exit": 0
+      },
+      {
+        "name": "extensions",
+        "exit": 0
+      },
+      {
+        "name": "deploy-local",
+        "exit": 0
+      },
+      {
+        "name": "deploy-lab-repeat",
+        "exit": 0
+      },
+      {
+        "name": "chain",
+        "exit": 0
+      },
+      {
+        "name": "lab",
+        "exit": 0
+      }
+    ],
+    "walletLab": {
+      "passed": 67,
+      "transactions": 51,
+      "localNodeSignatures": 16,
+      "profiles": 25,
+      "scope": "local-node-transactions-and-signature-format-not-MetaMask-Snap-UI"
+    },
+    "extendedEvidencePassed": 15,
+    "snapshotRuntimeGraphFiles": 49,
+    "laterAiChangesOutsideGraph": true,
+    "ownNodeStopped": true
+  },
+  "separateIntegration": {
+    "v3": {
+      "testWrappers": 1,
+      "stateScenarios": 23,
+      "passed": true
+    },
+    "traceFallback": {
+      "passed": 1,
+      "sourceAnalysisWrites": 0
+    },
+    "devPrivateFiles": {
+      "passed": 1
+    }
+  },
+  "offlineModelValidator": {
+    "validSyntheticAbstentions": 12,
+    "adversarialRejections": 120,
+    "modelCalls": 0,
+    "rpcCalls": 0,
+    "accuracyMeasured": false
+  },
+  "negativeInputSweep": {
+    "seed": "0x57a1d026",
+    "algorithm": "xorshift32",
+    "total": 504,
+    "groups": {
+      "abi": 352,
+      "typed": 128,
+      "envelope": 24
+    },
+    "httpStatuses": {
+      "200": 480,
+      "400": 18,
+      "413": 6
+    },
+    "positiveControls": 12,
+    "passed": 504,
+    "modelCalls": 0,
+    "externalCalls": 0,
+    "caseSha256": "c177749e61fc8624040f882bb70bf293dcf7c12f914d20ebaa12de7c65a982ac"
+  },
+  "hosted": {
+    "testedAt": "2026-10-27T16:08:55.781397+00:00",
+    "hostedBuild": "passed",
+    "hostedPackage": "passed",
+    "officialManifestErrors": 0,
+    "httpChecksPassed": 29,
+    "releasePackageFiles": 5,
+    "negativeConfigurationCasesPassed": 3,
+    "snapUiReleaseFocusedTests": {
+      "passed": 42,
+      "failed": 0
+    },
+    "sharedSourceDrift": [],
+    "rootRuntimeRemainsLocal": true,
+    "syntheticPrivateCanaryExposed": false,
+    "ownHostedProcessStopped": true,
+    "published": false
+  },
+  "realMuse": {
+    "model": "muse-wonder-1.0",
+    "analyses": 3,
+    "paidRequests": 4,
+    "repairedAnalyses": 1,
+    "results": [
+      {
+        "case": "vault-deposit",
+        "acceptedScore": 24,
+        "attempts": 2
+      },
+      {
+        "case": "opaque-order",
+        "acceptedScore": null,
+        "attempts": 1,
+        "reason": "Unresolved asset-authority semantics"
+      },
+      {
+        "case": "fork-trace-approval",
+        "acceptedScore": 24,
+        "attempts": 1
+      }
+    ],
+    "finalOfflineReplay": [
+      {
+        "attempt": 1,
+        "case": "vault-deposit",
+        "accepted": false,
+        "reason": "Unsupported bounded observation claim"
+      },
+      {
+        "attempt": 2,
+        "case": "vault-deposit",
+        "accepted": true,
+        "score": 24
+      },
+      {
+        "attempt": 3,
+        "case": "opaque-order",
+        "accepted": true,
+        "score": null
+      },
+      {
+        "attempt": 4,
+        "case": "fork-trace-approval",
+        "accepted": true,
+        "score": 24
+      }
+    ],
+    "sourceFixtureUnchangedDuringAnalysis": true,
+    "upstreamAnalysisWrites": 0,
+    "independentAccuracyMeasured": false
+  },
+  "dependencyAudit": {
+    "date": "2026-10-27",
+    "full": {
+      "info": 0,
+      "low": 12,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 12
+    },
+    "selectedProduction": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "bodyParserVersion": "2.4.0",
+    "remainingRootAdvisory": "GHSA-848j-6mx2-7j84",
+    "hostedInstallRequiresDevDependencies": true
+  },
+  "actualBrowserWalletAcceptancePerformedThisRound": false,
+  "limitations": [
+    "Maintained assertions and fixture checks do not prove absence of untested defects.",
+    "Wallet hook delivery and explicit-integration boundaries remain.",
+    "Opaque/custom/nonstandard requests can remain partial or unscored.",
+    "No independent held-out scoring calibration or false-negative measurement.",
+    "No new production deployment or real-asset readiness certification."
+  ],
+  "publicationExclusions": [
+    "secrets",
+    ".local data",
+    "private audit records",
+    "PPT files"
+  ]
+}

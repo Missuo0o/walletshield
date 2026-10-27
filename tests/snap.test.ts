@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { onTransaction } from '../snap/src/index.js';
 import { scenarios } from '../src/core/scenarios.js';
-import { evaluate } from '../src/core/engine.js';
+import {assess} from '../src/security/rules.js';
+import type {SecurityRequest} from '../src/security/types.js';
+const fixtureRequest:SecurityRequest={kind:'transaction',...scenarios[0].input};
+function reportResponse(init:RequestInit|undefined,overrides:Record<string,unknown>={}){const request=JSON.parse(String(init?.body)) as SecurityRequest;return new Response(JSON.stringify({...assess(request,[]),...overrides,request}));}
 async function invoke(chainId = 'eip155:31337') {
   const result = await onTransaction({ transaction: scenarios[0].input.transaction, chainId, transactionOrigin: 'http://localhost:5173' } as Parameters<typeof onTransaction>[0]);
   assert.ok(result && 'content' in result);
@@ -29,15 +32,15 @@ test('Snap surfaces RPC findings and fails visibly for network, API, and untrust
   const original = globalThis.fetch;
   const oldSnap=(globalThis as any).snap;(globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
   try {
-    const result = { ...evaluate(scenarios[0].input, { ...scenarios[0].context, source: 'rpc' }), id: 'test' };
+    const result = { ...assess(fixtureRequest,[]), id: 'test' };
     let posted: Record<string, unknown> | undefined;
-    globalThis.fetch = async (_url, init) => { posted = JSON.parse(init!.body as string); return new Response(JSON.stringify(result)); };
+    globalThis.fetch = async (_url, init) => { posted = JSON.parse(init!.body as string); return reportResponse(init,result); };
     const high = await invoke(); assert.equal(high.severity, 'critical'); assert.equal(posted?.chainId, 31337);
     assert.ok(JSON.stringify(high.content).includes('High risk'));
     globalThis.fetch = async () => { throw new Error('offline'); };
     const offline = await invoke(); assert.equal(offline.severity, 'critical'); assert.ok(JSON.stringify(offline.content).includes('Unable to assess'));
     const unsupported = await invoke('eip155:1'); assert.equal(unsupported.severity, 'critical');
-    globalThis.fetch = async () => new Response(JSON.stringify({ ...result, source: 'demo' }));
+    globalThis.fetch = async (_url,init) => reportResponse(init,{ ...result, source: 'demo' });
     assert.ok(JSON.stringify((await invoke()).content).includes('Unable to assess'));
     globalThis.fetch = async () => new Response('{}', { status: 500 });
     assert.equal((await invoke()).severity, 'critical');
@@ -47,8 +50,8 @@ test('Snap surfaces RPC findings and fails visibly for network, API, and untrust
 test('signature hook forwards unsigned message with unknown current chain and uses critical presentation',async()=>{
   const {onSignature}=await import('../snap/src/index.js');const original=globalThis.fetch;const oldSnap=(globalThis as any).snap;(globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
   try{
-    const result={...evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'}),id:'signature-check'};
-    let posted:any;globalThis.fetch=async(_url,init)=>{posted=JSON.parse(String(init?.body));return new Response(JSON.stringify(result));};
+    const result={...assess(fixtureRequest,[]),id:'signature-check'};
+    let posted:any;globalThis.fetch=async(_url,init)=>{posted=JSON.parse(String(init?.body));return reportResponse(init,result);};
     const response=await onSignature({signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign',data:'0x68656c6c6f'},signatureOrigin:'https://example.test'});
     assert.equal(posted.kind,'signature');assert.equal(posted.chainId,0);assert.equal(posted.signature.method,'personal_sign');assert.equal(response?.severity,'critical');assert.ok(JSON.stringify(response).includes('signature-check'));
     globalThis.fetch=async()=>new Response('{}',{status:500});assert.ok(JSON.stringify(await onSignature({signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign',data:'0x'}})).includes('Unable to assess'));
@@ -59,14 +62,14 @@ test('transaction and signature insights distinguish abstention from rejected ou
  const {onSignature}=await import('../snap/src/index.js');const original=globalThis.fetch,oldSnap=(globalThis as any).snap;
  (globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
  try{
-  const base={...evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'}),id:'outcome-test',score:null,scoreSource:'none'};
+  const base={...assess(fixtureRequest,[]),id:'outcome-test',score:null,scoreSource:'none'};
   const states=[
    {ai:{status:'completed',message:'Insufficient observed evidence',result:{score:null,assessment:'unknown',summary:'Evidence could not support a number',reasons:[],suggested_action:'Review the evidence'}},label:'Evidence insufficient for a score'},
    {ai:{status:'failed',failureKind:'validation',message:'A cited observation did not support the claim'},label:'Model output rejected'},
    {ai:{status:'failed',failureKind:'transport',message:'Model request timed out'},label:'Model connection failed'}
   ];
   for(const state of states){
-   globalThis.fetch=async()=>new Response(JSON.stringify({...base,ai:state.ai}));
+   globalThis.fetch=async(_url,init)=>reportResponse(init,{...base,ai:state.ai});
    const tx=JSON.stringify(await invoke()),signature=JSON.stringify(await onSignature({signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign',data:'hello'}}));
    assert.ok(tx.includes(state.label),state.label);assert.ok(signature.includes(state.label),state.label);assert.ok(!tx.includes('AI risk indicator:'),'A no-score state must never present a numeric risk indicator');
   }
@@ -90,7 +93,7 @@ test('Snap provider network is forwarded as separate context and never replaces 
  const {onSignature}=await import('../snap/src/index.js');const original=globalThis.fetch,oldSnap=(globalThis as any).snap,oldEthereum=(globalThis as any).ethereum;let posted:any,calls:string[]=[];
  (globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};(globalThis as any).ethereum={request:async(value:any)=>{calls.push(value.method);return '0x1';}};
  try{
-  const result={...evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'}),id:'context'};globalThis.fetch=async(_,init)=>{posted=JSON.parse(String(init?.body));return new Response(JSON.stringify(result));};
+  const result={...assess(fixtureRequest,[]),id:'context'};globalThis.fetch=async(_,init)=>{posted=JSON.parse(String(init?.body));return reportResponse(init,result);};
   await onSignature({signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign',data:'hello'}});assert.equal(posted.chainId,0);assert.equal(posted.signature.providerContext.chainId,1);assert.equal(posted.signature.providerContext.source,'snap-provider');assert.deepEqual(calls,['eth_chainId']);
   (globalThis as any).ethereum={request:async()=>{throw Error('unavailable');}};await onSignature({signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign',data:'hello'}});assert.equal(posted.signature.providerContext,undefined);assert.equal(posted.chainId,0);
  }finally{globalThis.fetch=original;(globalThis as any).snap=oldSnap;(globalThis as any).ethereum=oldEthereum;}
@@ -100,20 +103,20 @@ test('Snap includes AI explanations and forwards fee fields without signing or e
  const original=globalThis.fetch,previous=(globalThis as any).snap;let posted:any;
  (globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
  try{
-  const result={...evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'}),id:'ai-test',score:88,scoreSource:'ai',ai:{status:'completed',message:'AI 完成',result:{summary:'基于证据的模型解释',reasons:[{text:'模型发现的具体风险',evidence_ids:['operation']}],suggested_action:'核实用途'}}};
-  globalThis.fetch=async(_,init)=>{posted=JSON.parse(String(init?.body));return new Response(JSON.stringify(result));};
+  const result={...assess(fixtureRequest,[]),id:'ai-test',score:88,scoreSource:'ai',ai:{status:'completed',message:'AI 完成',result:{summary:'基于证据的模型解释',reasons:[{text:'模型发现的具体风险',evidence_ids:['operation']}],suggested_action:'核实用途'}}};
+  globalThis.fetch=async(_,init)=>{posted=JSON.parse(String(init?.body));return reportResponse(init,result);};
   const response=await onTransaction({transaction:{...scenarios[0].input.transaction,gas:'0x5208',maxFeePerGas:'0x64'},chainId:'eip155:31337'} as any);
   assert.equal(posted.transaction.gas,'0x5208');assert.equal(posted.transaction.maxFeePerGas,'0x64');assert.ok(JSON.stringify(response).includes('基于证据的模型解释'));assert.ok(JSON.stringify(response).includes('模型发现的具体风险'));
-  globalThis.fetch=async()=>new Response(JSON.stringify({...result,score:101}));assert.ok(JSON.stringify(await invoke()).includes('Unable to assess'));
+  globalThis.fetch=async(_url,init)=>reportResponse(init,{...result,score:101});assert.ok(JSON.stringify(await invoke()).includes('Unable to assess'));
  }finally{globalThis.fetch=original;(globalThis as any).snap=previous;}
 });
 
 test('transaction and signature panels show case-specific boundaries, primary facts and missing evidence totals',async()=>{
  const {onSignature}=await import('../snap/src/index.js');const original=globalThis.fetch,oldSnap=(globalThis as any).snap;(globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
  try{
-  const result={...evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'}),id:'scope-check',operation:{category:'lending',label:'借贷候选',fields:{amount:'100',onBehalfOf:scenarios[0].input.transaction.from}},missingData:['头寸未计算','预言机未验证'],ai:{status:'failed',message:'HTTP 429'}};
-  globalThis.fetch=async()=>new Response(JSON.stringify(result));const transaction=JSON.stringify(await invoke());assert.ok(transaction.includes('Scope of this analysis'));assert.ok(transaction.includes('Raw amount: 100'));assert.ok(transaction.includes('future prices'));assert.ok(transaction.includes('Base-currency fields are not automatically USD'));assert.ok(transaction.includes('Unfinished checks (2)'));
-  const signature={...result,operation:{category:'siwe',label:'登录消息候选',fields:{domainName:'example.test'}}};globalThis.fetch=async()=>new Response(JSON.stringify(signature));const message=JSON.stringify(await onSignature({signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign',data:'hello'}}));assert.ok(message.includes('does not verify a remote nonce store'));assert.ok(message.includes('does not force a block or continuously monitor after signing'));
+  const result={...assess(fixtureRequest,[]),id:'scope-check',operation:{category:'lending',label:'借贷候选',fields:{amount:'100',onBehalfOf:scenarios[0].input.transaction.from}},missingData:['头寸未计算','预言机未验证'],ai:{status:'failed',message:'HTTP 429'}};
+  globalThis.fetch=async(_url,init)=>reportResponse(init,result);const transaction=JSON.stringify(await invoke());assert.ok(transaction.includes('Scope of this analysis'));assert.ok(transaction.includes('Raw amount: 100'));assert.ok(transaction.includes('future prices'));assert.ok(transaction.includes('Base-currency fields are not automatically USD'));assert.ok(transaction.includes('Unfinished checks (2)'));
+  const signature={...result,operation:{category:'siwe',label:'登录消息候选',fields:{domainName:'example.test'}}};globalThis.fetch=async(_url,init)=>reportResponse(init,signature);const message=JSON.stringify(await onSignature({signature:{from:scenarios[0].input.transaction.from,signatureMethod:'personal_sign',data:'hello'}}));assert.ok(message.includes('does not verify a remote nonce store'));assert.ok(message.includes('does not force a block or continuously monitor after signing'));
  }finally{globalThis.fetch=original;(globalThis as any).snap=oldSnap;}
 });
 
@@ -125,9 +128,9 @@ test('Snap home explains expanded partial coverage and manual-only entry points 
 test('large bounded evidence reports remain usable while Snap prioritizes risks and links to full evidence',async()=>{
  const original=globalThis.fetch,oldSnap=(globalThis as any).snap;(globalThis as any).snap={request:async()=>({backendToken:'a'.repeat(64)})};
  try{
-  const base=evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'});
+  const base=assess(fixtureRequest,[]);
   const checks=Array.from({length:110},(_,i)=>({title:i===109?'late-critical-evidence':`routine-${i}`,detail:'Observed bounded fixture.',status:i===109?'risk':'pass'}));
-  globalThis.fetch=async()=>new Response(JSON.stringify({...base,id:'large-report',checks}));
+  globalThis.fetch=async(_url,init)=>reportResponse(init,{...base,id:'large-report',checks});
   const result=JSON.stringify(await invoke());assert.ok(result.includes('late-critical-evidence'));assert.ok(result.includes('110 evidence items'));assert.ok(result.includes('large-report'));assert.ok(!result.includes('routine-30'));
  }finally{globalThis.fetch=original;(globalThis as any).snap=oldSnap;}
 });
@@ -150,8 +153,8 @@ test('chain-scoped contract-wallet pairing is verified, retained and fails close
  let state:any=null,providerChain:string|undefined='0x7a69',scans=0,posted:any;
  (globalThis as any).snap={request:async(value:any)=>{if(value.params.operation==='get')return state;state=value.params.newState;}};
  (globalThis as any).ethereum={request:async()=>{if(!providerChain)throw Error('Provider unavailable');return providerChain;}};
- const result={...evaluate(scenarios[0].input,{...scenarios[0].context,source:'rpc'}),id:'bound-check'};
- globalThis.fetch=async(url,init)=>{if(String(url).endsWith('/pair/status'))return new Response(JSON.stringify({paired:true,address:scenarios[0].input.transaction.from,chainId:31337,expiresAt:null}));scans++;posted=JSON.parse(String(init?.body));return new Response(JSON.stringify(result));};
+ const result={...assess(fixtureRequest,[]),id:'bound-check'};
+ globalThis.fetch=async(url,init)=>{if(String(url).endsWith('/pair/status'))return new Response(JSON.stringify({paired:true,address:scenarios[0].input.transaction.from,chainId:31337,expiresAt:null}));scans++;posted=JSON.parse(String(init?.body));return reportResponse(init,result);};
  try{
   const configure={jsonrpc:'2.0',id:1,method:'walletshield_configure',params:{token:'a'.repeat(64)}};
   const paired:any=await onRpcRequest({origin:'http://127.0.0.1:5173',request:configure} as any);assert.equal(paired.chainId,31337);assert.equal(state.chainId,31337);
