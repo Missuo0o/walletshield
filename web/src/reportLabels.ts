@@ -1,6 +1,6 @@
 import {COVERAGE_PROFILES} from '../../src/security/coverage';
 import type {SecurityReport} from '../../src/security/types';
-import {scoreDisposition} from '../../src/security/score-disposition';
+import {scoreDisposition,partialAssessmentLabel} from '../../src/security/score-disposition';
 
 /** Display labels never replace original report text or stored judgments. */
 export function historyOperationLabel(report:SecurityReport):string {
@@ -10,7 +10,7 @@ export function historyOperationLabel(report:SecurityReport):string {
 
 export function overallAdvisoryLabel(report:SecurityReport):string {
  if(report.ai.status==='not_applicable'&&!['high','review'].includes(report.level))return 'Read-only · Privacy not assessed';
- if(report.level==='unknown'&&report.ai.status==='completed'&&report.score!==null)return 'Incomplete evidence';
+ const partial=partialAssessmentLabel(report);if(partial)return partial;
  return {low:'No clear risk observed',review:'Needs review',high:'High risk',unknown:'Unable to assess'}[report.level];
 }
 

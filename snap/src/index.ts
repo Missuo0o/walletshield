@@ -6,7 +6,7 @@ import { NodeType, type Component, type Panel } from '@metamask/snaps-sdk';
 import { coverageForCategory, ENTRY_LABELS, ENTRY_BOUNDARY, ADVICE_ONLY, DATA_BOUNDARY } from '../../src/security/coverage';
 import { operationLines, missingLines, adviceLine } from '../../src/security/display';
 import {unsupportedTransactionFields,normalizeAuthorizationList} from '../../src/security/transaction-fields';
-import {scoreDisposition} from '../../src/security/score-disposition';
+import {scoreDisposition,partialAssessmentLabel} from '../../src/security/score-disposition';
 import {reportMatchesRequest} from './request-binding';
 const legacyPanel = (children: Component[]): Panel => ({ type: NodeType.Panel, children });
 const legacyHeading = (value: string): Component => ({ type: NodeType.Heading, value });
@@ -82,7 +82,7 @@ export const onTransaction: OnTransactionHandler = async ({ transaction, chainId
     const operation=typeof result.operation==='object'?result.operation:undefined;
     const coverage=coverageForCategory(operation?.category),missing=missingLines(result),disposition=scoreDisposition(result);
     return {
-      content: Box({ children: [Heading({ children: `WalletShield · ${result.title}` }),
+      content: Box({ children: [Heading({ children: `WalletShield · ${partialAssessmentLabel(result)??result.title}` }),
         Text({ children: disposition.kind==='scored'||disposition.kind==='legacy_score' ? `${result.scoreSource === 'ai' ? 'AI risk indicator' : 'Historical rule score'}: ${result.score}/100 (not a loss probability)` : `${disposition.label}. ${disposition.detail}` }), Text({children:scoreExplanation}),Text({ children: result.ai?.message ?? 'Review the scope of the checks.' }),
         ...(result.ai?.status==='completed'&&result.ai.result?.assessment?[Text({children:`Model assessment: ${assessmentLabel[result.ai.result.assessment]}`})]:[]),
         ...(result.ai?.status==='completed'&&result.ai.result?[Text({children:result.ai.result.summary}),...result.ai.result.reasons.map(r=>Text({children:r.text})),Text({children:adviceLine(result.ai.result.suggested_action)})]:[]),...dimensionLines(result).map(line=>Text({children:line})),Text({ children: result.summary }), Divider({}),
@@ -122,7 +122,7 @@ export const onSignature: OnSignatureHandler = async ({ signature, signatureOrig
     if (!validResult(result)||!reportMatchesRequest(sent,result.request)) throw new Error('INVALID_RESPONSE');
     const operation=typeof result.operation==='object'?result.operation:undefined;
     const coverage=coverageForCategory(operation?.category),missing=missingLines(result),disposition=scoreDisposition(result);
-    return { severity: 'critical', content: legacyPanel([legacyHeading(`WalletShield · ${result.title}`),
+    return { severity: 'critical', content: legacyPanel([legacyHeading(`WalletShield · ${partialAssessmentLabel(result)??result.title}`),
       legacyText(result.summary), legacyText(disposition.kind==='scored'||disposition.kind==='legacy_score' ? `${result.scoreSource === 'ai' ? 'AI risk indicator' : 'Historical rule score'}: ${result.score}/100 (not a loss probability)` : `${disposition.label}. ${disposition.detail}`),legacyText(scoreExplanation),
       ...(result.ai?.status==='completed'&&result.ai.result?.assessment?[legacyText(`Model assessment: ${assessmentLabel[result.ai.result.assessment]}`)]:[]),
       legacyText(result.ai?.message ?? 'A message signature can authorize later asset operations.'),

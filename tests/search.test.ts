@@ -38,9 +38,9 @@ test('security history searches English display categories and advisories withou
  report.score=34;report.scoreSource='ai';report.ai={status:'completed',message:'Completed',result:validateAI(finitePermitOutput(34),report,'muse-wonder-1.0')};
  const original=structuredClone(report),operation=historyOperationLabel(report);
  assert.match(operation,/Permit/);assert.doesNotMatch(operation,/\p{Script=Han}/u);
- assert.equal(overallAdvisoryLabel(report),'Incomplete evidence');
+ assert.equal(overallAdvisoryLabel(report),'Review required · Partial assessment');
  assert.equal(securityHistoryMatches(report,operation.toUpperCase(),displayedTime),true);
- assert.equal(securityHistoryMatches(report,'incomplete evidence',displayedTime),true);
+ assert.equal(securityHistoryMatches(report,'partial assessment',displayedTime),true);
  assert.equal(securityHistoryMatches(report,'23:53',displayedTime),true);
  assert.equal(securityHistoryMatches(report,'历史有限授权',displayedTime),false);
  assert.equal(securityHistoryMatches(report,'历史无法判断',displayedTime),false);

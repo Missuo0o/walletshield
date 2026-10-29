@@ -26,3 +26,13 @@ export function scoreStatusLabel(report:ScoreReport):string {
  const disposition=scoreDisposition(report);
  return disposition.kind==='scored'?`${report.score}/100 · AI`:disposition.kind==='legacy_score'?`${report.score}/100 · Legacy rules`:disposition.label;
 }
+
+/** A usable, accepted model assessment can coexist with incomplete evidence.
+ * This changes presentation only: unknown checks, severity and score stay intact.
+ * Never mask an observed high risk, abstention, failure or historical rule score. */
+export function partialAssessmentLabel(report:ScoreReport&{level:string}):string|undefined {
+ const result=report.ai?.result;
+ if(report.level!=='unknown'||scoreDisposition(report).kind!=='scored'||!result||typeof result!=='object')return undefined;
+ const assessment=(result as {assessment?:unknown}).assessment;
+ return assessment==='review'||assessment==='low'?'Review required · Partial assessment':undefined;
+}

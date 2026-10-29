@@ -170,3 +170,7 @@ Use the full locked install, `npm ci`, for the current launchers, including host
 Read the [full user manual](USER-MANUAL.md) and [exact field-by-field guide](AI-COVERAGE-GUIDE.md) before interpreting an operation as covered. Current source and the actual report take precedence over older screenshots and dated acceptance artifacts.
 
 The 28 October local audit additionally identifies the unpatched deepmerge chain: 14 low-severity affected-package entries in the full set and zero in the `--omit=dev` selection. No moderate/high/critical entries were reported. See [the latest dependency inventory and limits](LOCAL-RETEST-2026-10-28.md#remaining-limits-and-impact). The current launcher still uses development tools; the smaller audit is not deployment-footprint certification.
+
+## Partial assessment presentation
+
+Different operation categories retain their existing collector plans and evidence requirements. An accepted numeric Muse result with a low/review assessment and an incomplete overall level is presented as **Review required · Partial assessment** in transaction/signature insights and webpage history/details. All unknown checks, the underlying level, completeness, model evidence gates and wallet severity are preserved. High-risk findings take precedence; abstentions, invalid output and transport failures are not relabeled as successful partial assessments. Existing history is formatted without rescoring or rewriting stored evidence.

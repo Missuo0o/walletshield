@@ -56,10 +56,10 @@ test('legacy report prose stays original and absent quality or legacy scoring is
  assert.match(html,/original non-English content/);assert.ok(html.includes('原始详情'));
  assert.match(html,/No evidence-quality inventory was saved/);assert.match(html,/older rules engine/);assert.match(html,/not a Muse score/);
 });
-test('a valid model number with unknown overall evidence renders an incomplete-evidence advisory without changing the report',()=>{
+test('a valid model number with unknown overall evidence renders a partial-assessment advisory without changing the report',()=>{
  const report=finitePermitReport();report.level='unknown';report.score=34;report.scoreSource='ai';
  report.ai={status:'completed',message:'Model analysis completed.',result:validateAI(finitePermitOutput(34),report,'muse-wonder-1.0')};
  const original=structuredClone(report),html=renderToStaticMarkup(createElement(SecurityReportView,{report}));
- assert.match(html,/Overall advisory: Incomplete evidence/);assert.match(html,/Model assessment: Needs review/);
+ assert.match(html,/Overall advisory: Review required · Partial assessment/);assert.match(html,/Model assessment: Needs review/);
  assert.match(html,/Missing checks/);assert.ok(report.missingData.length>0);assert.deepEqual(report,original);
 });

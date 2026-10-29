@@ -12,6 +12,7 @@ import { loadSecurityConfig, type SecurityConfig } from './config.js';
 import { scoreWithAI, evidencePacket } from './ai.js';
 import {evidenceQuality} from './quality.js';
 import {assessmentScope} from './assessment-scope.js';
+import {partialAssessmentLabel} from './score-disposition.js';
 import { securityExamples, demoEvidence } from './examples.js';
 import { watchSchema, newWatch, startMonitor } from './monitor.js';
 import { z } from 'zod';
@@ -91,6 +92,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
     else if(config.apiKey&&config.aiEnabled&&!principal&&!store.securityAiAttempt(config.aiDailyLimit??30))report.ai={status:'disabled',message:`The local daily model limit of ${config.aiDailyLimit??30} attempts has been reached. No AI score; evidence retained.`};
     else {if(config.apiKey&&config.aiEnabled){report.ai={status:'pending',message:'Muse is analyzing this evidence. No score yet; wait for the wallet insight.'};save(report,principal);}try{report.ai=options.score?await options.score(report,config):await scoreWithAI(report,config,fetch,()=>principal?auth!.active(principal)&&auth!.takeAttempt(principal,options.access!.service.walletDailyLimit,config.aiDailyLimit??100):store.securityAiAttempt(config.aiDailyLimit??30));}catch{report.ai={status:'failed',failureKind:'transport',message:'Model service error. No AI score; qualitative evidence retained.'};}}
     if(report.ai.status==='completed'&&report.ai.result){const ai=report.ai.result;report.assessmentScope=assessmentScope(report,ai.missing_data);if(ai.score!==null){report.score=ai.score;report.scoreSource='ai';}if(report.level!=='high'&&ai.assessment==='high'){report.level='high';report.title='High risk';}if(!report.assessmentScope.criticalMissingData.length&&report.level!=='high'){report.level=ai.assessment;report.title=ai.assessment==='low'?'No clear risk observed within request scope':ai.assessment==='review'?'Review needed':'Unable to assess';}}
+    const partial=partialAssessmentLabel(report);if(partial)report.title=partial;
     save(report,principal);return report;
   }
   if(!hosted){
