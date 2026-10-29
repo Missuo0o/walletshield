@@ -133,7 +133,7 @@ ENABLE_EXTERNAL_LOOKUPS=1
 
 [中文使用手册](docs/USER-MANUAL-zh.md) · [English manual](docs/USER-MANUAL.md) · [覆盖范围](docs/CURRENT-COVERAGE-zh.md) · [取数字段与 AI 证据](docs/AI-COVERAGE-GUIDE-zh.md) · [接入与评估](docs/RELIABILITY-AND-INTEGRATION.md)
 
-开发者验证命令与带日期的结果：[最新完整复测](docs/FULL-RETEST-2026-10-27-zh.md)。
+开发者验证命令与带日期的结果：[最新本地复测](docs/LOCAL-RETEST-2026-10-28-zh.md)。
 
 ## 线上测试实验室
 

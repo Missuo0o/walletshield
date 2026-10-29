@@ -23,6 +23,7 @@ export function createStore(path: string) {
   db.exec('CREATE TABLE IF NOT EXISTS security_reports (id TEXT PRIMARY KEY,created_at TEXT NOT NULL,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS ai_attempts (created_at TEXT NOT NULL)');
   db.exec('CREATE TABLE IF NOT EXISTS security_watches(id TEXT PRIMARY KEY,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS security_alerts(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,payload TEXT NOT NULL)');
   db.exec('CREATE TABLE IF NOT EXISTS lab_sessions(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,payload TEXT NOT NULL)');
+  db.exec('CREATE TABLE IF NOT EXISTS lab_daily_budgets(address TEXT NOT NULL,day INTEGER NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(address,day))');
   db.exec('CREATE TABLE IF NOT EXISTS wallet_auth_challenges(id TEXT PRIMARY KEY,address TEXT NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS wallet_auth_tokens(token_hash TEXT PRIMARY KEY,address TEXT NOT NULL,kind TEXT NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_address ON wallet_auth_tokens(address,kind); CREATE TABLE IF NOT EXISTS wallet_report_owners(report_id TEXT PRIMARY KEY,address TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_report_owners_address ON wallet_report_owners(address); CREATE TABLE IF NOT EXISTS wallet_ai_attempts(address TEXT NOT NULL,day TEXT NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(address,day)); CREATE TABLE IF NOT EXISTS wallet_auth_rates(rate_key TEXT NOT NULL,bucket INTEGER NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(rate_key,bucket));');
   db.exec('CREATE INDEX IF NOT EXISTS wallet_auth_challenges_expiry ON wallet_auth_challenges(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_expiry ON wallet_auth_tokens(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_tokens_owner_expiry ON wallet_auth_tokens(address,kind,expires_at,token_hash); CREATE INDEX IF NOT EXISTS wallet_auth_rates_bucket ON wallet_auth_rates(bucket);');
   db.exec('CREATE TABLE IF NOT EXISTS wallet_auth_verifications(id TEXT PRIMARY KEY,address TEXT NOT NULL,expires_at TEXT NOT NULL); CREATE INDEX IF NOT EXISTS wallet_auth_verifications_expiry ON wallet_auth_verifications(expires_at); CREATE INDEX IF NOT EXISTS wallet_auth_verifications_address ON wallet_auth_verifications(address);');
@@ -32,11 +33,14 @@ export function createStore(path: string) {
   // preserve reports, budgets and all local-chain/configuration state.
   db.exec('CREATE TABLE IF NOT EXISTS wallet_identity_policies(id TEXT PRIMARY KEY); BEGIN IMMEDIATE');
   try{
+    // Preserve any surviving legacy lab counters before minute-based auth
+    // cleanup runs. Daily counters must never share that cleanup window.
+    db.exec("INSERT OR IGNORE INTO lab_daily_budgets SELECT substr(rate_key,16),bucket,attempts FROM wallet_auth_rates WHERE substr(rate_key,1,15)='test-lab:daily:'; DELETE FROM wallet_auth_rates WHERE substr(rate_key,1,15)='test-lab:daily:';");
     if(!db.prepare('PRAGMA table_info(wallet_auth_verifications)').all().some(column=>column.name==='chain_id'))db.exec('ALTER TABLE wallet_auth_verifications ADD COLUMN chain_id INTEGER');
     db.exec("DELETE FROM wallet_auth_tokens WHERE NOT EXISTS(SELECT 1 FROM wallet_identity_policies WHERE id='contract-chain-v1'); DELETE FROM wallet_auth_challenges WHERE NOT EXISTS(SELECT 1 FROM wallet_identity_policies WHERE id='contract-chain-v1'); DELETE FROM wallet_auth_verifications WHERE NOT EXISTS(SELECT 1 FROM wallet_identity_policies WHERE id='contract-chain-v1'); INSERT OR IGNORE INTO wallet_identity_policies VALUES('contract-chain-v1'); COMMIT;");
   }catch(error){db.exec('ROLLBACK');db.close();throw error;}
   if(path!==':memory:')for(const suffix of ['-wal','-shm'])try{chmodSync(path+suffix,0o600);}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
-  function pruneAuth(now:string){db.prepare('DELETE FROM wallet_auth_challenges WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_verifications WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_tokens WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_rates WHERE bucket<?').run(Math.floor(Date.parse(now)/60000)-2);}
+  function pruneAuth(now:string){db.prepare('DELETE FROM wallet_auth_challenges WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_verifications WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_tokens WHERE expires_at<=?').run(now);db.prepare('DELETE FROM wallet_auth_rates WHERE bucket<?').run(Math.floor(Date.parse(now)/60000)-2);db.prepare('DELETE FROM lab_daily_budgets WHERE day<?').run(Math.floor(Date.parse(now)/86400000));}
   function activeWeb(address:string,id:string,now:string,chainId?:number){return Boolean(db.prepare("SELECT 1 FROM wallet_auth_tokens WHERE token_hash=? AND address=? AND kind='web' AND expires_at>? AND json_extract(payload,'$.chainId') IS ?").get(id,address,now,chainId??null));}
   function revokeOwner(address:string,chainId?:number){
     if(chainId===undefined){const changes=db.prepare('DELETE FROM wallet_auth_tokens WHERE address=?').run(address).changes;db.prepare('DELETE FROM wallet_auth_challenges WHERE address=?').run(address);db.prepare('DELETE FROM wallet_auth_verifications WHERE address=?').run(address);return Number(changes);}
@@ -129,6 +133,7 @@ export function createStore(path: string) {
       }catch(error){db.exec('ROLLBACK');throw error;}
     },
     authRateAttempt(key:string,bucket:number,limit:number):boolean{if(!Number.isSafeInteger(bucket)||!Number.isInteger(limit)||limit<1)throw Error('Invalid auth rate');return db.prepare('INSERT INTO wallet_auth_rates VALUES(?,?,1) ON CONFLICT(rate_key,bucket) DO UPDATE SET attempts=attempts+1 WHERE attempts<?').run(key,bucket,limit).changes===1;},
+    labDailyAttempt(address:string,day:number,limit:number):boolean{if(!Number.isSafeInteger(day)||!Number.isInteger(limit)||limit<1)throw Error('Invalid lab budget');return db.prepare('INSERT INTO lab_daily_budgets VALUES(?,?,1) ON CONFLICT(address,day) DO UPDATE SET attempts=attempts+1 WHERE attempts<?').run(address.toLowerCase(),day,limit).changes===1;},
     authReportOwner(reportId:string,address:string,chainId?:number):boolean {if(chainId!==undefined&&!db.prepare("SELECT 1 FROM security_reports WHERE id=? AND json_extract(payload,'$.request.chainId')=?").get(reportId,chainId))return false;db.prepare('INSERT OR IGNORE INTO wallet_report_owners VALUES(?,?)').run(reportId,address);return Boolean(db.prepare('SELECT 1 FROM wallet_report_owners WHERE report_id=? AND address=?').get(reportId,address));},
     authOwnsReport(reportId:string,address:string,chainId?:number):boolean{return Boolean(chainId===undefined?db.prepare('SELECT 1 FROM wallet_report_owners WHERE report_id=? AND address=?').get(reportId,address):db.prepare("SELECT 1 FROM wallet_report_owners o JOIN security_reports r ON r.id=o.report_id WHERE o.report_id=? AND o.address=? AND json_extract(r.payload,'$.request.chainId')=?").get(reportId,address,chainId));},
     authSecurityList(address:string,chainId?:number):SecurityReport[]{return db.prepare("SELECT r.payload FROM security_reports r JOIN wallet_report_owners o ON o.report_id=r.id WHERE o.address=? AND (? IS NULL OR json_extract(r.payload,'$.request.chainId')=?) ORDER BY r.created_at DESC LIMIT 100").all(address,chainId??null,chainId??null).map(row=>JSON.parse(row.payload as string));},
@@ -149,7 +154,15 @@ export function createStore(path: string) {
     },
     authAttemptsToday(address:string,now=new Date().toISOString()):number{return Number(db.prepare('SELECT attempts FROM wallet_ai_attempts WHERE address=? AND day=?').get(address,now.slice(0,10))?.attempts??0);},
     labSave(session:LabSession){db.prepare('INSERT INTO lab_sessions VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload').run(session.id,session.createdAt,JSON.stringify(session));},
-    labList():LabSession[]{return db.prepare('SELECT payload FROM lab_sessions ORDER BY created_at DESC LIMIT 100').all().map(r=>JSON.parse(r.payload as string));},
+    labFinish(session:LabSession):LabSession|null{
+      if(session.status==='pending')throw Error('A completed wallet outcome is required');
+      // Receipt reads can overlap another outcome or a Snap report attachment.
+      // Change only outcome fields and let exactly one pending writer finish.
+      const patch={status:session.status,note:session.note,...(session.transactionHash?{transactionHash:session.transactionHash}:{})};
+      const row=db.prepare("UPDATE lab_sessions SET payload=json_patch(payload,?) WHERE id=? AND json_extract(payload,'$.status')='pending' RETURNING payload").get(JSON.stringify(patch),session.id);
+      return row?JSON.parse(row.payload as string):null;
+    },
+    labList(address?:string):LabSession[]{return db.prepare("SELECT payload FROM lab_sessions WHERE ? IS NULL OR lower(COALESCE(json_extract(payload,'$.request.transaction.from'),json_extract(payload,'$.request.signature.from'))) = ? ORDER BY created_at DESC,id DESC LIMIT 100").all(address?.toLowerCase()??null,address?.toLowerCase()??null).map(r=>JSON.parse(r.payload as string));},
     labGet(id:string):LabSession|null{const row=db.prepare('SELECT payload FROM lab_sessions WHERE id=?').get(id);return row?JSON.parse(row.payload as string):null;},
     watchSave(watch:Watch){db.prepare('INSERT INTO security_watches VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload').run(watch.id,JSON.stringify(watch));},
     watchList():Watch[]{return db.prepare('SELECT payload FROM security_watches').all().map(r=>JSON.parse(r.payload as string));},

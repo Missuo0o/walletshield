@@ -159,7 +159,7 @@ export function registerSecurity(app:FastifyInstance,store:Store,options:Securit
       // Store once before model work. The same ID is updated; AI never creates a
       // second wallet-operation record or fabricates a transaction outcome.
       save(report,principal);
-      if(fromSnap&&(!hosted||hostedLab)){const sessionId=req.headers['x-walletshield-test-session'];const candidates=store.labList().filter(s=>(!principal||labSessionAddress(s)===principal.address)&&(typeof sessionId!=='string'||s.id===sessionId));const session=matchLabReport(candidates,report);if(session)store.labSave(session);}
+      if(fromSnap&&(!hosted||hostedLab)){const sessionId=req.headers['x-walletshield-test-session'];const candidates=(typeof sessionId==='string'?[store.labGet(sessionId)].filter((s):s is NonNullable<typeof s>=>s!==null):store.labList(principal?.address)).filter(s=>!principal||labSessionAddress(s)===principal.address);const session=matchLabReport(candidates,report);if(session)store.labSave(session);}
       return await modelStage(report,config,principal);
     } catch(error){if(error instanceof RevokedScan)return reply.code(401).send({error:error.message});throw error;} finally {busy.delete(key);}
   });

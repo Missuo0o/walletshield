@@ -14,7 +14,7 @@ export function hostedLabAccess(auth:WalletAuth,store:Store,now=Date.now){
  function takeLease(address:string){const t=now();if(lease&&lease.expires>t&&lease.address!==address.toLowerCase())return false;lease={address:address.toLowerCase(),expires:t+15*60*1000};return true;}
  function takeRate(key:string,limit:number){return store.authRateAttempt('test-lab:'+key,Math.floor(now()/60000),limit);}
  return {principal,owns,takeLease,maySend:(address:string)=>!!lease&&lease.expires>now()&&lease.address===address.toLowerCase(),takeRate,
-  mutation:(address:string)=>takeRate('mutate:'+address.toLowerCase(),4)&&store.authRateAttempt('test-lab:daily:'+address.toLowerCase(),Math.floor(now()/86400000),40),
+  mutation:(address:string)=>takeRate('mutate:'+address.toLowerCase(),4)&&store.labDailyAttempt(address,Math.floor(now()/86400000),40),
   rpcRate:(ip:string)=>takeRate('rpc:global',360)&&takeRate('rpc:'+ip,120),
   lease:()=>lease&&lease.expires>now()?{active:true,expiresAt:new Date(lease.expires).toISOString()}: {active:false}};
 }

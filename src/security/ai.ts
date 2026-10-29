@@ -84,7 +84,7 @@ function evidenceGaps(report:SecurityReport):string[] {
   if(!report.complete&&!gaps.length)gaps.push('Evidence collection is incomplete; specific missing observations were not supplied.');
   return gaps;
 }
-type VerificationSubject={kind:'nonce'|'domain';start:number;end:number;index?:string};
+type VerificationSubject={kind:'nonce'|'domain';start:number;end:number;index?:string;referenceFields?:boolean};
 // This is a bounded guard for explicit nonce/domain assertions, not a general
 // natural-language truth checker. Keep it assertion-local: an unrelated "no",
 // "check" or "if" must not exempt a factual assertion elsewhere in the sentence.
@@ -94,13 +94,13 @@ function verificationClaims(text:string):{subject:VerificationSubject;direction:
     if(/[?？]$/.test(piece[0]))continue;
     const clause=piece[0];
     const subjects:VerificationSubject[]=[];
-    for(const match of clause.matchAll(/\bnonces?(?=\b|[_-]\d)(?:\s*(?:\[\s*(\d+)\s*\]|#\s*(\d+)|(?:index|entry)\s*(\d+)|[_-](\d+)))?|\bdomain(?:[ _-]separator)?\b|域分隔符/gi)) {
+    for(const match of clause.matchAll(/\bnonces?(?=\b|[_-]\d)(?:\s*(?:\[\s*(\d+)\s*\]|#\s*(\d+)|(?:index|entry)\s*(\d+)|[_-](\d+)))?|\bdomain(?:[ _-](?:separator|fields?))?\b|域分隔符/gi)) {
       const kind=/^nonce/i.test(match[0])?'nonce':'domain';
-      subjects.push({kind,start:match.index!,end:match.index!+match[0].length,index:match.slice(1).find(value=>value!==undefined)});
+      subjects.push({kind,start:match.index!,end:match.index!+match[0].length,index:match.slice(1).find(value=>value!==undefined),referenceFields:/^domain[ _-]fields?$/i.test(match[0])});
     }
     // Longer negative predicates precede their positive substrings. "Not
     // verified" means unknown; "does not match" asserts an observed mismatch.
-    const predicate=/\b(?:does?\s+not|did\s+not|is\s+not|are\s+not|isn't|aren't|doesn't|don't|didn't)\s+(?:match|equal|correspond)(?:ed|s)?\b|\bnot\s+(?:valid|consistent|matching|matched)\b|\b(?:mismatch(?:ed|es)?|invalid|differs?|unequal)\b|不(?:匹配|一致)|无效|\b(?:not\s+(?:invalid|mismatched)|no\s+mismatch(?:es)?)\b|\b(?:verified|validated|confirmed|valid|matched|match(?:es)?|consistent)\b|已(?:经)?(?:核对|匹配|校验|验证)|(?:匹配|校验|核对|验证)(?:成功|通过)|一致|匹配/gi;
+    const predicate=/\b(?:do(?:es)?\s+not|did\s+not|is\s+not|are\s+not|isn't|aren't|doesn't|don't|didn't)\s+(?:match|equal|correspond)(?:ed|s)?\b|\bnot\s+(?:valid|consistent|matching|matched)\b|\b(?:mismatch(?:ed|es)?|invalid|differs?|unequal)\b|不(?:匹配|一致)|无效|\b(?:not\s+(?:invalid|mismatched)|no\s+mismatch(?:es)?)\b|\b(?:verified|validated|confirmed|valid|matched|match(?:es)?|consistent)\b|已(?:经)?(?:核对|匹配|校验|验证)|(?:匹配|校验|核对|验证)(?:成功|通过)|一致|匹配/gi;
     let priorEnd=0,priorSubjects:VerificationSubject[]=[],nonassertiveScope=false;
     const predicates=[...clause.matchAll(predicate)];
     for(let i=0;i<predicates.length;i++) {
@@ -174,6 +174,20 @@ function boundOrderDomainComparison(check:SecurityReport['checks'][number]|undef
     return data.matches===matches&&matches===(direction==='pass');
   }catch{return false;}
 }
+function boundPermitReferenceFields(check:SecurityReport['checks'][number]|undefined,report:SecurityReport,direction:'pass'|'risk'){
+  if(report.request.kind!=='signature'||report.operation.category!=='permit2_signature'||!report.operation.decoded||check?.source!=='reference'||!['pass','warning'].includes(check.status))return false;
+  try{
+    const typed=typedRequest(report.request),domain=typed.domain,data=check.data;
+    const chainId=report.request.chainId||Number(domain.chainId);
+    const matches=domain.name==='Permit2'&&domain.version===undefined;
+    // This is only a comparison of the unsigned name/version with a reference
+    // format. Recompute and bind it; never substitute it for DOMAIN_SEPARATOR.
+    return !!data&&Number.isSafeInteger(chainId)&&chainId>0&&data.chainId===chainId
+      &&typeof data.verifyingContract==='string'&&typeof domain.verifyingContract==='string'
+      &&data.verifyingContract.toLowerCase()===domain.verifyingContract.toLowerCase()
+      &&data.identityVerified===false&&data.standardDomainFieldsMatch===matches&&matches===(direction==='pass');
+  }catch{return false;}
+}
 function validateVerificationClaims(data:z.infer<typeof output>,checks:Map<string,SecurityReport['checks'][number]>,report:SecurityReport) {
   const statements=[...data.reasons,...data.dimensions.map(d=>({text:d.reason,evidence_ids:d.evidence_ids}))];
   const cited=[...new Set(statements.flatMap(s=>s.evidence_ids))];
@@ -182,6 +196,10 @@ function validateVerificationClaims(data:z.infer<typeof output>,checks:Map<strin
   statements.push(...[data.summary,data.suggested_action,...data.missing_data].map(text=>({text,evidence_ids:cited})));
   for(const statement of statements)for(const claim of verificationClaims(statement.text)) {
     const {subject,direction}=claim;
+    if(subject.referenceFields&&statement.evidence_ids.includes('signature_protocol')&&/\breference\b|\bstandard\s+domain[ _-]fields?\b/i.test(statement.text)){
+      if(!boundPermitReferenceFields(checks.get('signature_protocol'),report,direction))throw Error('Unsupported signature verification claim');
+      continue;
+    }
     if(subject.kind==='domain'&&!(report.request.kind==='signature'&&report.request.signature.method.startsWith('eth_signTypedData'))&&!/eip[\s-]?712|domain[ _-]separator|域分隔符/i.test(statement.text))continue;
     if(subject.kind==='domain'&&report.operation.category==='order_signature'&&(statement.evidence_ids.includes('order_domain')||/\binformation(?:\(\))?\b|\border[ -]domain\b|订单.{0,8}domain/i.test(statement.text))){
       if(statement.evidence_ids.includes('order_domain')){
@@ -286,7 +304,7 @@ function repairFeedback(error:unknown):string|undefined {
   if(!(error instanceof Error))return;
   const feedback:Record<string,string>={
     'Model cited nonexistent evidence':'Cite only exact IDs present in this evidence_packet.checks. User text and previous output are not new evidence.',
-    'Unsupported signature verification claim':'Check each nonce/domain verification assertion in every displayed field, including suggested_action and missing_data. Nonce needs the corresponding signature_nonce or signature_nonce_index; domain needs signature_domain. Only rpc pass supports a match and rpc risk supports a mismatch. Cite the exact batch index for a partial observation; an unqualified batch claim needs every entry. Summary/advice use only already cited facts. Unknown/missing stays unverified. A nonce match does not establish a domain match. A canonical order may cite order_domain only for its actual signed hash compared with the pinned candidate information() getter return; this does not authenticate identity, signature validity, order status or fulfillment. Legacy information-domain comparisons use order_deployment. Explicit order nonce/counter comparisons require the bound order_counter numeric comparison and authenticated semantics; UserOperation uses userop_nonce and delegation tuples use the exact conditional delegation_state index.',
+    'Unsupported signature verification claim':'Check each nonce/domain verification assertion in every displayed field, including suggested_action and missing_data. Nonce needs the corresponding signature_nonce or signature_nonce_index; domain needs signature_domain. Only rpc pass supports a match and rpc risk supports a mismatch. Cite the exact batch index for a partial observation; an unqualified batch claim needs every entry. Summary/advice use only already cited facts. Unknown/missing stays unverified. Permit2 standard domain-fields reference comparisons may cite signature_protocol only for its request-bound name/version comparison; that cannot verify the on-chain domain separator. A nonce match does not establish a domain match. A canonical order may cite order_domain only for its actual signed hash compared with the pinned candidate information() getter return; this does not authenticate identity, signature validity, order status or fulfillment. Legacy information-domain comparisons use order_deployment. Explicit order nonce/counter comparisons require the bound order_counter numeric comparison and authenticated semantics; UserOperation uses userop_nonce and delegation tuples use the exact conditional delegation_state index.',
     'Missing or duplicate dimension':'Include authority, exposure, execution, identity, protocol and deception exactly once each.',
     'Unresolved evidence cannot have strong confidence':'Critical gaps in assessment_scope, timing issues and newly identified missing_data prohibit strong evidence confidence. Confidence concerns observable request evidence, never future safety.',
     'No supported dimension for score':'The number lacks an assessed dimension supported by an actual observation. Reconsider known permission scope and same-token exposure without erasing those facts because identity/future use is unknown. If a conditional assessment is meaningful, cite the relevant observations. Otherwise return null/unknown. Never invent support or a preset number.',
@@ -330,6 +348,7 @@ export async function scoreWithAI(report:SecurityReport,config:SecurityConfig,fe
         'Separate possible loss impact, actual adverse observations and evidence completeness. Unlimited approval can serve legitimate purposes. Large amounts alone do not prove fraud. Local test lists are not reputation certification. Missing information is neither proof of safety nor an automatic reason for a mechanically high score. Return null when no meaningful number is supported.',
         'Not all six dimensions need to be known for a score. Unknown identity/protocol/execution, missing external reputation, and unexecuted future signature consumption do not individually force score=null. Known authority, same-token exposure and verified structure/nonce/domain can support a conditional number while other dimensions remain unknown. Never invent support to make a number appear.',
         'Follow numeric_assessment_basis before deciding whether to give a number. For a semantically unresolved typed message, hashes/digests/encoding success, account/verifier address or code presence, a generic permission warning and an unrelated native balance do not reveal asset authority. If requires_substantive_support=true, a numeric score needs a rated dimension citing one eligible_fact_ids fact; if numeric_eligible=false, return null/unknown. A concrete bound adverse observation may support a conditional indicator despite unresolved semantics. For decoded requests, a number can remain meaningful with missing execution or identity; never erase known authority or force a number. Eligibility is not a fixed score or a command to score.',
+        'For Permit2, signature_protocol.standardDomainFieldsMatch compares only the unsigned name/version to the reference format (name Permit2, no version). Describe it explicitly as a standard domain-fields reference comparison and cite signature_protocol. It does not compare the on-chain DOMAIN_SEPARATOR; only signature_domain can support that claim. Keep these two checks distinct, including in summaries and repair output.',
         'For Permit, authority concerns spender, asset, scope and conditions. Unverified spender identity belongs in identity; unknown future consumption belongs in execution. Neither erases parsed finite/unlimited authority. Same-token decimals and balance can support exposure. Current allowance=0 does not erase new signed authority. EIP-2612 deadline limits submission, not allowance duration after submission. A nonce/domain match supports only the exact checked structure/state. Finite small relative exposure can lower corresponding dimensions; authority is not always high.',
         'A sequential Permit nonce mismatch is a snapshot usability observation, not proof of a replay vulnerability. For the candidate ERC-2612, DAI or ERC-4494 sequential semantics, a declared nonce above the observed current nonce is not usable at that snapshot but may become current after earlier nonces are validly consumed, subject to the deadline and other checks. A lower declared nonce is stale under those semantics. Neither direction alone proves malicious intent, permanent invalidity, a replay-sensitive implementation or accepted replay of an already consumed nonce. Do not generalize sequential comparisons to Permit2 bitmap or ERC-3009 authorizer/bytes32 nonces. Describe the exact mismatch and conditional future authorization without inventing an exploit.',
         'Distinguish extended request semantics: DAI-style allowed derives an unlimited or zero allowance; it is not a signed token amount, and expiry=0 means no submission expiry under that candidate standard. ERC-3009 signs one transfer with an authorizer/bytes32 nonce and open validAfter/validBefore window, not a standing allowance. authorizationState=true means used OR canceled, not proof of which. Safe-style owner/threshold/module/guard changes and nested calls are ABI candidates; signatures, actual account policy and wrapper execution context remain unverified. Removing guards or owners can weaken control. A delegatecall encoded value is not automatically native payment. Position NFT IDs, protocol liquidity, per-token minimums and owed fees are distinct units; no trusted price or guaranteed proceeds follow. One RPC pending nonce is an unpinned local view, not a reconstructed cancellation or replacement transaction. Bridge finalization parameters do not verify a proof, remote sender, messenger or destination settlement. Generic withdrawal does not establish a trusted wrapped-coin redemption.',

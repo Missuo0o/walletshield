@@ -51,9 +51,9 @@ export function registerLab(app:FastifyInstance,store:Store,options:LabOptions={
  });
  app.post('/api/lab/begin',async(req,reply)=>{
   const parsed=z.object({caseId:z.enum(WALLET_CASES.map(c=>c.id) as [string,...string[]]),address}).strict().safeParse(req.body);if(!parsed.success)return reply.code(400).send({error:'Choose a listed test case and connect an account.'});
-  try{const d=await verifiedLab();const request=await buildWalletCase(parsed.data.caseId,parsed.data.address as Address,d,await labArtifacts(),req.headers.origin);const test=WALLET_CASES.find(c=>c.id===parsed.data.caseId)!;if(request.kind==='transaction'&&test.prerequisite&&test.id!=='sell-blocked'){try{await labClient.call({account:request.transaction.from as Address,to:request.transaction.to as Address,data:request.transaction.data as `0x${string}`,value:BigInt(request.transaction.value??'0x0')});}catch{throw Error(`A local test prerequisite is not satisfied: ${test.prerequisite} Check the assets, existing allowances or positions. This is not an AI risk assessment.`);}}const {session,token}=newLabSession(parsed.data.caseId,request);store.labSave(session);return {...publicLabSession(session),token};}catch(e){return reply.code(409).send({error:e instanceof Error?e.message:'Test request preparation failed.'});}
+  try{const d=await verifiedLab();const request=await buildWalletCase(parsed.data.caseId,parsed.data.address as Address,d,await labArtifacts(),req.headers.origin);const boundChain=options.hosted?.access.principal(req)?.chainId;if(request.kind==='signature'&&boundChain!==undefined)request.chainId=boundChain;const test=WALLET_CASES.find(c=>c.id===parsed.data.caseId)!;if(request.kind==='transaction'&&test.prerequisite&&test.id!=='sell-blocked'){try{await labClient.call({account:request.transaction.from as Address,to:request.transaction.to as Address,data:request.transaction.data as `0x${string}`,value:BigInt(request.transaction.value??'0x0')});}catch{throw Error(`A local test prerequisite is not satisfied: ${test.prerequisite} Check the assets, existing allowances or positions. This is not an AI risk assessment.`);}}const {session,token}=newLabSession(parsed.data.caseId,request);store.labSave(session);return {...publicLabSession(session),token};}catch(e){return reply.code(409).send({error:e instanceof Error?e.message:'Test request preparation failed.'});}
  });
- app.get('/api/lab/sessions',async(req)=>store.labList().filter(s=>!options.hosted||options.hosted.access.owns(req,labSessionAddress(s))).map(s=>({...publicLabSession(s),report:s.reportId?store.securityGet(s.reportId):null})));
+ app.get('/api/lab/sessions',async(req)=>store.labList(options.hosted?.access.principal(req)?.address).filter(s=>!options.hosted||options.hosted.access.owns(req,labSessionAddress(s))).map(s=>({...publicLabSession(s),report:s.reportId?store.securityGet(s.reportId):null})));
  app.get<{Params:{id:string}}>('/api/lab/sessions/:id',async(req,reply)=>{const s=store.labGet(req.params.id);if(!s)return reply.code(404).send({error:'Test record not found.'});return {...publicLabSession(s),report:s.reportId?store.securityGet(s.reportId):null};});
  app.post<{Params:{id:string}}>('/api/lab/sessions/:id/result',async(req,reply)=>{
   const parsed=z.object({token:z.string().min(20).max(100),status:z.enum(['signed','submitted','rejected','error']),transactionHash:z.string().regex(/^0x[\da-f]{64}$/i).optional()}).strict().safeParse(req.body),session=store.labGet(req.params.id);
@@ -69,7 +69,8 @@ export function registerLab(app:FastifyInstance,store:Store,options:LabOptions={
     try{const receipt=await labClient.getTransactionReceipt({hash});next.status=receipt.status==='success'?'confirmed':'reverted';next.note='The local transaction contents and receipt were verified. This does not establish safety.';}catch{next.note='Transaction contents verified. A receipt is not available yet.';}
    }catch{return reply.code(409).send({error:'The local transaction has not been verified. Keep the hash returned by the wallet.'});}
   }
-  // The Snap may have attached its report while the wallet was open.
-  next.reportId=store.labGet(session.id)?.reportId;store.labSave(next);return publicLabSession(next);
+  // Preserve any report attached during receipt reads; concurrent result
+  // submissions must not overwrite the first recorded wallet outcome.
+  const finished=store.labFinish(next);if(!finished)return reply.code(409).send({error:'The wallet outcome for this request has already been recorded.'});return publicLabSession(finished);
  });
 }

@@ -140,4 +140,4 @@ This is a **shared test chain** with a 15-minute exclusive transaction lease. Co
 
 [User manual](docs/USER-MANUAL.md) · [中文手册](docs/USER-MANUAL-zh.md) · [Coverage](docs/CURRENT-COVERAGE.md) · [Extracted fields and AI evidence](docs/AI-COVERAGE-GUIDE.md) · [Integration and evaluation](docs/RELIABILITY-AND-INTEGRATION.md)
 
-Developer validation commands and dated results: [latest full re-test](docs/FULL-RETEST-2026-10-27.md).
+Developer validation commands and dated results: [latest local re-test](docs/LOCAL-RETEST-2026-10-28.md).
