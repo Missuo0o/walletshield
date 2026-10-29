@@ -16,6 +16,7 @@ import {requestPreparedAssetDisplay} from './labAssetActions';
 import {createLocalWalletGuard} from './localWallet';
 import {SNAP_ID,snapInstallationError,discoverWallets,defaultWallet,walletAccounts,walletChain,type DiscoveredWallet,type WalletProvider,type SnapSetupStage} from './wallet';
 import './styles.css';
+import './refined.css';
 declare global{interface Window{ethereum?:WalletProvider}}
 type Page='lab'|'network'|'history'|'setup'|'about';
 function App(){
